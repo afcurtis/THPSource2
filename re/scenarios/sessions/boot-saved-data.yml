@@ -1,0 +1,24 @@
+version: 1
+description: "Boot, main menu to Options (Right x6), Saved Data, Save Data, Enter through what follows, Esc back."
+deliveries: 6800
+keys:
+  - {poll: 530, key: right, hold: 5}
+  - {poll: 560, key: right, hold: 5}
+  - {poll: 590, key: right, hold: 5}
+  - {poll: 620, key: right, hold: 5}
+  - {poll: 650, key: right, hold: 5}
+  - {poll: 680, key: right, hold: 5}
+  - {poll: 760, key: enter, hold: 5}
+  - {poll: 1000, key: down, hold: 5}
+  - {poll: 1060, key: down, hold: 5}
+  - {poll: 1120, key: down, hold: 5}
+  - {poll: 1180, key: down, hold: 5}
+  - {poll: 1260, key: enter, hold: 5}
+  - {poll: 1500, key: down, hold: 5}
+  - {poll: 1620, key: enter, hold: 5}
+  - {poll: 1900, key: enter, hold: 5}
+  - {poll: 2200, key: enter, hold: 5}
+  - {poll: 2500, key: esc, hold: 5}
+  - {poll: 2700, key: esc, hold: 5}
+  - {poll: 2900, key: f9, hold: 5}
+masks: ["55dce8:4", "55dd0c:8", "55dd28:4", "55dd5c:4", "6a04c4:8", "6a7674:8"]

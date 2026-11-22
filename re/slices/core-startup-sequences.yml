@@ -1,0 +1,42 @@
+version: 1
+id: core-startup-sequences
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x00458270
+  - 0x004584d0
+  - 0x00458500
+  - 0x00458690
+  - 0x004586f0
+  - 0x00458730
+  - 0x00458750
+  - 0x00458760
+  - 0x00458840
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/core-startup.md
+  - re/evidence/fixtures/core-calls-iniA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/core_init.cpp
+  - re/gdb/probes/core_specs_init.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/core_retail_calls_test.cpp
+  - tests/test_core_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups ini): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (core_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 9 of the 9 functions (init.cpp: the list sweep that deletes a list''s objects, the clean-up of a level (with its three modes), the kill-all with its seven leftover checks, the heap zone layout, the restart, the for-game set-up and the program''s start-up and shut-down sequences) are replayed over 2700 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 270 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - `Init_AtStart` allocates and clears a 6 MB block: the replay does not hold it, so the clearing is not compared (the port skips it when the block is not mapped); the PlayStation library stubs the retail code also calls do nothing and are not reproduced.'

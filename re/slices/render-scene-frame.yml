@@ -1,0 +1,40 @@
+version: 1
+id: render-scene-frame
+subsystem: renderer
+status: complete
+scope:
+  functions:
+  - 0x0045f3f0
+  - 0x00460a90
+  - 0x004667e0
+  - 0x00466a00
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/renderer-scene-frame.md
+  - re/evidence/fixtures/render-calls-rscnC.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/render_scene.cpp
+  - re/gdb/probes/render_specs5.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/render_retail_calls_test.cpp
+  - tests/test_render_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rscn): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (render_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 4 of the 4 functions (the frame functions of the scene renderer: the cleanup rectangle that closes a view, the submission of an object list to the item renderer, the zone blockmap (bounds, cell counts and the cells'' lists of environment objects) and the loading banner of a replay) are replayed over 160 cases with no mismatch (at least 40 cases each; the committed fixtures keep the first 30 of each capture per function, 120 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the item renderer called for every object, the text drawer and the PSX library are services.

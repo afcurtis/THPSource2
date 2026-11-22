@@ -1,0 +1,76 @@
+version: 1
+id: create-skater-objects
+subsystem: create
+status: complete
+scope:
+  functions:
+  - 0x0041f1e0
+  - 0x0041f350
+  - 0x0041f370
+  - 0x0041f4b0
+  - 0x0041f7c0
+  - 0x0041f900
+  - 0x0041fc80
+  - 0x0041ff50
+  - 0x004200b0
+  - 0x004200d0
+  - 0x00420420
+  - 0x004206c0
+  - 0x004208a0
+  - 0x00420c10
+  - 0x00420fa0
+  - 0x00421410
+  - 0x00421460
+  - 0x00421690
+  - 0x00421910
+  - 0x00421ba0
+  - 0x00422020
+  - 0x004221a0
+  - 0x00422340
+  - 0x00422b30
+  - 0x00422d80
+  - 0x00422e30
+  - 0x00422ec0
+  - 0x00423be0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/createobj-skater-object.md
+  - re/evidence/fixtures/createobj-calls-capp21.txt
+  - re/evidence/fixtures/createobj-calls-cdb21.txt
+  - re/evidence/fixtures/createobj-calls-cmat21.txt
+  - re/evidence/fixtures/createobj-calls-cpart21.txt
+  - re/evidence/fixtures/createobj-calls-cskt21.txt
+  - re/evidence/fixtures/createobj-calls-cweld21.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/createobj_kit.hpp
+  - src/runtime/create_parts.hpp
+  - src/runtime/create_spool.hpp
+  - src/runtime/create_stitch.hpp
+  - src/runtime/createobj_object.cpp
+  - src/runtime/createobj_texture.cpp
+  - re/gdb/probes/cobj_specs3.py
+  - re/gdb/probes/cobj_specs4.py
+  - re/gdb/probes/cobj_specs6.py
+  - re/gdb/probes/cobj_specs7.py
+  - re/gdb/probes/cobj_world.py
+  - re/gdb/probes/cobj_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/createobj_retail_calls_test.cpp
+  - tests/test_createobj_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cmat, cpart, capp, cskt, cweld): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (createobj_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 28 of the 28 functions (the part database (constructor, the part manifest reader, the animation indexes, the material checksum lists, deleting destructor and destructor) and the custom skater object (constructor, destructors, the board checksum, the release of the part database, the region it builds in, its texture names and part order, the stitching of its parts, the scale, and the application of texture sets to the nine slots of the body)) are replayed over 1280 cases with no mismatch (at least 20 cases each; the committed fixtures keep the first 30 of each capture per function, 690 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the PSX region services, the file system's sub-directory, the texture-set lookups, the palette functions of the slots and the material queries are reported services; the lookups and records they use are earlier slices.

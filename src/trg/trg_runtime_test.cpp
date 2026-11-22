@@ -1,0 +1,890 @@
+#include "trg_runtime.hpp"
+
+#include "tests/test_check.hpp"
+#include <cstdint>
+#include <iostream>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+using namespace opentony::trg;
+
+namespace {
+
+void u16(std::vector<std::byte>& out, std::uint16_t value) {
+    out.push_back(static_cast<std::byte>(value & 0xff));
+    out.push_back(static_cast<std::byte>((value >> 8) & 0xff));
+}
+
+void u32(std::vector<std::byte>& out, std::uint32_t value) {
+    for (unsigned shift = 0; shift < 32; shift += 8) {
+        out.push_back(static_cast<std::byte>((value >> shift) & 0xff));
+    }
+}
+
+std::vector<std::byte> trg_file(const std::vector<std::vector<std::byte>>& nodes) {
+    const std::size_t first_node = 12 + nodes.size() * 4;
+    std::vector<std::byte> result;
+    result.reserve(first_node);
+    result.insert(result.end(), {
+        std::byte{'_'}, std::byte{'T'}, std::byte{'R'}, std::byte{'G'},
+    });
+    u32(result, 2);
+    u32(result, static_cast<std::uint32_t>(nodes.size()));
+    std::size_t offset = first_node;
+    for (const auto& node : nodes) {
+        u32(result, static_cast<std::uint32_t>(offset));
+        offset += node.size();
+    }
+    for (const auto& node : nodes) {
+        result.insert(result.end(), node.begin(), node.end());
+    }
+    return result;
+}
+
+std::vector<std::byte> type6_node(
+    std::span<const std::uint16_t> links,
+    std::uint32_t checksum,
+    std::span<const std::byte> stream) {
+    std::vector<std::byte> node;
+    u16(node, 6);
+    u16(node, static_cast<std::uint16_t>(links.size()));
+    for (const std::uint16_t link : links) {
+        u16(node, link);
+    }
+    // The absolute-node alignment is tested by the runtime using the final
+    // file offset. This helper is used with an even first-node offset, so a
+    // two-byte pad is required only for an odd number of link words.
+    if (((20 + node.size()) & 2) != 0) {
+        u16(node, 0);
+    }
+    u32(node, checksum);
+    node.insert(node.end(), stream.begin(), stream.end());
+    return node;
+}
+
+std::vector<std::byte> object_node() {
+    std::vector<std::byte> node;
+    u16(node, 1);
+    u16(node, 0);
+    u16(node, 0);
+    u16(node, 0);
+    node.push_back(std::byte{2});
+    node.push_back(std::byte{4});
+    node.push_back(std::byte{0xff});
+    node.insert(node.end(), 24, std::byte{0});
+    return node;
+}
+
+struct Recorder final : TriggerServices {
+    std::size_t objects{};
+    std::size_t pickups{};
+    std::vector<std::pair<std::size_t, std::string>> restarts;
+    std::vector<std::uint16_t> visible_values;
+    std::vector<std::vector<std::uint16_t>> visible_links;
+    std::vector<std::pair<std::uint32_t, std::uint16_t>> gaps;
+    std::vector<std::uint32_t> timers;
+    std::vector<std::string> resources;
+    std::vector<std::string> diagnostics;
+    std::vector<std::uint16_t> flags;
+    std::vector<std::uint16_t> initial_states;
+    std::vector<std::size_t> node_pulses;
+    std::vector<std::pair<std::uint16_t, std::uint16_t>> global_words;
+    std::vector<std::vector<std::uint8_t>> spawn_options;
+    std::vector<std::pair<std::size_t, std::uint32_t>> factory_cursors;
+    std::vector<std::size_t> selected_restarts;
+    std::vector<std::size_t> applied_restarts;
+    std::vector<std::pair<std::uint32_t, std::uint16_t>> restart_data;
+    std::vector<std::pair<std::uint32_t, std::uint16_t>> applied_restart_data;
+    std::vector<std::tuple<std::size_t, std::uint32_t, std::array<std::uint16_t, 3>>> script_objects;
+    std::vector<std::tuple<std::size_t, std::uint16_t, std::uint16_t, std::array<std::int32_t, 3>>> special_states;
+    std::vector<std::tuple<std::uint16_t, std::uint32_t, std::size_t>> unknown_commands;
+    std::vector<std::pair<std::uint16_t, std::vector<std::uint16_t>>> suspend_activate_lists;
+    std::vector<std::vector<std::uint16_t>> signal_lists;
+    std::size_t level_event_updates{};
+
+    void on_object_node(std::size_t) override { ++objects; }
+    void on_pickup_node(std::size_t) override { ++pickups; }
+    void on_spawn_node_options(
+        std::size_t,
+        std::uint16_t,
+        std::span<const std::uint8_t> options) override {
+        spawn_options.emplace_back(options.begin(), options.end());
+    }
+    void on_spawn_factory_cursor(std::size_t node, std::uint32_t offset) override {
+        factory_cursors.emplace_back(node, offset);
+    }
+    void on_script_object(
+        std::size_t source,
+        std::uint32_t key,
+        std::array<std::uint16_t, 3> parameters) override {
+        script_objects.emplace_back(source, key, parameters);
+    }
+    void on_special_node_state(
+        std::size_t node,
+        std::uint16_t type,
+        std::uint16_t flags,
+        std::array<std::int32_t, 3> position) override {
+        special_states.emplace_back(node, type, flags, position);
+    }
+    void on_restart_node(std::size_t index, std::string_view name, std::array<std::int32_t, 3>) override {
+        restarts.emplace_back(index, std::string(name));
+    }
+    void on_restart_node_data(std::size_t, std::uint32_t auxiliary, std::uint16_t word) override {
+        restart_data.emplace_back(auxiliary, word);
+    }
+    void on_visible(std::size_t, std::uint16_t value, std::span<const std::uint16_t> links) override {
+        visible_values.push_back(value);
+        visible_links.emplace_back(links.begin(), links.end());
+    }
+    void on_suspend_activate(
+        std::size_t,
+        std::uint16_t opcode,
+        std::span<const std::uint16_t> links) override {
+        suspend_activate_lists.emplace_back(opcode, std::vector<std::uint16_t>(links.begin(), links.end()));
+    }
+    void on_signal(std::size_t, std::span<const std::uint16_t> links) override {
+        signal_lists.emplace_back(links.begin(), links.end());
+    }
+    void on_level_event_state() override { ++level_event_updates; }
+    void on_gap(std::size_t, std::uint32_t checksum, std::uint16_t argument) override {
+        gaps.emplace_back(checksum, argument);
+    }
+    void on_timer(std::uint32_t milliseconds) override { timers.push_back(milliseconds); }
+    void on_resource(std::uint16_t, std::string_view name) override { resources.emplace_back(name); }
+    void on_initial_state(std::uint16_t value) override { initial_states.push_back(value); }
+    void set_career_flag(std::uint16_t flag) override { flags.push_back(flag); }
+    void on_node_pulse(std::size_t node) override { node_pulses.push_back(node); }
+    void on_global_word(std::uint16_t opcode, std::uint16_t value) override {
+        global_words.emplace_back(opcode, value);
+    }
+    void on_restart_selected(std::uint16_t, std::size_t node, std::string_view) override {
+        selected_restarts.push_back(node);
+    }
+    void on_apply_restart(std::size_t node, std::array<std::int32_t, 3>) override {
+        applied_restarts.push_back(node);
+    }
+    void on_apply_restart_data(std::size_t, std::uint32_t auxiliary, std::uint16_t word) override {
+        applied_restart_data.emplace_back(auxiliary, word);
+    }
+    void on_unknown_command(
+        std::uint16_t opcode,
+        std::uint32_t offset,
+        std::size_t node,
+        std::span<const std::byte>) override {
+        unknown_commands.emplace_back(opcode, offset, node);
+    }
+    void on_diagnostic(std::string_view message) override { diagnostics.emplace_back(message); }
+};
+
+void test_visible_pulse_and_record_layout() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x000d);
+    u16(stream, 1);
+    u16(stream, 0xffff);
+    const std::array<std::uint16_t, 1> links{1};
+    const std::vector<std::byte> file_bytes = trg_file({
+        type6_node(links, 0, stream),
+        object_node(),
+        std::vector<std::byte>{std::byte{0xff}, std::byte{0}},
+    });
+    TrgFile file = TrgFile::parse(file_bytes);
+    CHECK(file.nodes().size() == 3);
+    CHECK(file.nodes()[0].offset == 24);
+    CHECK(file.node_bytes(0).size() == type6_node(links, 0, stream).size());
+    CHECK(file.script(0).offset == 36);
+    CHECK(file.links(0) == std::vector<std::uint16_t>{1});
+    CHECK(file.node_spawn_options(1) == std::vector<std::uint8_t>({2, 4}));
+    CHECK(file.node_factory_cursor_offset(1) == file.node(1).offset + 32);
+
+    Recorder recorder;
+    TriggerRuntime runtime(std::move(file), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+    CHECK(recorder.objects == 1);
+    const std::vector<std::vector<std::uint8_t>> expected_spawn_options{{2, 4}};
+    CHECK(recorder.spawn_options == expected_spawn_options);
+    const std::vector<std::pair<std::size_t, std::uint32_t>> expected_factory_cursors{{1, 32}};
+    CHECK((recorder.factory_cursors == expected_factory_cursors));
+    CHECK(recorder.visible_values == std::vector<std::uint16_t>{1});
+    CHECK(recorder.visible_links == std::vector<std::vector<std::uint16_t>>{{1}});
+    const CommandPointRuntime* point = runtime.command_point(0);
+    CHECK(point != nullptr);
+    CHECK(point->source_node == 0);
+    CHECK(point->pulse_count == 1);
+}
+
+void test_c9_alignment_and_gap_dispatch() {
+    std::vector<std::byte> node;
+    u16(node, 6);
+    u16(node, 0);
+    u32(node, 0xf3abdf8e);
+    u16(node, 0x00c9);
+    u16(node, 0);
+    u32(node, 0xf3abdf8e);
+    u16(node, 10);
+    u16(node, 0x0086);
+    u16(node, 7);
+    u16(node, 0xffff);
+    const std::vector<std::byte> file_bytes = trg_file({node, {std::byte{0xff}, std::byte{0}}});
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(file_bytes), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+    const std::vector<std::pair<std::uint32_t, std::uint16_t>> expected_gaps{{0xf3abdf8e, 10}};
+    CHECK(recorder.gaps == expected_gaps);
+    CHECK(recorder.diagnostics.empty());
+    // The following opcode is reached only if the aligned c9 payload consumed
+    // exactly six bytes after its alignment pad.
+    CHECK(runtime.command_point(0)->state == 7);
+}
+
+void test_c9_rejects_checksum_mismatch_without_side_effects() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x00c9);
+    u16(stream, 0); // absolute alignment pad before the checksum
+    u32(stream, 0x22222222);
+    u16(stream, 10);
+    u16(stream, 0xffff);
+    const std::array<std::uint16_t, 1> links{1};
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node(links, 0x11111111, stream),
+        object_node(),
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+
+    CHECK(recorder.gaps.empty());
+    CHECK(recorder.node_pulses.empty());
+    CHECK(recorder.diagnostics
+        == std::vector<std::string>{"gap command checksum does not match its command point"});
+}
+
+void test_c9_rejects_truncated_aligned_payload() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x00c9);
+    u16(stream, 0); // the aligned payload is intentionally absent
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node({}, 0x12345678, stream),
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    bool threw = false;
+    try {
+        runtime.pulse_node(0);
+    } catch (const FormatError&) {
+        threw = true;
+    }
+    CHECK(threw);
+    CHECK(recorder.gaps.empty());
+}
+
+void test_c9_skip_consumes_aligned_payload() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x0094);
+    u16(stream, 0); // the first pulse count is one, so skip the block
+    u16(stream, 0x00c9);
+    u16(stream, 0); // absolute alignment pad before the skipped checksum
+    u32(stream, 0x12345678);
+    u16(stream, 10);
+    u16(stream, 0x0095);
+    u16(stream, 0x0086);
+    u16(stream, 9);
+    u16(stream, 0xffff);
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node({}, 0x12345678, stream),
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+
+    CHECK(recorder.gaps.empty());
+    CHECK(recorder.diagnostics.empty());
+    CHECK(runtime.command_point(0)->state == 9);
+}
+
+void test_initial_pulses_and_timer() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x00a6);
+    u16(stream, 512);
+    u16(stream, 0x00a9);
+    u16(stream, 1000);
+    u16(stream, 0x0086);
+    u16(stream, 1);
+    u16(stream, 0x0003);
+    u16(stream, 0xffff);
+    const std::array<std::uint16_t, 1> links{1};
+    const std::vector<std::byte> file_bytes = trg_file({
+        type6_node(links, 0, stream),
+        object_node(),
+        {std::byte{0xff}, std::byte{0}},
+    });
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(file_bytes), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+    const CommandPointRuntime* point = runtime.command_point(0);
+    CHECK(point != nullptr);
+    CHECK(point->initialized == 1);
+    CHECK(point->state == 0);
+    CHECK(point->pulse_count == 1);
+    const std::vector<std::pair<std::uint16_t, std::uint16_t>> expected_globals{
+        {0x00a6, 512},
+        {0x00a9, 1000},
+    };
+    CHECK(recorder.global_words == expected_globals);
+    runtime.pulse_node(0);
+    CHECK(recorder.node_pulses == std::vector<std::size_t>{1});
+    CHECK(point->pulse_count == 2);
+}
+
+void test_link_commands_take_targets_from_source_node_links() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x0004);
+    u16(stream, 0x000a);
+    u16(stream, 0x0005);
+    // 0x0004/0x0005/0x000a have no stream operand (retail 0x004c5dc0 passes
+    // TRG_GetNodeLinks(source)); this proves the cursor advances one word each.
+    u16(stream, 0x0086);
+    u16(stream, 7);
+    u16(stream, 0xffff);
+
+    const std::array<std::uint16_t, 2> serialized_links{1, 2};
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node(serialized_links, 0, stream),
+        object_node(),
+        object_node(),
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+
+    const std::vector<std::pair<std::uint16_t, std::vector<std::uint16_t>>> expected_suspend{
+        {0x0004, {1, 2}},
+        {0x0005, {1, 2}},
+    };
+    CHECK(recorder.suspend_activate_lists == expected_suspend);
+    const std::vector<std::vector<std::uint16_t>> expected_signal{{1, 2}};
+    CHECK(recorder.signal_lists == expected_signal);
+    CHECK(runtime.command_point(0)->initialized == 1);
+    CHECK(runtime.command_point(0)->state == 7);
+}
+
+void test_link_command_conditional_skip_is_operand_free() {
+    std::vector<std::byte> skipped_stream;
+    u16(skipped_stream, 0x0094);
+    u16(skipped_stream, 0); // pulse count 1 does not enter this block
+    u16(skipped_stream, 0x0004);
+    u16(skipped_stream, 0x0005);
+    u16(skipped_stream, 0x000a);
+    u16(skipped_stream, 0x0095);
+    u16(skipped_stream, 0x0086);
+    u16(skipped_stream, 9);
+    u16(skipped_stream, 0xffff);
+
+    Recorder skipped_recorder;
+    TriggerRuntime skipped_runtime(TrgFile::parse(trg_file({
+        type6_node({}, 0, skipped_stream),
+        {std::byte{0xff}, std::byte{0}},
+    })), skipped_recorder);
+    skipped_runtime.build();
+    skipped_runtime.pulse_node(0);
+    CHECK(skipped_recorder.suspend_activate_lists.empty());
+    CHECK(skipped_recorder.signal_lists.empty());
+    CHECK(skipped_runtime.command_point(0)->state == 9);
+    CHECK(skipped_recorder.diagnostics.empty());
+
+    // A link-less source still executes the command; retail asserts and then
+    // iterates zero targets, so the service sees an empty list.
+    std::vector<std::byte> empty_stream;
+    u16(empty_stream, 0x0005);
+    u16(empty_stream, 0xffff);
+    Recorder empty_recorder;
+    TriggerRuntime empty_runtime(TrgFile::parse(trg_file({
+        type6_node({}, 0, empty_stream),
+        {std::byte{0xff}, std::byte{0}},
+    })), empty_recorder);
+    empty_runtime.build();
+    empty_runtime.pulse_node(0);
+    CHECK(empty_recorder.suspend_activate_lists.size() == 1);
+    CHECK(empty_recorder.suspend_activate_lists[0].second.empty());
+}
+
+void test_camera_commands_take_two_operand_words() {
+    // Retail advances 3 words for 0x82/0x87/0x8b/0x8f-0x92 (SKATE_T node 28).
+    for (const std::uint16_t opcode : {0x0082, 0x0087, 0x008b, 0x008f, 0x0090, 0x0091, 0x0092}) {
+        std::vector<std::byte> stream;
+        u16(stream, opcode);
+        u16(stream, 0x1111);
+        u16(stream, 0x2222);
+        u16(stream, 0x0086);
+        u16(stream, 9);
+        u16(stream, 0xffff);
+
+        Recorder recorder;
+        TriggerRuntime runtime(TrgFile::parse(trg_file({
+            type6_node({}, 0, stream),
+            {std::byte{0xff}, std::byte{0}},
+        })), recorder);
+        runtime.build();
+        runtime.pulse_node(0);
+        CHECK(runtime.command_point(0)->state == 9);
+        for (const std::string& message : recorder.diagnostics) {
+            CHECK(message != "unknown TRG command");
+        }
+    }
+}
+
+void test_conditional_skip_consumes_music_and_sound_operands() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x0094);
+    u16(stream, 0); // pulse count deliberately does not match the first pulse
+    u16(stream, 0x0069);
+    u16(stream, 7);
+    u16(stream, 0x006a);
+    u16(stream, 8);
+    u16(stream, 0x0095);
+    u16(stream, 0xffff);
+
+    const std::array<std::uint16_t, 0> links{};
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node(links, 0, stream),
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+    CHECK(recorder.diagnostics.empty());
+}
+
+void test_conditional_skip_consumes_a7_pair() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x0094);
+    u16(stream, 0); // pulse count deliberately does not match the pair
+    u16(stream, 0x00a7);
+    u16(stream, 0x0123);
+    u16(stream, 0x0045);
+    u16(stream, 0x00ae);
+    u16(stream, 0x0067);
+    u16(stream, 0x0089);
+    u16(stream, 0x00c8);
+    u16(stream, 0x00ab);
+    u16(stream, 0x00cd);
+    u16(stream, 0x00ca);
+    u16(stream, 0x00ef);
+    u16(stream, 0x0012);
+    u16(stream, 0x0095);
+    u16(stream, 0x00a6);
+    u16(stream, 9);
+    u16(stream, 0xffff);
+
+    const std::array<std::uint16_t, 0> links{};
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node(links, 0, stream),
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+    const std::vector<std::pair<std::uint16_t, std::uint16_t>> expected_globals{
+        {0x00a6, 9}};
+    CHECK(recorder.global_words == expected_globals);
+    CHECK(recorder.diagnostics.empty());
+}
+
+void test_restart_selection_and_checksum_lookup() {
+    std::vector<std::byte> autoexec;
+    u16(autoexec, 4);
+    u16(autoexec, 0x008c);
+    autoexec.push_back(std::byte{'R'});
+    autoexec.push_back(std::byte{0});
+    u16(autoexec, 0xffff);
+
+    std::vector<std::byte> stream;
+    u16(stream, 0x008c);
+    stream.push_back(std::byte{'R'});
+    stream.push_back(std::byte{0});
+    u16(stream, 0xffff);
+
+    std::vector<std::byte> restart;
+    u16(restart, 8);
+    u16(restart, 0);
+    // With four nodes, the restart starts at absolute offset 50; the
+    // retail position helper therefore aligns its payload at offset 56.
+    u16(restart, 0);
+    u32(restart, 1);
+    u32(restart, 2);
+    u32(restart, 3);
+    u32(restart, 0x44556677);
+    u16(restart, 0x8899);
+    restart.push_back(std::byte{'R'});
+    restart.push_back(std::byte{0});
+    u16(restart, 0xffff);
+
+    const std::array<std::uint16_t, 0> links{};
+    const std::vector<std::byte> file_bytes = trg_file({
+        autoexec,
+        type6_node(links, 0x12345678, stream),
+        restart,
+        {std::byte{0xff}, std::byte{0}},
+    });
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(file_bytes), recorder);
+    runtime.initialize();
+    CHECK(runtime.selected_restart() == 2);
+    CHECK(recorder.selected_restarts == std::vector<std::size_t>{2});
+    runtime.pulse_node(1);
+    const std::vector<std::size_t> expected_selected{2, 2};
+    CHECK(recorder.selected_restarts == expected_selected);
+    const CommandPointRuntime* point = runtime.command_point_by_checksum(0x12345678);
+    CHECK(point != nullptr);
+    CHECK(point->source_node == 1);
+    runtime.execute_restart(2);
+    CHECK(recorder.applied_restarts == std::vector<std::size_t>{2});
+    const std::vector<std::pair<std::uint32_t, std::uint16_t>> expected_applied_data{{0x44556677, 0x8899}};
+    CHECK(recorder.applied_restart_data == expected_applied_data);
+}
+
+void test_two_player_restart_selection_command() {
+    std::vector<std::byte> autoexec;
+    u16(autoexec, 4);
+    u16(autoexec, 0x00b2);
+    autoexec.push_back(std::byte{'R'});
+    autoexec.push_back(std::byte{0});
+    u16(autoexec, 0xffff);
+
+    std::vector<std::byte> restart;
+    u16(restart, 8);
+    u16(restart, 0);
+    u32(restart, 1);
+    u32(restart, 2);
+    u32(restart, 3);
+    u32(restart, 0);
+    u16(restart, 0);
+    restart.push_back(std::byte{'R'});
+    restart.push_back(std::byte{0});
+    u16(restart, 0xffff);
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        autoexec,
+        restart,
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.initialize(true);
+    CHECK(runtime.selected_restart() == 1);
+    CHECK(recorder.selected_restarts == std::vector<std::size_t>{1});
+
+    // The same opcode is consumed but does not select a restart outside the
+    // retail two-player mode.
+    runtime.run_autoexec(false);
+    CHECK(runtime.selected_restart() == 1);
+    CHECK(recorder.selected_restarts == std::vector<std::size_t>{1});
+}
+
+void test_kill_bruce_applies_linked_restart() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x0098);
+    u16(stream, 0xffff);
+    const std::array<std::uint16_t, 1> links{1};
+
+    std::vector<std::byte> restart;
+    u16(restart, 8);
+    u16(restart, 0);
+    u32(restart, 0x1111);
+    u32(restart, 0x2222);
+    u32(restart, 0x3333);
+    u32(restart, 0x44556677);
+    u16(restart, 0x8899);
+    restart.push_back(std::byte{'K'});
+    restart.push_back(std::byte{0});
+    u16(restart, 0xffff);
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node(links, 0, stream),
+        restart,
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+    CHECK(recorder.applied_restarts == std::vector<std::size_t>{1});
+    const std::vector<std::pair<std::uint32_t, std::uint16_t>> expected_data{
+        {0x44556677, 0x8899},
+    };
+    CHECK(recorder.applied_restart_data == expected_data);
+}
+
+void test_script_object_command() {
+    std::vector<std::byte> restart;
+    u16(restart, 8);
+    u16(restart, 0);
+    u32(restart, 1);
+    u32(restart, 2);
+    u32(restart, 3);
+    u32(restart, 0);
+    u16(restart, 0);
+    restart.push_back(std::byte{'S'});
+    restart.push_back(std::byte{0});
+    u16(restart, 0x00ab);
+    u16(restart, 0); // absolute alignment pad before the u32 operand
+    u32(restart, 0xf6e32d0e);
+    u16(restart, 0x1111);
+    u16(restart, 0x2222);
+    u16(restart, 0x3333);
+    u16(restart, 0xffff);
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        restart,
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.execute_restart(0);
+
+    const std::vector<std::tuple<std::size_t, std::uint32_t, std::array<std::uint16_t, 3>>> expected{
+        {0, 0xf6e32d0e, {0x1111, 0x2222, 0x3333}},
+    };
+    CHECK(recorder.script_objects == expected);
+}
+
+void test_load_ai_reports_retail_unsupported_diagnostic() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x00a2);
+    stream.push_back(std::byte{'A'});
+    stream.push_back(std::byte{'I'});
+    stream.push_back(std::byte{0});
+    // read_string() advances to the next even absolute byte before the
+    // following command word.
+    stream.push_back(std::byte{0});
+    u16(stream, 0xffff);
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node({}, 0, stream),
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+
+    const std::vector<std::string> expected_diagnostics{
+        "LoadAI command not supported",
+    };
+    CHECK(recorder.diagnostics == expected_diagnostics);
+}
+
+void test_type10_type11_runtime_list_state() {
+    // With two nodes the first node begins at absolute offset 20.  The
+    // retail type-10/type-11 position rule aligns (node + link_words + 7)
+    // down to absolute offset 24, then reads the trailing flag word after
+    // the three u32 coordinates.
+    std::vector<std::byte> trigger;
+    u16(trigger, 10);
+    u16(trigger, 0);
+    u32(trigger, 0x1000);
+    u32(trigger, 0x2000);
+    u32(trigger, 0x3000);
+    u16(trigger, 0x0042);
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({trigger, {std::byte{0xff}, std::byte{0}}})), recorder);
+    runtime.build();
+    CHECK(recorder.special_states.size() == 1);
+    CHECK(std::get<0>(recorder.special_states[0]) == 0);
+    CHECK(std::get<1>(recorder.special_states[0]) == 10);
+    CHECK(std::get<2>(recorder.special_states[0]) == 0x0042);
+    const std::array<std::int32_t, 3> expected_position{
+        0x1000 << 12,
+        0x2000 << 12,
+        0x3000 << 12,
+    };
+    CHECK(std::get<3>(recorder.special_states[0]) == expected_position);
+    CHECK(runtime.file().node_trigger_flags(0) == 0x0042);
+
+    runtime.pulse_node(0);
+    CHECK(recorder.node_pulses == std::vector<std::size_t>{0});
+}
+
+void test_restart_view_and_autoexec() {
+    std::vector<std::byte> restart;
+    u16(restart, 8);
+    u16(restart, 0);
+    u32(restart, 1);
+    u32(restart, 2);
+    u32(restart, 3);
+    u32(restart, 0x11223344);
+    u16(restart, 0x5566);
+    restart.push_back(std::byte{'R'});
+    restart.push_back(std::byte{0});
+    u16(restart, 0xffff);
+    const std::vector<std::byte> file_bytes = trg_file({
+        restart,
+        {std::byte{0xff}, std::byte{0}},
+    });
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(file_bytes), recorder);
+    runtime.build();
+    const std::vector<std::pair<std::size_t, std::string>> expected_restarts{{0, "R"}};
+    CHECK(recorder.restarts == expected_restarts);
+    const std::vector<std::pair<std::uint32_t, std::uint16_t>> expected_restart_data{{0x11223344, 0x5566}};
+    CHECK(recorder.restart_data == expected_restart_data);
+}
+
+void test_unknown_opcode_matches_retail_fallthrough() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x1234);
+    u16(stream, 0x0086);
+    u16(stream, 1);
+    u16(stream, 0xffff);
+    const std::vector<std::byte> file_bytes = trg_file({type6_node({}, 0, stream), {std::byte{0xff}, std::byte{0}}});
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(file_bytes), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+    const std::vector<std::tuple<std::uint16_t, std::uint32_t, std::size_t>> expected_unknown{
+        {0x1234, 28, 0},
+    };
+    CHECK(recorder.unknown_commands == expected_unknown);
+    CHECK(!recorder.diagnostics.empty());
+    CHECK(runtime.command_point(0)->initialized == 1);
+}
+
+void test_level_event_opcode_is_operand_free_and_bounded() {
+    std::vector<std::byte> stream;
+    u16(stream, 0x009e);
+    u16(stream, 0x0086);
+    u16(stream, 7);
+    u16(stream, 0xffff);
+
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node({}, 0, stream),
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+    CHECK(recorder.level_event_updates == 1);
+    CHECK(runtime.command_point(0)->state == 7);
+
+    // Conditional scanning must treat 0x009e as opcode-only and reach the
+    // following 0x0086 after skipping the whole block.
+    std::vector<std::byte> skipped;
+    u16(skipped, 0x0094);
+    u16(skipped, 0);
+    u16(skipped, 0x009e);
+    u16(skipped, 0x0086);
+    u16(skipped, 9);
+    u16(skipped, 0x0095);
+    u16(skipped, 0x0086);
+    u16(skipped, 11);
+    u16(skipped, 0xffff);
+    Recorder skipped_recorder;
+    TriggerRuntime skipped_runtime(TrgFile::parse(trg_file({
+        type6_node({}, 0, skipped),
+        {std::byte{0xff}, std::byte{0}},
+    })), skipped_recorder);
+    skipped_runtime.build();
+    skipped_runtime.pulse_node(0);
+    CHECK(skipped_recorder.level_event_updates == 0);
+    CHECK(skipped_runtime.command_point(0)->state == 11);
+
+    // A one-byte tail is not a valid opcode, even though 0x009e itself has no
+    // operand. The containing command stream remains strictly bounded.
+    const std::vector<std::byte> truncated{std::byte{0x9e}};
+    Recorder truncated_recorder;
+    TriggerRuntime truncated_runtime(TrgFile::parse(trg_file({
+        type6_node({}, 0, truncated),
+        {std::byte{0xff}, std::byte{0}},
+    })), truncated_recorder);
+    truncated_runtime.build();
+    bool threw = false;
+    try {
+        truncated_runtime.pulse_node(0);
+    } catch (const FormatError&) {
+        threw = true;
+    }
+    CHECK(threw);
+    CHECK(truncated_recorder.level_event_updates == 0);
+}
+
+void test_pulse_fan_out_drops_undecodable_targets() {
+    // Node 0 pulses nodes 1 and 2. Node 1 cannot be decoded (a 0xc9 gap command
+    // with its aligned payload missing, the same shape as the dead SKATE_T
+    // records); node 2 is healthy. The fan-out must survive node 1.
+    std::vector<std::byte> source;
+    u16(source, 0x0086);
+    u16(source, 0xffff);
+    u16(source, 0x0003);
+    u16(source, 0xffff);
+    std::vector<std::byte> dead;
+    u16(dead, 0x00c9);
+    u16(dead, 0);
+    std::vector<std::byte> healthy;
+    u16(healthy, 0x0093);
+    u16(healthy, 5);
+    u16(healthy, 0xffff);
+
+    const std::array<std::uint16_t, 2> targets{1, 2};
+    Recorder recorder;
+    TriggerRuntime runtime(TrgFile::parse(trg_file({
+        type6_node(targets, 0, source),
+        type6_node({}, 0x11111111, dead),
+        type6_node({}, 0x22222222, healthy),
+        {std::byte{0xff}, std::byte{0}},
+    })), recorder);
+    runtime.build();
+    runtime.pulse_node(0);
+    CHECK(runtime.faulted_pulses() == 1);
+    CHECK(recorder.initial_states == std::vector<std::uint16_t>{5});
+    bool reported = false;
+    for (const std::string& message : recorder.diagnostics) {
+        reported = reported || message.find("pulse to node 1 dropped") != std::string::npos;
+    }
+    CHECK(reported);
+
+    // A direct pulse to the dead node is still a hard error for the caller.
+    bool threw = false;
+    try {
+        runtime.pulse_node(1);
+    } catch (const FormatError&) {
+        threw = true;
+    }
+    CHECK(threw);
+}
+
+} // namespace
+
+int main() {
+    test_visible_pulse_and_record_layout();
+    test_c9_alignment_and_gap_dispatch();
+    test_c9_rejects_checksum_mismatch_without_side_effects();
+    test_c9_rejects_truncated_aligned_payload();
+    test_c9_skip_consumes_aligned_payload();
+    test_initial_pulses_and_timer();
+    test_link_commands_take_targets_from_source_node_links();
+    test_link_command_conditional_skip_is_operand_free();
+    test_camera_commands_take_two_operand_words();
+    test_conditional_skip_consumes_music_and_sound_operands();
+    test_conditional_skip_consumes_a7_pair();
+    test_restart_selection_and_checksum_lookup();
+    test_two_player_restart_selection_command();
+    test_kill_bruce_applies_linked_restart();
+    test_script_object_command();
+    test_load_ai_reports_retail_unsupported_diagnostic();
+    test_type10_type11_runtime_list_state();
+    test_restart_view_and_autoexec();
+    test_unknown_opcode_matches_retail_fallthrough();
+    test_level_event_opcode_is_operand_free_and_bounded();
+    test_pulse_fan_out_drops_undecodable_targets();
+    std::cout << "TRG runtime tests passed\n";
+}

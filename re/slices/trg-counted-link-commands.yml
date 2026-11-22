@@ -1,0 +1,38 @@
+version: 1
+id: trg-counted-link-commands
+subsystem: scripting
+status: complete
+
+scope:
+  functions:
+    - 0x004c5dc0
+    - 0x004c5c70
+    - 0x004c5b60
+    - 0x004c7c50
+    - 0x004c8550
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/trg-counted-link-commands.md
+    - re/evidence/functions/scripting.md
+    - re/evidence/functions/trg-command-table.md
+  native:
+    - src/trg/trg_runtime.hpp
+    - src/trg/trg_runtime.cpp
+    - src/trg/level_trigger_state_test.cpp
+  tests:
+    - src/trg/trg_runtime_test.cpp
+    - src/trg/level_trigger_state_test.cpp
+    - tests/test_assets.py
+    - tests/test_trg_command_table.py
+
+open_questions: []
+
+completion:
+  - Documented limit, not a blocker - whether the retail M3dUtils_InBetween assert on an empty link list aborts is not established; native delivers an empty target list and performs no action.
+  - The scoped retail helper boundaries are evidence-backed. Commands 0x03/0x04/0x05/0x0a/0x0b/0x0c carry no stream operand; their targets are the source node's serialized link list, and only 0x0d consumes a u16. This replaces the earlier inline counted-list reading.
+  - Command 4 is activate (CBody::UnSuspend) and command 5 is suspend (CBody::Suspend); native code, Python decoder, symbols and docs agree.
+  - Execution and conditional skipping advance the same width for these commands; the operand widths of the camera and PlayXA commands are fixed at three words.
+  - All 32 shipped TRG files decode natively and in tony/assets.py, agree with the independent thps2-tools disassembler, and only the dead SKATE_T/SKPARK_T nodes 48-50 fail to tokenise.

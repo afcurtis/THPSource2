@@ -1,0 +1,71 @@
+version: 1
+id: camera-tuning-defaults
+subsystem: camera
+status: complete
+scope:
+  functions:
+  - 0x0040ed70
+  - 0x0040ed80
+  - 0x0040eda0
+  - 0x0040edb0
+  - 0x0040edd0
+  - 0x0040ede0
+  - 0x0040ee00
+  - 0x0040ee10
+  - 0x0040ee30
+  - 0x0040ee40
+  - 0x0040ee60
+  - 0x0040ee70
+  - 0x0040ee90
+  - 0x0040eea0
+  - 0x0040eec0
+  - 0x0040eed0
+  - 0x0040eef0
+  - 0x0040ef00
+  - 0x0040ef20
+  - 0x0040ef30
+  - 0x0040ef50
+  - 0x0040ef60
+  - 0x0040ef80
+  - 0x0040ef90
+  - 0x0040efb0
+  - 0x0040efc0
+  - 0x0040efe0
+  - 0x0040eff0
+  - 0x0040f010
+  - 0x0040f020
+  - 0x0040f040
+  - 0x0040f050
+  - 0x0040f070
+  - 0x0040f080
+  - 0x0040f0a0
+  - 0x0040f0b0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/camera-tuning.md
+  - re/evidence/fixtures/camera-calls-cmsB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/camera_kit.hpp
+  - src/runtime/camera_tuning.cpp
+  - re/gdb/probes/cam_specs_small.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/camera_retail_calls_test.cpp
+  - tests/test_camera_video_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cms): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (camera_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 36 of the 36 functions (the 18 initialisers of the camera''s tuning values (distances, heights, speeds and limits of each mode) and the jump thunk in front of each) are replayed over 1440 cases with no mismatch (at least 40 cases each; the committed fixtures keep the first 30 of each capture per function, 1080 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - nothing is a service here; the stores are generated from the disassembly.

@@ -1,0 +1,87 @@
+version: 1
+id: skater-windows
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x004293b0
+    - 0x00429680
+    - 0x00429910
+    - 0x00429cd0
+    - 0x00429ce0
+    - 0x00429cf0
+    - 0x00429e00
+    - 0x0042a0f0
+    - 0x0042a110
+    - 0x0042a8c0
+    - 0x0042a9b0
+    - 0x0042aab0
+    - 0x0042ae30
+    - 0x0042b070
+    - 0x0042b4d0
+    - 0x0042b880
+    - 0x0042b910
+    - 0x0042b960
+    - 0x0042ba00
+    - 0x0042bcf0
+    - 0x004b6180
+    - 0x004b6490
+    - 0x004b64e0
+    - 0x004b6560
+    - 0x004b6bf0
+    - 0x004b6c00
+    - 0x004b6d20
+    - 0x004b6d90
+    - 0x004b7040
+    - 0x004b7060
+    - 0x004b70a0
+    - 0x004b70b0
+    - 0x004b71c0
+    - 0x004b7290
+    - 0x004b7320
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/skater-windows.md
+    - re/evidence/fixtures/skwin-calls-skapp.txt
+    - re/evidence/fixtures/skwin-calls-skhelp.txt
+    - re/evidence/fixtures/skwin-calls-skpers.txt
+    - re/evidence/fixtures/skwin-calls-skpoll.txt
+    - re/evidence/fixtures/skwin-calls-skstat.txt
+  native:
+    - src/runtime/skater_windows.hpp
+    - src/runtime/skater_windows_personal.cpp
+    - src/runtime/skater_windows_appearance.cpp
+    - src/runtime/skater_windows_sync.cpp
+    - src/runtime/skater_windows_stats.cpp
+    - src/runtime/skater_windows_dispatch.cpp
+    - src/runtime/skater_window_helpers.hpp
+    - src/runtime/skater_window_helpers.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_common.py
+    - re/gdb/probes/frontend_specs_menu.py
+    - re/gdb/probes/frontend_specs_skhelp.py
+    - re/gdb/probes/frontend_specs_skwin.py
+    - re/gdb/probes/frontend_specs_skapp.py
+    - re/gdb/probes/frontend_specs_skstat.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/skater_windows_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/skater_windows_test.cpp
+    - tests/test_skater_windows.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the skpers, skapp and skstat group): the retail function is called on a random legal state built in a scratch slab, its virtual methods and every service outside the file stubbed (fake vtables whose slots are retail functions nothing here reaches, one per method, so each call is a named service carrying the object); the return value, every written byte and the ordered service calls are compared with the native replay (`skater_windows_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The create-a-skater personal-information page (perwin.cpp), appearance page (appwin.cpp) and stat page with its points block (statwin.cpp): 35 of the 35 functions are replayed over 1476 cases with no mismatch, assertion paths included. The toolkit, the 4.8 skater manager and career code and the 4.9 texture-set and palette code run natively on the same memory, so the replay compares real native state changes.'
+  - Documented exclusion, not a blocker - the pages' constructors and destructors of the personal and stat windows are creedit.cpp / statedit.cpp (4.10e); lists, dialogs, sprites and the engine's per-frame hook are seams reported by name; `Career_GetPointCost` (0x00415820) is the toolkit's `option_limit` service in the probe (it is validated by the 4.8 replay).

@@ -1,0 +1,92 @@
+version: 1
+
+# Cross-reference inputs for `tony xref`. Every address in re/symbols and re/types
+# belongs to executables.thps2_pc (the Activision Value re-release extracted from
+# game/THPS2.img). The builds and projects below are *external evidence* that is
+# translated onto that canonical build; see re/xref/README.md.
+
+variants:
+  original_2000:
+    description: >-
+      Original 2000 retail THawk2.exe (vestigial SafeDisc 2 sections stxt774/stxt371,
+      crack applied). PARTYMOD and the THPS2 Cumulative Patch hard-code addresses for
+      this build, and PARTYMOD rejects the Activision Value re-release.
+    path: game/variants/original-2000/THawk2.exe
+    size: 1460224
+    sha256: 003152194111a3e564c1a458da2a02cc1187a4f47c147a4126f5d37913cfee8a
+    sha1: d4911f92496877a897b4f19736475ed60b4584da
+    pe_timestamp: 971636783
+    entry_point_va: 0x004ffe6c
+    text: [0x00401000, 0x005136cd]
+    data: [0x00515000, 0x02a0d000]
+    # `tony xref static-recipe`: the canonical static-data image rebuilt from this build (tony/static_variant.py,
+    # re/evidence/xref-static-original-2000.md). Masked ranges are zeroed in that image instead of reproduced.
+    static_recipe: re/xref/original_2000_static.yml
+    static_masked:
+      - address: 0x00525500
+        size: 400
+        why: >-
+          Front_KeyTable (0x00418140): the key CD_ReadLocalFile decodes texture.dat with for CD_CheckAudioTOC
+          (re/evidence/cd-check.md). Only the Value re-release has it; the standalone replaces the CD check
+          (standalone_host.cpp CD_Recheck), so nothing it runs reads these bytes.
+    # The THawk2.exe on the original 2000 disc itself (Setup/data): SafeDisc 2, with .text and .data encrypted
+    # (0.4% of .data equal to the build above). Not a source of static data; the launchers name it when they refuse it.
+    protected_disc_executable:
+      size: 2193512
+      sha256: bca39d172fff978c270a065903a394260de45f171f67ad00d9a094f66b35a9d9
+
+references:
+  thps2_demo_decomp:
+    url: https://github.com/emoluvjd2/thps2-demo-decomp
+    commit: 1050a327d0a009aad70549debc99788a8900a882
+    license: none (no blanket license; see its LICENSE_SCOPE.md)
+    use: >-
+      PSX demo symbol names, translation-unit membership and call edges only.
+      Never copy its reconstructed source into OpenTony.
+  partymod_thps2:
+    url: https://github.com/PARTYMANX/partymod-thps2
+    commit: 5096a69dc5849371416c2b8ec677587417e7c95c
+    license: MIT
+    targets: original_2000
+    use: function/global names and addresses; code may be reused with attribution.
+  thps2_cumulative_patch:
+    url: https://github.com/DCxDemo/THPS2-Cumulative-Patch
+    commit: 06ef51535417dbdd75d4b77fd6fa40d5e98905b3
+    license: GPL-3.0
+    targets: original_2000
+    use: >-
+      Function/global names and addresses only. Never copy its code into non-GPL files.
+  neverscript:
+    url: https://github.com/byxor/NeverScript
+    commit: 77baa233a58c25e271399c534fc6ef89bbb43c06
+    license: 'none stated (README says there is no license); knowledge only'
+    use: >-
+      Background on the later Neversoft QB script bytecode family (THPS3, THPS4,
+      THUG1/2 only; it does not target THPS2 .TRG). Never copy its code. Not a
+      ground truth for THPS2 opcodes.
+  thps2_tools:
+    url: https://github.com/JayFoxRox/thps2-tools
+    commit: e78065aa8ac54e21d1479cf4832d8edc88fd8392
+    license: MIT
+    use: >-
+      Independent working THPS2 .TRG disassembler (disassemble-trg.py) and
+      container tools; second source for the TRG command table and node layouts.
+      MIT, so facts may be reused with attribution.
+  neversoft_multitool:
+    url: https://github.com/slfx77/neversoft-multitool
+    commit: 3c9028e0178deb9060190362d1c47039a32846e2
+    license: MIT
+    use: >-
+      Independent modern PKR/PRE/PSX/FNT/bitmap parsers for cross-checking container
+      layout and for extract/repack round trips (Phase 4.5). The local Reference copy
+      has no VCS metadata; the commit is the upstream head seen on 2026-09-30, the
+      closest available pin. Facts may be reused with attribution.
+  wad_tool:
+    url: https://github.com/DCxDemo/WAD-Tool
+    commit: f51d96eee959ee7312386e84cce5c63947f00d96
+    license: GPL-2.0
+    use: >-
+      Big Guns HED/WAD container layout and filename-checksum knowledge only (Phase
+      4.5). GPL-2.0: never copy its code into non-GPL files. The local Reference copy
+      has no VCS metadata; the commit is the upstream head (2020-12-07), not verified
+      byte-for-byte against the local copy.

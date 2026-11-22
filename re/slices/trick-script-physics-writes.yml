@@ -1,0 +1,35 @@
+version: 1
+id: trick-script-physics-writes
+subsystem: tricks
+status: paused
+
+scope:
+  # Phase 4 close (2026-10-26): paused, handed to Phase 5 (native gameplay frame integration). Phase 5 close (2026-11-13): handed to Phase 6 (open_questions).
+  # The four functions are native and trace-validated in slice trick-script-execute.
+  functions:
+    - 0x004be450
+    - 0x004be3b0
+    - 0x004be3c0
+    - 0x004be3e0
+  types:
+    - RuntimeSkaterMovementState
+  globals: []
+
+shared:
+  functions: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/physics.md
+    - re/evidence/functions/trick-script-runtime.md
+  native:
+    - src/runtime/native_replay_main.cpp
+  tests:
+    - tests/test_native_replay.py
+
+open_questions:
+  - "Phase 6 hand-off (the Phase 5 close, 2026-11-13): the integration this slice waited for happened in Phase 5. The standalone runs TrickScript_Execute, Trick_TakeOff, Trick_Land and the score stack in its native gameplay frame (10g s17-s21, word for word against retail forced calls and frame by frame in the scenarios), and reads no physics field from a recorded after-snapshot. tony/native_replay.py and src/runtime/native_replay_main.cpp are the Phase 4 replay harness, which the standalone supersedes. Phase 6 decides whether to retire the harness (and with it this slice) or to keep it as an oracle."
+
+completion:
+  - "Paused; handed to Phase 6 (open_questions). The native gameplay frame calls the trick interpreter in the standalone."
+  - "On resume: native replay no longer reads any physics field from a recorded after-snapshot, and the Warehouse strict native replays stay 256/256."

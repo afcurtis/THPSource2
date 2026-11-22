@@ -1,0 +1,43 @@
+version: 1
+id: redbook-sequencer
+subsystem: audio
+status: complete
+scope:
+  functions:
+  - 0x004ab9c0
+  - 0x004ab9e0
+  - 0x004aba90
+  - 0x004abb00
+  - 0x004abc80
+  - 0x004abcb0
+  - 0x004abe20
+  - 0x004abe50
+  - 0x004abed0
+  - 0x004abf10
+  - 0x004abf80
+  - 0x004ac010
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/audio-movie.md
+  - re/evidence/fixtures/audio-calls-redbook.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/audio_game.hpp
+  - src/runtime/audio_redbook.cpp
+  - re/gdb/probes/audio_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/audio_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_audio_game.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups redbook of audio_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`audio_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 12 of the 12 functions (the redbook / XA music sequencer (redbook.cpp): the volume and fade, the reset, playing, stopping and stepping tracks, the pause, the per-frame update and the saved position) are replayed over 3600 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 360 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - Bink, the music thread and the Win32 imports under the movie interface are services (the movie interface itself is native and runs for real in these cases).

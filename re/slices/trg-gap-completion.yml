@@ -1,0 +1,43 @@
+version: 1
+id: trg-gap-completion
+subsystem: scripting
+status: complete
+
+scope:
+  functions:
+    - 0x0048f690
+    - 0x00414c50
+    - 0x004544a0
+  types:
+    - RuntimeGapDefinition
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/gap-runtime.md
+    - re/evidence/functions/trg-runtime.md
+  native:
+    - src/trg/gap_table.hpp
+    - src/trg/gap_table.cpp
+    - src/trg/retail_gap_table.cpp
+    - scripts/generate_gap_tables.py
+    - src/trg/level_trigger_state.hpp
+    - src/trg/level_trigger_state.cpp
+    - src/runtime/gameplay_session.hpp
+    - src/runtime/gameplay_session.cpp
+  tests:
+    - src/trg/trg_runtime_test.cpp
+    - src/trg/level_trigger_state_test.cpp
+    - src/runtime/level_event_owner_test.cpp
+    - tests/test_gap_tables.py
+
+open_questions: []
+
+completion:
+  - Documented limit, not a blocker - the meaning of the u16 at record offset +0x02 is not identified; it is preserved verbatim in every generated record.
+  - The executable gap record layout and divider lookup are evidence-backed.
+  - Native state distinguishes checksum admission, immediate completion, and both deferred flag paths.
+  - Player physics state selects the raw +0x3014/+0x3018 deferred slot, and the owning level session pulses the stored source node after checklist completion.
+  - Immediate completion records the source-correlated event and exposes a one-shot source pulse.
+  - Malformed aligned payloads and checksum mismatches have deterministic regression coverage.
+  - The three compiled tables (0x00541990 early levels, 0x00546110 late levels, 0x005283d0 custom park) and the Front_LaunchGameLevel selection rule are recovered; the native tables are generated from the executable and a test fails if they drift.

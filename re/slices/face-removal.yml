@@ -1,0 +1,42 @@
+version: 1
+id: face-removal
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004436e0
+  - 0x00443710
+  - 0x00443730
+  - 0x004437d0
+  - 0x004437f0
+  - 0x00443820
+  - 0x00443eb0
+  - 0x00443f00
+  - 0x00443f30
+  - 0x00443f70
+  - 0x00443fc0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/generator-objects.md
+  - re/evidence/fixtures/gen-calls-gface.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/gen_objs.hpp
+  - src/runtime/gen_face_removal.cpp
+  - re/gdb/probes/gen_specs.py
+  - re/gdb/probes/gen_specs_poly.py
+  - re/gdb/probes/gen_specs_model.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/gen_objs_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_generator_objects.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of gen_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`gen_objs_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 11 of the 11 functions (faceremoval.cpp: the point pool and the clipping of two faces'' rings) are replayed over 1650 cases with no mismatch (at least 150 cases each).'
+- Documented exclusion, not a blocker - the logger reports only the format address; the pool is the game's static pool pointed at the slab.

@@ -1,0 +1,101 @@
+#pragma once
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <limits>
+#include <optional>
+
+namespace opentony::runtime {
+
+using FixedPosition = std::array<std::int32_t, 3>;
+using PositionCollisionProbe = std::function<bool(const FixedPosition&)>;
+
+// FUN_00496060 has one direct-commit path, seven collision candidates, and a
+// final current-position fallback. Keep the ordinal visible to replay and
+// fixture consumers without turning the collision result into a guessed
+// geometry type.
+enum class PositionCommitCandidate : std::uint8_t {
+    Direct = 0,
+    Desired = 1,
+    OldX = 2,
+    OldZ = 3,
+    OldY = 4,
+    OldYOldZ = 5,
+    OldXOldY = 6,
+    OldXOldZ = 7,
+    CurrentFallback = 8,
+};
+
+// Stable collision metadata shared by the native physics boundary. The PSX
+// adapter converts its asset-specific hit record into this representation;
+// gameplay code can then consume normals/materials without depending on the
+// asset parser.
+struct PositionCollisionHit {
+    std::size_t face_index{};
+    std::size_t object_index{};
+    std::size_t model_index{};
+    std::size_t model_face_index{};
+    std::uint32_t hit_parameter_q14{};
+    FixedPosition position{};
+    FixedPosition normal{};
+    std::uint16_t face_flags{};
+    std::uint16_t surface_flags{};
+    std::uint32_t raw_collision_word{};
+    bool surface_bit_6{};
+    bool surface_bit_7_clear{};
+    bool surface_bit_8_clear{};
+    std::uint8_t raw_type_bits_9_12{};
+    bool face_flag_80{};
+    // Parsed PSX object-table identity for a linked/dynamic hit. Static hits
+    // leave this at its sentinel value and use object_index for scene identity.
+    std::size_t source_object_index{std::numeric_limits<std::size_t>::max()};
+
+    friend bool operator==(
+        const PositionCollisionHit&,
+        const PositionCollisionHit&) = default;
+};
+
+// FUN_00497f40's first ground-vs-non-ground contact split compares the
+// collision normal's Y short against 0xccd (strictly greater). Keep this
+// predicate independent from trigger/material policy, which is owned by the
+// collision query and its face-mask options.
+inline constexpr std::int32_t kRetailGroundContactNormalYQ12 = 0xccd;
+
+[[nodiscard]] bool accepts_retail_ground_contact(
+    const PositionCollisionHit& hit) noexcept;
+
+// A query result is the collision object's optional hit record. Its wrapper
+// at 0x00466090 clears EAX after forwarding the query, so native acceptance
+// must use this optional record rather than treating that wrapper return as a
+// C++ boolean.
+using PositionCollisionQuery = std::function<std::optional<PositionCollisionHit>(
+    const FixedPosition& start,
+    const FixedPosition& end)>;
+
+struct PositionCommitResult {
+    FixedPosition position{};
+    bool collided{};
+    bool blocked{};
+    std::uint8_t probes{};
+    std::uint8_t selected_candidate{};
+
+    friend bool operator==(
+        const PositionCommitResult&,
+        const PositionCommitResult&) = default;
+};
+
+// Faithful control-flow model of retail FUN_00496060 (the shared position
+// commit path). Collision representation and response policy are injected;
+// this class only preserves the observed axis-fallback ordering.
+class PositionCommitter final {
+public:
+    [[nodiscard]] static PositionCommitResult commit(
+        FixedPosition current,
+        FixedPosition desired,
+        const PositionCollisionProbe& probe,
+        bool bypass_collision = false);
+};
+
+} // namespace opentony::runtime

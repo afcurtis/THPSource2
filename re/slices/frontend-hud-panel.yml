@@ -1,0 +1,71 @@
+version: 1
+id: frontend-hud-panel
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x0048ad50
+    - 0x0048b100
+    - 0x0048b2b0
+    - 0x0048b2c0
+    - 0x0048b430
+    - 0x0048b540
+    - 0x0048b620
+    - 0x0048b760
+    - 0x0048b8e0
+    - 0x0048ba70
+    - 0x0048bae0
+    - 0x0048bef0
+    - 0x0048c0b0
+    - 0x0048c1a0
+    - 0x0048c520
+    - 0x0048c760
+    - 0x0048c8d0
+    - 0x0048ca00
+    - 0x0048cd80
+    - 0x0048d030
+    - 0x0048d040
+    - 0x0048d090
+    - 0x0048d660
+    - 0x0048d7c0
+    - 0x0048d830
+    - 0x0048d8a0
+    - 0x0048d990
+    - 0x0048e950
+    - 0x0048e9c0
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/hud-panel.md
+    - re/evidence/fixtures/hud-calls-construction.txt
+    - re/evidence/fixtures/hud-calls-draw.txt
+    - re/evidence/fixtures/hud-calls-natural-frame400.txt
+    - re/evidence/fixtures/hud-calls-natural-frame5.txt
+    - re/evidence/fixtures/hud-calls-score.txt
+    - re/evidence/fixtures/hud-calls-sprites.txt
+  native:
+    - src/runtime/hud_panel.cpp
+    - src/runtime/hud_panel.hpp
+    - src/runtime/hud_display.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_common.py
+    - re/gdb/probes/frontend_specs_panel.py
+    - re/gdb/probes/frontend_specs_panel_draw.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/hud_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/hud_test.cpp
+    - tests/test_hud_panel.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/frontend_calls.py` with the panel group): the retail function is called on a random legal state poked into the live player-one skater and the HUD globals, its virtual methods and every service outside panel.cpp stubbed; the return value, every written byte and the ordered service calls are compared with the native replay (`hud_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The in-game HUD (panel.cpp): the polygon builders, the score, special meter, timer, trick points and trick names, the icons, the tape letters, the level and replay messages, the viewport layouts (`Panel_Display`) and the panel constructor, loader and unloader: 29 of the 29 functions are replayed over 1562 cases with no mismatch, assertion paths included; the draw functions are also replayed on the untouched live state at two frames of the Warehouse run.'
+  - Documented exclusion, not a blocker - sprites, fonts and text effects are drawn through fake vtables in the probe (a draw is a reported call carrying the object), so what each draw looks like is the text layer's and the engine's validation; the viewport index of a layout nothing in a shipped level reaches (above 7) reads stack garbage in retail and is not generated.

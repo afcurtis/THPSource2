@@ -1,0 +1,51 @@
+version: 1
+id: park-pieces
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x0043a3e0
+  - 0x0043ab00
+  - 0x0043b080
+  - 0x0043b0f0
+  - 0x0043b410
+  - 0x0043b850
+  - 0x0043b8d0
+  - 0x0043bbf0
+  - 0x0043f1b0
+  - 0x0043f400
+  - 0x0043f540
+  - 0x0043f5a0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-generator.md
+  - re/evidence/fixtures/levelgen-calls-lgb.txt
+  - re/evidence/fixtures/levelgen-calls-lgf.txt
+  - re/evidence/fixtures/levelgen-calls-lgl.txt
+  - re/evidence/fixtures/levelgen-calls-lgl2.txt
+  - re/evidence/fixtures/levelgen-calls-lgl3.txt
+  - re/evidence/fixtures/levelgen-calls-lgz.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/gen_objs.hpp
+  - src/runtime/level_gen.hpp
+  - src/runtime/level_gen_pieces.cpp
+  - re/gdb/probes/levelgen_specs.py
+  - re/gdb/probes/levelgen_specs_pieces.py
+  - re/gdb/probes/levelgen_specs_edit.py
+  - re/gdb/probes/levelgen_specs_prk.py
+  - re/gdb/probes/levelgen_specs_region.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_gen_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_generator.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of levelgen_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_gen_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 12 of the 12 functions (FloorTab, the out-models of placed and floor pieces, the gap members, the start positions, pruning, neighbours and the cell flags) are replayed over 1957 cases with no mismatch (at least 80 cases each; the committed fixtures keep the first 30 of each capture per function, 390 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the out-model constructor and the gap member routines are the 4.11b services of the same class (replayed natively inside the port); the face loop reads only the faces the source model has.

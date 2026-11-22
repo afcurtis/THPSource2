@@ -1,0 +1,35 @@
+version: 1
+id: ground-motion-ordinary
+subsystem: ground-movement
+status: complete
+
+scope:
+  functions:
+    - 0x0049b010
+  types:
+    - RuntimeSkaterMovementState
+  globals:
+    - AutoKickSetting
+
+shared:
+  functions: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/ground-movement.md
+    - re/evidence/functions/autokick-option.md
+    - re/evidence/functions/physics.md
+  native:
+    - src/runtime/ground_motion.cpp
+    - src/runtime/ground_motion.hpp
+  tests:
+    - src/runtime/ground_motion_test.cpp
+
+open_questions: []
+
+completion:
+  - The ordinary correction branch predicates and accessed movement fields are evidence-backed, including the metric > 0x4e20 bypass of the basis-Y test.
+  - The profile-table gate is identified as the per-player Autokick option (AutoKickSetting), from the options menu, its factory default and a controlled runtime A/B; the native model keeps it caller-supplied.
+  - Inclusive/exclusive boundary fixtures cover the ordinary correction branch, and one retail Warehouse frame joins the write to the 0x004967b6 add and the 0x0049f0e5 commit as a native fixture.
+  - Native progress records the trace-validated semantic reconstruction without claiming collision ownership; later ground-follow/collision adjustments of the candidate stay with the collision slices.
+  - The +0x10 controller slot's binding name and the Autokick-Off low-speed decay path (0x0049d630) are outside this slice.

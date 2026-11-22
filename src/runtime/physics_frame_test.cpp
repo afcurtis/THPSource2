@@ -1,0 +1,1009 @@
+#include "physics_frame.hpp"
+#include "physics_replay.hpp"
+#include "collision_recovery.hpp"
+
+#include "tests/test_check.hpp"
+#include <iostream>
+#include <vector>
+
+int main() {
+    using opentony::runtime::FixedPosition;
+    using opentony::runtime::InputState;
+    using opentony::runtime::MovementAction;
+    using opentony::runtime::PositionCollisionHit;
+    using opentony::runtime::PhysicsDispatchStage;
+    using opentony::runtime::PlayerPhysicsFrame;
+    using opentony::runtime::PlayerPhysicsFrameHooks;
+    using opentony::runtime::PlayerState;
+    using opentony::runtime::movement_bit;
+
+    // FUN_00496360 folds the state-2 profile turn and the optional
+    // FUN_0049c060 +0x3124 result into one angle, while the active +0x2d90
+    // latch decays by three without either action-bank byte and by one when
+    // either byte is active.
+    const auto state_two_surface_phase =
+        opentony::runtime::compute_ground_surface_response_step(
+            opentony::runtime::GroundSurfaceResponseStepInput{
+                2,
+                0,
+                10 * 0x1000,
+                15,
+                80,
+                0,
+                0x100,
+                5,
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+            });
+    CHECK(state_two_surface_phase.special_ground_phase);
+    CHECK(state_two_surface_phase.turn_units_before_response == 9);
+    CHECK(state_two_surface_phase.timer_after == 12);
+    CHECK(state_two_surface_phase.turn_units == 14);
+    CHECK(state_two_surface_phase.angle12 == 14);
+
+    const auto response_probe_phase =
+        opentony::runtime::compute_ground_surface_response_step(
+            opentony::runtime::GroundSurfaceResponseStepInput{
+                0,
+                0,
+                0,
+                15,
+                0,
+                0,
+                0x100,
+                7,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+            });
+    CHECK(response_probe_phase.response_call_requested);
+    CHECK(response_probe_phase.timer_after == 15);
+    CHECK(response_probe_phase.turn_units == 7);
+
+    const auto action_bank_phase =
+        opentony::runtime::compute_ground_surface_response_step(
+            opentony::runtime::GroundSurfaceResponseStepInput{
+                0,
+                0,
+                0x1000,
+                15,
+                0,
+                0,
+                0x100,
+                0,
+                false,
+                false,
+                false,
+                false,
+                false,
+                true,
+                false,
+                false,
+            });
+    CHECK(!action_bank_phase.response_call_requested);
+    CHECK(action_bank_phase.timer_after == 14);
+
+    const auto cleared_surface_phase =
+        opentony::runtime::compute_ground_surface_response_step(
+            opentony::runtime::GroundSurfaceResponseStepInput{
+                0,
+                0,
+                0x1000,
+                15,
+                0,
+                0,
+                0x100,
+                9,
+                false,
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                true,
+            });
+    CHECK(!cleared_surface_phase.response_call_requested);
+    CHECK(cleared_surface_phase.timer_after == 0);
+    CHECK(cleared_surface_phase.turn_units == 1);
+
+    const auto surface_response_reset =
+        opentony::runtime::compute_ground_surface_response_reset(
+            opentony::runtime::GroundSurfaceResponseResetInput{0, 1, 2});
+    CHECK(surface_response_reset.applied);
+    CHECK(surface_response_reset.clear_spin_phase_2e80);
+    CHECK(surface_response_reset.clear_auxiliary_list_3214);
+    const auto state_two_surface_reset =
+        opentony::runtime::compute_ground_surface_response_reset(
+            opentony::runtime::GroundSurfaceResponseResetInput{2, 1, 0});
+    CHECK(state_two_surface_reset.applied);
+    CHECK(!state_two_surface_reset.clear_spin_phase_2e80);
+    CHECK(!opentony::runtime::compute_ground_surface_response_reset(
+        opentony::runtime::GroundSurfaceResponseResetInput{5, 1, 0}).applied);
+    CHECK(!opentony::runtime::compute_ground_surface_response_reset(
+        opentony::runtime::GroundSurfaceResponseResetInput{0, 0, 0}).applied);
+
+    const auto completed_surface_phase =
+        opentony::runtime::compute_ground_surface_response_phase(
+            opentony::runtime::GroundSurfaceResponsePhaseInput{
+                1,
+                0x0ff0,
+                0x20,
+                0x100,
+            });
+    CHECK(completed_surface_phase.phase_boundary_crossed);
+    CHECK(completed_surface_phase.completed);
+    CHECK(completed_surface_phase.countdown_after == 0);
+    CHECK(completed_surface_phase.phase_after == 0);
+    CHECK(completed_surface_phase.rate_after == 0);
+
+    const auto continuing_surface_phase =
+        opentony::runtime::compute_ground_surface_response_phase(
+            opentony::runtime::GroundSurfaceResponsePhaseInput{
+                2,
+                0x0ff0,
+                0x20,
+                0x100,
+            });
+    CHECK(continuing_surface_phase.phase_boundary_crossed);
+    CHECK(!continuing_surface_phase.completed);
+    CHECK(continuing_surface_phase.countdown_after == 1);
+    CHECK(continuing_surface_phase.phase_after == 0x1010);
+
+    PlayerState reset_context_player;
+    reset_context_player.set_physics_state(0);
+    reset_context_player.set_surface_response_spin_phase(4);
+    reset_context_player.set_surface_response_action_gate(1);
+    reset_context_player.set_surface_response_phase_refresh_gate(1);
+    CHECK(reset_context_player.reset_surface_response_context());
+    CHECK(reset_context_player.ground_surface_response_timer() == 0xf);
+    CHECK(reset_context_player.surface_response_dispatch_active() == 1);
+    CHECK(!reset_context_player.surface_response_spin_active());
+    CHECK(!reset_context_player.surface_response_action_gate_active());
+    CHECK(!reset_context_player.surface_response_phase_refresh_blocked());
+
+    PlayerState state_two_reset_context_player;
+    state_two_reset_context_player.set_physics_state(2);
+    state_two_reset_context_player.set_surface_response_spin_phase(4);
+    CHECK(state_two_reset_context_player.reset_surface_response_context());
+    CHECK(state_two_reset_context_player.surface_response_spin_active());
+
+    PlayerState phase_context_player;
+    phase_context_player.set_surface_response_phase(1, 0x0ff0, 0x20);
+    phase_context_player.advance_surface_response_phase();
+    CHECK(!phase_context_player.surface_response_phase_active());
+
+    // FUN_0049d9c0 selects 10/70 from +0x2f64, while FUN_004957c0 uses the
+    // live point for its first line and the restored +0xbc point for both
+    // endpoints of its normal-offset verification line.
+    CHECK(opentony::runtime::grounded_bounce_probe_distance(false) == 10);
+    CHECK(opentony::runtime::grounded_bounce_probe_distance(true) == 70);
+    CHECK(opentony::runtime::accepts_grounded_bounce_normal(0x3ff));
+    CHECK(!opentony::runtime::accepts_grounded_bounce_normal(0x400));
+    CHECK(!opentony::runtime::accepts_grounded_bounce_normal(-0x400));
+    const auto bounce_geometry =
+        opentony::runtime::make_grounded_bounce_probe_geometry(
+            FixedPosition{1000, 2000, 3000},
+            FixedPosition{4096, 0, 0},
+            FixedPosition{0, 4096, 0},
+            -1,
+            10);
+    CHECK(bounce_geometry.first_start == FixedPosition({1000, 124880, 3000}));
+    CHECK(bounce_geometry.first_end == FixedPosition({-39960, 124880, 3000}));
+    const FixedPosition verification_start =
+        opentony::runtime::make_grounded_bounce_verification_start(
+            FixedPosition{10, 20, 30},
+            FixedPosition{0, -4096, 0});
+    // The verification endpoint ignores the probe direction (edi holds only
+    // the distance at 0x004959cf): it always backs away along the normal.
+    const FixedPosition verification_end =
+        opentony::runtime::make_grounded_bounce_verification_end(
+            FixedPosition{10, 20, 30},
+            FixedPosition{0, -4096, 0},
+            10);
+    CHECK(verification_start == FixedPosition({10, -4076, 30}));
+    CHECK(verification_end == FixedPosition({10, -40940, 30}));
+
+    // FUN_00496550's support tail has two distinct state-0 exits.  The
+    // inverse24-clear branch exits directly; the inverse24-set branch only
+    // exits when its target/forward/response gate is satisfied.  These cases
+    // preserve the raw face-bit contract independently of material numbers.
+    const FixedPosition recovery_target{0, -4096, 0};
+    const FixedPosition current_forward{0, 0, 4096};
+    PositionCollisionHit support_hit{};
+    support_hit.normal = FixedPosition{0, -2272, -3408};
+    support_hit.surface_bit_6 = false;
+    support_hit.surface_bit_8_clear = true;
+    CHECK(opentony::runtime::support_hit_requests_ground_exit(
+        support_hit,
+        recovery_target,
+        current_forward,
+        FixedPosition{0, 0, 0}));
+
+    support_hit.normal = FixedPosition{0, -3019, 2768};
+    CHECK(!opentony::runtime::support_hit_requests_ground_exit(
+        support_hit,
+        recovery_target,
+        current_forward,
+        FixedPosition{0, 0, 0}));
+
+    support_hit.normal = FixedPosition{0, -3019, 2768};
+    support_hit.surface_bit_8_clear = false;
+    CHECK(opentony::runtime::support_hit_requests_ground_exit(
+        support_hit,
+        recovery_target,
+        current_forward,
+        FixedPosition{0, 0, 1}));
+
+    support_hit.surface_bit_8_clear = true;
+    support_hit.normal = FixedPosition{0, -2272, -3408};
+    CHECK(!opentony::runtime::support_hit_requests_ground_exit(
+        support_hit,
+        recovery_target,
+        FixedPosition{0, 0, -4096},
+        FixedPosition{0, 0, 0}));
+    CHECK(!opentony::runtime::support_hit_requests_ground_exit(
+        support_hit,
+        recovery_target,
+        current_forward,
+        FixedPosition{0, 1, 0}));
+
+    support_hit.surface_bit_6 = true;
+    support_hit.surface_bit_8_clear = false;
+    CHECK(!opentony::runtime::support_hit_requests_ground_exit(
+        support_hit,
+        recovery_target,
+        current_forward,
+        FixedPosition{0, 0, 0}));
+
+    PlayerState state_two_exit_player;
+    state_two_exit_player.set_physics_state(2);
+    const auto state_two_exit =
+        state_two_exit_player.exit_ground_collision_recovery();
+    CHECK(state_two_exit.state_two_shortcut);
+    CHECK(state_two_exit.state_request.to == 1);
+    CHECK(state_two_exit.state_request.reason == 0x1605);
+    CHECK(!state_two_exit.animation_request_issued);
+
+    PlayerState ordinary_exit_player;
+    ordinary_exit_player.set_physics_state(0);
+    const auto ordinary_exit =
+        ordinary_exit_player.exit_ground_collision_recovery();
+    CHECK(ordinary_exit.ordinary_cleanup);
+    CHECK(ordinary_exit.state_request.reason == 0x160b);
+    CHECK(ordinary_exit.animation_request_issued);
+    CHECK(ordinary_exit.animation == 0x1b);
+    CHECK(ordinary_exit.animation_reason == 0x162a);
+
+    PlayerState blocked_exit_player;
+    blocked_exit_player.set_physics_state(0);
+    blocked_exit_player.set_control_blocked(true);
+    const auto blocked_exit =
+        blocked_exit_player.exit_ground_collision_recovery();
+    CHECK(blocked_exit.ordinary_cleanup);
+    CHECK(!blocked_exit.animation_request_issued);
+
+    PlayerState player({0, 0, 0});
+    player.set_physics_state(3);
+    player.set_collision_response({10, 20, 30});
+    InputState input;
+    input.begin_frame(movement_bit(MovementAction::Left));
+
+    std::vector<PhysicsDispatchStage> stages;
+    PlayerPhysicsFrameHooks hooks{};
+    hooks.collision_probe = [](const FixedPosition& candidate) {
+        return candidate[0] > 5;
+    };
+    hooks.on_stage = [&stages](
+        PhysicsDispatchStage stage,
+        PlayerState&,
+        const InputState&) {
+        stages.push_back(stage);
+    };
+
+    const auto frame = PlayerPhysicsFrame::step(player, input, hooks);
+    CHECK(frame.dispatch.handled);
+    CHECK(frame.position_integrated);
+    CHECK(frame.motion_correction_integrated);
+    CHECK(stages.size() == 1);
+    CHECK(stages.front() == PhysicsDispatchStage::InAir_97f40);
+    // The desired x=10 is blocked; FUN_00496060 falls back to the old x.
+    CHECK(frame.position_commit.collided);
+    CHECK(frame.position_commit.probes == 2);
+    CHECK(frame.position_commit.selected_candidate == 2);
+    CHECK(player.position() == FixedPosition({0, 20, 30}));
+    CHECK(player.previous_position() == FixedPosition({0, 0, 0}));
+    // FUN_00493370 runs every frame (0x0049e97d, straight-line from
+    // 0x0049e939) and its non-grounded branch covers state 3 too: held Left
+    // steps +0x3144 by the in-air 0xa000.
+    CHECK(player.turn_accumulator() == -0xa000);
+
+    // FUN_00493370 applies the drained local delta through the live matrix
+    // before the state dispatcher. A retail zero-angle restart installs the
+    // negative-identity basis, so a local +X step becomes world -X.
+    PlayerState queued_player({100, 200, 300});
+    queued_player.apply_restart({100, 200, 300}, 0x08000000);
+    CHECK(queued_player.set_queued_motion_command(0, 1, 4));
+    const auto queued_motion = queued_player.drain_queued_motion();
+    const FixedPosition queued_world_delta = queued_player.apply_queued_motion(
+        queued_motion);
+    CHECK(queued_world_delta == FixedPosition({-1, 0, 0}));
+    CHECK(queued_player.position() == FixedPosition({99, 200, 300}));
+    CHECK(queued_player.previous_position() == FixedPosition({100, 200, 300}));
+
+    PlayerState queued_frame_player;
+    queued_frame_player.set_physics_state(3);
+    CHECK(queued_frame_player.set_queued_motion_command(1, 1, 2));
+    InputState queued_frame_input;
+    queued_frame_input.begin_frame(0);
+    PlayerPhysicsFrameHooks queued_frame_hooks{};
+    queued_frame_hooks.apply_ground_turn = false;
+    queued_frame_hooks.integrate_position = false;
+    queued_frame_hooks.integrate_motion_correction = false;
+    const auto queued_frame = PlayerPhysicsFrame::step(
+        queued_frame_player,
+        queued_frame_input,
+        queued_frame_hooks);
+    CHECK(queued_frame.queued_motion.moved);
+    CHECK(queued_frame.queued_motion_world_delta == FixedPosition({0, 1, 0}));
+    CHECK(queued_frame_player.position() == FixedPosition({0, 1, 0}));
+
+    PlayerState producer({100, 200, 300});
+    producer.set_physics_state(0);
+    producer.set_collision_response({100, 0, 0});
+    InputState neutral;
+    neutral.begin_frame(0);
+    PlayerPhysicsFrameHooks producer_hooks{};
+    producer_hooks.apply_ground_turn = false;
+    producer_hooks.on_stage = [](
+        PhysicsDispatchStage stage,
+        PlayerState& current_player,
+        const InputState&) {
+        if (stage == PhysicsDispatchStage::GroundCollision_96550) {
+            current_player.set_motion_correction({0x1000, 0, 0});
+        }
+    };
+    producer_hooks.apply_ground_basis_correction = true;
+    const auto produced = PlayerPhysicsFrame::step(
+        producer,
+        neutral,
+        producer_hooks);
+    CHECK(produced.position_integrated);
+    CHECK(producer.position() == FixedPosition({2248, 200, 300}));
+    CHECK(producer.collision_response() == FixedPosition({4096, 0, 0}));
+
+    // The unresolved retail ground-motion producer belongs before the shared
+    // position integrator. Keep that source injectable until its writer is
+    // identified; movement input must not silently become guessed velocity.
+    PlayerState prephysics_source({0, 0, 0});
+    prephysics_source.set_physics_state(0);
+    InputState left_input;
+    left_input.begin_frame(movement_bit(MovementAction::Left));
+    PlayerPhysicsFrameHooks prephysics_hooks{};
+    prephysics_hooks.apply_ground_turn = false;
+    prephysics_hooks.on_prephysics = [](
+        PlayerState& current_player,
+        const InputState&) {
+        current_player.set_collision_response({0x100, 0, 0});
+    };
+    const auto prephysics_frame = PlayerPhysicsFrame::step(
+        prephysics_source,
+        left_input,
+        prephysics_hooks);
+    CHECK(prephysics_frame.position_integrated);
+    CHECK(prephysics_source.previous_position() == FixedPosition({0, 0, 0}));
+    CHECK(prephysics_source.position() == FixedPosition({0x100, 0, 0}));
+
+    // The outer retail wrapper publishes the completed transient correction
+    // separately from the persistent response add. Both replay seams run
+    // after dispatch and must remain independently observable.
+    PlayerState correction_hooks_player;
+    correction_hooks_player.set_physics_state(3);
+    correction_hooks_player.set_collision_response({1, 2, 3});
+    InputState correction_hooks_input;
+    correction_hooks_input.begin_frame(0);
+    PlayerPhysicsFrameHooks correction_hooks{};
+    correction_hooks.integrate_position = false;
+    correction_hooks.integrate_motion_correction = false;
+    correction_hooks.motion_correction_input = [](
+        const PlayerState&,
+        const opentony::runtime::PhysicsDispatchResult&) {
+        return std::optional<FixedPosition>{FixedPosition({4, 5, 6})};
+    };
+    correction_hooks.response_correction_input = [](
+        const PlayerState&,
+        const opentony::runtime::PhysicsDispatchResult&) {
+        return std::optional<FixedPosition>{FixedPosition({7, 8, 9})};
+    };
+    const auto correction_hooks_frame = PlayerPhysicsFrame::step(
+        correction_hooks_player,
+        correction_hooks_input,
+        correction_hooks);
+    CHECK(!correction_hooks_frame.position_integrated);
+    CHECK(correction_hooks_player.motion_correction() == FixedPosition({4, 5, 6}));
+    CHECK(correction_hooks_player.collision_response() == FixedPosition({8, 10, 12}));
+
+    PlayerState profile_player;
+    profile_player.set_physics_state(0);
+    InputState profile_input;
+    profile_input.begin_frame(0x0080U, static_cast<std::int8_t>(-0x29), 0);
+    PlayerPhysicsFrameHooks profile_hooks{};
+    profile_hooks.apply_ground_turn = false;
+    profile_hooks.integrate_position = false;
+    profile_hooks.integrate_motion_correction = false;
+    profile_hooks.ground_animation_input = [](
+        const PlayerState&,
+        const InputState&,
+        const opentony::runtime::ActionProfileState&) {
+        return opentony::runtime::GroundAnimationInput{
+            0x2d000,
+            0,
+            false,
+            false,
+            false,
+            0,
+            0,
+        };
+    };
+    profile_hooks.ground_motion_input = [](
+        const PlayerState& player,
+        const InputState&,
+        const opentony::runtime::ActionProfileState& profile) {
+        CHECK(profile.slot_at_offset(0x10));
+        CHECK(profile.slot_at_offset(0x80));
+        CHECK(!profile.slot_at_offset(0x90));
+        CHECK(player.animation_state() == 7);
+        CHECK(player.animation_frame() == 5);
+        return std::optional<opentony::runtime::GroundMotionInput>{};
+    };
+    const auto profile_frame = PlayerPhysicsFrame::step(
+        profile_player,
+        profile_input,
+        profile_hooks);
+    CHECK(profile_frame.action_profile.slot_at_offset(0x10));
+    CHECK(profile_frame.action_profile.slot_at_offset(0x80));
+
+    PlayerState stateful_ground_player;
+    stateful_ground_player.set_physics_state(0);
+    stateful_ground_player.set_collision_response({0x80000, 0, 0});
+    InputState stateful_ground_input;
+    stateful_ground_input.begin_frame(0);
+    PlayerPhysicsFrameHooks stateful_ground_hooks{};
+    stateful_ground_hooks.integrate_position = false;
+    stateful_ground_hooks.integrate_motion_correction = false;
+    stateful_ground_hooks.ground_physics_input = [](
+        const PlayerState&,
+        const InputState&) {
+        return std::optional<opentony::runtime::GroundPhysicsInput>{
+            opentony::runtime::GroundPhysicsInput{
+                {},
+                0,
+                0,
+                -0x1000,
+                0,
+                0,
+                0,
+                0,
+                true,
+                false,
+                false,
+                false,
+                false,
+            },
+        };
+    };
+    const auto stateful_ground_frame = PlayerPhysicsFrame::step(
+        stateful_ground_player,
+        stateful_ground_input,
+        stateful_ground_hooks);
+    CHECK(stateful_ground_frame.ground_physics.has_value());
+    CHECK(stateful_ground_frame.ground_physics->ground_update_state == 1);
+    CHECK(stateful_ground_player.ground_physics_mode() == 1);
+    CHECK(stateful_ground_player.collision_response()
+        == FixedPosition({0x78000, 0, 0}));
+    CHECK(stateful_ground_player.ground_motion_cooldown() == 2);
+
+    PlayerState wide_player;
+    wide_player.set_physics_state(0);
+    InputState wide_input;
+    wide_input.begin_frame(
+        opentony::runtime::movement_bit(MovementAction::Right),
+        0,
+        static_cast<std::int8_t>(0x20));
+    PlayerPhysicsFrameHooks wide_hooks{};
+    wide_hooks.integrate_position = false;
+    wide_hooks.integrate_motion_correction = false;
+    bool saw_closed_turn_gate = false;
+    wide_hooks.ground_motion_input = [&saw_closed_turn_gate](
+        const PlayerState& current_player,
+        const InputState&,
+        const opentony::runtime::ActionProfileState&) {
+        saw_closed_turn_gate =
+            current_player.ground_turn_wide_profile() &&
+            current_player.ground_turn_policy_changed() &&
+            !current_player.ground_motion_correction_gate_open();
+        return std::optional<opentony::runtime::GroundMotionInput>{};
+    };
+    const auto wide_frame = PlayerPhysicsFrame::step(
+        wide_player,
+        wide_input,
+        wide_hooks);
+    CHECK(wide_frame.ground_turn.has_value());
+    CHECK(wide_frame.ground_turn->wide_profile);
+    CHECK(wide_frame.ground_turn->policy_changed);
+    CHECK(saw_closed_turn_gate);
+
+    PlayerState normalized_player;
+    normalized_player.set_physics_state(0);
+    normalized_player.set_collision_response({0x10000, 0, 0});
+    InputState normalized_input;
+    normalized_input.begin_frame(
+        opentony::runtime::movement_bit(MovementAction::Right),
+        0,
+        static_cast<std::int8_t>(0x20));
+    PlayerPhysicsFrameHooks normalized_hooks{};
+    normalized_hooks.integrate_position = false;
+    normalized_hooks.integrate_motion_correction = false;
+    const auto normalized_frame = PlayerPhysicsFrame::step(
+        normalized_player,
+        normalized_input,
+        normalized_hooks);
+    CHECK(normalized_frame.ground_turn.has_value());
+    CHECK(normalized_frame.ground_turn->response_normalized);
+    // The response-normalized write is transient: retail clears +0x58/+0x5c/
+    // +0x60 between FUN_00493370 and B010.
+    CHECK(normalized_player.motion_correction() == FixedPosition({0, 0, 0}));
+
+    // The live retail frame canonicalizes the captured, slightly-short Q12
+    // basis before grounded turn/input processing. Preserve the short values
+    // in InitialState, but expose the normalized values after frame 0.
+    PlayerState basis_player;
+    basis_player.set_physics_state(0);
+    opentony::runtime::Q12Matrix3 short_basis{};
+    short_basis.at(0, 0) = -4095;
+    short_basis.at(0, 2) = -6;
+    short_basis.at(1, 1) = -4096;
+    short_basis.at(2, 0) = 6;
+    short_basis.at(2, 2) = -4095;
+    basis_player.set_orientation(short_basis);
+    InputState basis_input;
+    basis_input.begin_frame(0);
+    PlayerPhysicsFrameHooks basis_hooks{};
+    basis_hooks.integrate_position = false;
+    basis_hooks.integrate_motion_correction = false;
+    static_cast<void>(PlayerPhysicsFrame::step(
+        basis_player,
+        basis_input,
+        basis_hooks));
+    CHECK(basis_player.orientation().values
+        == (std::array<std::int16_t, 9>{
+            -4096, 0, -6,
+            0, -4096, 0,
+            6, 0, -4096,
+        }));
+
+    PlayerState cooldown_player;
+    cooldown_player.set_physics_state(0);
+    cooldown_player.set_ground_motion_cooldown(2);
+    InputState cooldown_input;
+    cooldown_input.begin_frame(0);
+    PlayerPhysicsFrameHooks cooldown_hooks{};
+    cooldown_hooks.apply_ground_turn = false;
+    cooldown_hooks.integrate_position = false;
+    cooldown_hooks.integrate_motion_correction = false;
+    bool saw_cooldown = false;
+    cooldown_hooks.ground_motion_input = [&saw_cooldown](
+        const PlayerState& current_player,
+        const InputState&,
+        const opentony::runtime::ActionProfileState&) {
+        saw_cooldown = current_player.ground_motion_cooldown() == 1;
+        return std::optional<opentony::runtime::GroundMotionInput>{};
+    };
+    static_cast<void>(PlayerPhysicsFrame::step(
+        cooldown_player,
+        cooldown_input,
+        cooldown_hooks));
+    CHECK(saw_cooldown);
+
+    PlayerState surface_player({0, 4096, 0});
+    surface_player.set_physics_state(3);
+    surface_player.set_collision_response({0, -8192, 0});
+    InputState surface_input;
+    surface_input.begin_frame(0);
+    PlayerPhysicsFrameHooks surface_hooks{};
+    surface_hooks.collision_query = [](
+        const FixedPosition& start,
+        const FixedPosition& end) -> std::optional<opentony::runtime::PositionCollisionHit> {
+        if (start[1] >= 0 && end[1] < 0) {
+            return opentony::runtime::PositionCollisionHit{
+                7,
+                3,
+                2,
+                11,
+                0x2000,
+                {0, 0, 0},
+                {0, 0x1000, 0},
+                0x20,
+                0x1234,
+            };
+        }
+        return std::nullopt;
+    };
+    bool saw_surface = false;
+    surface_hooks.on_collision = [&saw_surface](
+        PlayerState&,
+        const opentony::runtime::PositionCollisionHit& hit,
+        const opentony::runtime::PositionCommitResult&) {
+        saw_surface = hit.surface_flags == 0x1234;
+    };
+    const auto surface_frame = PlayerPhysicsFrame::step(
+        surface_player,
+        surface_input,
+        surface_hooks);
+    CHECK(surface_frame.collision_hit.has_value());
+    CHECK(surface_frame.hit_normal_removed);
+    CHECK(saw_surface);
+    CHECK(surface_player.position() == FixedPosition({0, 4096, 0}));
+    CHECK(surface_player.collision_response() == FixedPosition({0, 0, 0}));
+
+    PlayerState response_player({0, 100, 0});
+    response_player.set_physics_state(0);
+    response_player.set_collision_response({0, -0x1000, 0});
+    PlayerPhysicsFrameHooks response_hooks{};
+    response_hooks.remove_hit_normal_component = false;
+    response_hooks.integrate_motion_correction = false;
+    response_hooks.collision_query = [](
+        const FixedPosition& start,
+        const FixedPosition& end)
+        -> std::optional<opentony::runtime::PositionCollisionHit> {
+        if (start[1] > 0 && end[1] <= 0) {
+            return opentony::runtime::PositionCollisionHit{
+                1, 2, 3, 4, 0x2000, {0, 0, 0}, {0, 0x1000, 0}, 0, 0};
+        }
+        return std::nullopt;
+    };
+    response_hooks.collision_response_bias_q12 = [](
+        const PlayerState&,
+        const opentony::runtime::PositionCollisionHit&,
+        PhysicsDispatchStage) {
+        return std::optional<std::int32_t>{0xcd};
+    };
+    const auto response_frame = PlayerPhysicsFrame::step(
+        response_player,
+        surface_input,
+        response_hooks);
+    CHECK(response_frame.collision_response.has_value());
+    CHECK(response_frame.collision_response->adjusted);
+    CHECK(response_player.collision_response()[1] == 0xcd);
+
+    // The grounded movement hit reaches FUN_0049bad0 before the secondary
+    // support sweep and FUN_00490680. If the response hook is left at the
+    // generic result boundary, the support projection is immediately undone
+    // by a second bias application. Keep this ordering visible as a semantic
+    // regression test rather than relying only on the Warehouse recording.
+    //
+    // The support hit's travel decides whether FUN_00490680 runs at all:
+    // 0x004970c9 sends a hit farther than +0x2da4 + 0x74 into sweep to
+    // FUN_004956f0, which requests state 1 immediately, and the common tail
+    // at 0x00497576 skips FUN_00490680 in state 1. A quarter-sweep hit stays
+    // on the ordinary path and must see the projection; a half-sweep hit
+    // takes the exit and keeps the biased response.
+    const auto run_ordered_response = [&surface_input](
+        std::uint32_t support_parameter_q14,
+        bool& response_seen_by_support_query) {
+        PlayerState ordered_response_player({0, 100, 0});
+        ordered_response_player.set_physics_state(0);
+        ordered_response_player.set_collision_response({0, 0x1000, 0});
+        PlayerPhysicsFrameHooks ordered_response_hooks{};
+        ordered_response_hooks.integrate_motion_correction = false;
+        int ordered_query_count = 0;
+        response_seen_by_support_query = false;
+        ordered_response_hooks.collision_query = [
+            &ordered_response_player,
+            &ordered_query_count,
+            &response_seen_by_support_query,
+            support_parameter_q14](
+            const FixedPosition&,
+            const FixedPosition&)
+            -> std::optional<opentony::runtime::PositionCollisionHit> {
+            ++ordered_query_count;
+            if (ordered_query_count == 1) {
+                return opentony::runtime::PositionCollisionHit{
+                    1, 2, 3, 4, 0x2000, {0, 0, 0}, {0, -0x1000, 0}, 0, 0x0110};
+            }
+            if (ordered_query_count == 2) {
+                response_seen_by_support_query =
+                    ordered_response_player.collision_response()[1] < 0;
+                return opentony::runtime::PositionCollisionHit{
+                    5, 6, 7, 8, support_parameter_q14,
+                    {0, 0, 0}, {0, -0x1000, 0}, 0, 0};
+            }
+            return std::nullopt;
+        };
+        ordered_response_hooks.collision_response_bias_q12 = [](
+            const PlayerState&,
+            const opentony::runtime::PositionCollisionHit&,
+            PhysicsDispatchStage) {
+            return std::optional<std::int32_t>{0xcd};
+        };
+        static_cast<void>(PlayerPhysicsFrame::step(
+            ordered_response_player,
+            surface_input,
+            ordered_response_hooks));
+        return ordered_response_player;
+    };
+    bool response_seen_by_support_query = false;
+    const PlayerState ordered_response_player =
+        run_ordered_response(0x1000, response_seen_by_support_query);
+    CHECK(response_seen_by_support_query);
+    CHECK(ordered_response_player.physics_state() == 0);
+    CHECK(ordered_response_player.collision_response()[1] == 0);
+    const PlayerState exit_response_player =
+        run_ordered_response(0x2000, response_seen_by_support_query);
+    CHECK(response_seen_by_support_query);
+    CHECK(exit_response_player.physics_state() == 1);
+    CHECK(exit_response_player.collision_response()[1] == -0xcd);
+
+    PlayerState gravity_player;
+    gravity_player.set_physics_state(3);
+    gravity_player.set_air_motion({100, -1000, 300});
+    PlayerPhysicsFrameHooks gravity_hooks{};
+    gravity_hooks.integrate_position = false;
+    gravity_hooks.air_gravity_input = [](
+        const PlayerState&,
+        const InputState&) {
+        return std::optional<opentony::runtime::AirGravityConfig>{};
+    };
+    const auto gravity_disabled = PlayerPhysicsFrame::step(
+        gravity_player,
+        surface_input,
+        gravity_hooks);
+    CHECK(!gravity_disabled.air_gravity.has_value());
+    CHECK(gravity_player.air_motion() == FixedPosition({100, -1000, 300}));
+
+    gravity_hooks.air_gravity_input = [](
+        const PlayerState&,
+        const InputState&) {
+        return std::optional<opentony::runtime::AirGravityConfig>{
+            opentony::runtime::AirGravityConfig{500, -0x1000, -0xe0c, true}};
+    };
+    gravity_hooks.apply_air_motion_basis = true;
+    const auto gravity_applied = PlayerPhysicsFrame::step(
+        gravity_player,
+        surface_input,
+        gravity_hooks);
+    CHECK(gravity_applied.air_gravity.has_value());
+    CHECK(gravity_applied.air_motion_basis.has_value());
+    CHECK(gravity_player.air_motion()
+        == opentony::runtime::q12_normalize({100, -1500, 300}));
+
+    PlayerState gravity_acceleration_player;
+    gravity_acceleration_player.set_physics_state(3);
+    PlayerPhysicsFrameHooks gravity_acceleration_hooks{};
+    gravity_acceleration_hooks.integrate_position = false;
+    gravity_acceleration_hooks.integrate_motion_correction = false;
+    gravity_acceleration_hooks.air_gravity_acceleration_input = [](
+        const PlayerState&,
+        const InputState&) {
+        return std::optional<std::int32_t>{13000};
+    };
+    const auto gravity_acceleration_frame = PlayerPhysicsFrame::step(
+        gravity_acceleration_player,
+        surface_input,
+        gravity_acceleration_hooks);
+    CHECK(gravity_acceleration_frame.air_gravity_acceleration == 13000);
+    CHECK(gravity_acceleration_player.motion_correction()
+        == FixedPosition({0, 13000, 0}));
+
+    PlayerState air_input_player;
+    air_input_player.set_physics_state(3);
+    InputState air_input;
+    air_input.begin_frame(movement_bit(MovementAction::Up));
+    PlayerPhysicsFrameHooks air_input_hooks{};
+    air_input_hooks.integrate_position = false;
+    air_input_hooks.integrate_motion_correction = false;
+    air_input_hooks.air_direction_input = [](
+        const PlayerState&,
+        const InputState&) {
+        return std::optional<opentony::runtime::AirDirectionInputConfig>{
+            opentony::runtime::AirDirectionInputConfig{100, 150}};
+    };
+    const auto air_input_frame = PlayerPhysicsFrame::step(
+        air_input_player,
+        air_input,
+        air_input_hooks);
+    CHECK(air_input_frame.air_direction_input.has_value());
+    CHECK(air_input_frame.air_direction_input->delta
+        == FixedPosition({0, 0, 150}));
+    CHECK(air_input_player.motion_correction()
+        == FixedPosition({0, 0, -150}));
+
+    PlayerState stat_air_player;
+    stat_air_player.set_physics_state(3);
+    InputState stat_air_input;
+    stat_air_input.begin_frame(movement_bit(MovementAction::Up));
+    PlayerPhysicsFrameHooks stat_air_hooks{};
+    stat_air_hooks.integrate_position = false;
+    stat_air_hooks.integrate_motion_correction = false;
+    stat_air_hooks.air_speed_input = [](
+        const PlayerState&,
+        const InputState&) {
+        return std::optional<opentony::runtime::AirSpeedConfig>{
+            opentony::runtime::AirSpeedConfig{100, 0, 3, 0, false, false, false}};
+    };
+    const auto stat_air_frame = PlayerPhysicsFrame::step(
+        stat_air_player,
+        stat_air_input,
+        stat_air_hooks);
+    CHECK(stat_air_frame.air_direction_input.has_value());
+    CHECK(stat_air_frame.air_direction_input->delta
+        == FixedPosition({0, 0, 19500}));
+
+    PlayerState air_control_player;
+    air_control_player.set_physics_state(3);
+    air_control_player.set_collision_response({3200, 0, 0});
+    InputState air_control_input;
+    air_control_input.begin_frame(opentony::runtime::kKickActionBit);
+    PlayerPhysicsFrameHooks air_control_hooks{};
+    air_control_hooks.integrate_motion_correction = false;
+    air_control_hooks.air_action_control_input = [](
+        const PlayerState&,
+        const InputState&) {
+        return std::optional<opentony::runtime::AirActionControlConfig>{
+            opentony::runtime::AirActionControlConfig{
+                1000, true, false, false, false, false, false}};
+    };
+    const auto air_control_frame = PlayerPhysicsFrame::step(
+        air_control_player,
+        air_control_input,
+        air_control_hooks);
+    CHECK(air_control_frame.air_action_control.has_value());
+    CHECK(air_control_frame.air_action_control->applied);
+    CHECK(air_control_player.motion_correction()
+        == FixedPosition({-100, 1800, 0}));
+
+    PlayerState replay_player({0, 0, 0});
+    replay_player.set_physics_state(3);
+    replay_player.set_collision_response({100, 0, 0});
+    const std::vector<opentony::runtime::PlayerReplayInput> replay_inputs{
+        {0, 0, 0, 0x100},
+        {movement_bit(MovementAction::Right), 0, 0, 0x100},
+        {0, 0, 0, 0x80},
+    };
+    PlayerPhysicsFrameHooks replay_hooks{};
+    replay_hooks.apply_ground_turn = false;
+    const auto replay_a = opentony::runtime::PlayerPhysicsReplay::run(
+        replay_player,
+        replay_inputs,
+        replay_hooks);
+    const auto replay_b = opentony::runtime::PlayerPhysicsReplay::run(
+        replay_player,
+        replay_inputs,
+        replay_hooks);
+    CHECK(replay_a == replay_b);
+    CHECK(replay_a.size() == replay_inputs.size());
+    CHECK(replay_a[0].action_mask == 0);
+    CHECK(replay_a[1].effective_movement_mask
+        == movement_bit(MovementAction::Right));
+    CHECK(replay_a[0].position == FixedPosition({100, 0, 0}));
+    CHECK(replay_a[2].previous_position == replay_a[1].position);
+
+    PlayerState ollie_player;
+    ollie_player.set_physics_state(0);
+    PlayerPhysicsFrameHooks ollie_hooks{};
+    ollie_hooks.ollie_input = [](
+        const PlayerState&,
+        const InputState&) {
+        return opentony::runtime::OlliePrePhysicsInput{};
+    };
+    InputState kick_input;
+    kick_input.begin_frame(opentony::runtime::kKickActionBit);
+    const auto charge_frame = PlayerPhysicsFrame::step(
+        ollie_player,
+        kick_input,
+        ollie_hooks);
+    CHECK(charge_frame.ollie.has_value());
+    CHECK(charge_frame.ollie->event
+        == opentony::runtime::OlliePrePhysicsEvent::Charging);
+    kick_input.begin_frame(0);
+    const auto launch_frame = PlayerPhysicsFrame::step(
+        ollie_player,
+        kick_input,
+        ollie_hooks);
+    CHECK(launch_frame.ollie.has_value());
+    CHECK(launch_frame.ollie->event
+        == opentony::runtime::OlliePrePhysicsEvent::Launched);
+    CHECK(ollie_player.physics_state() == 1);
+    CHECK(ollie_player.last_state_request().reason
+        == opentony::runtime::kOrdinaryLaunchReason);
+
+    PlayerState landing_player({0, 100, 0});
+    landing_player.set_physics_state(3);
+    landing_player.set_collision_response({0, -200, 0});
+    InputState landing_input;
+    landing_input.begin_frame(0);
+    PlayerPhysicsFrameHooks landing_hooks{};
+    landing_hooks.collision_query = [](
+        const FixedPosition& start,
+        const FixedPosition& end)
+        -> std::optional<opentony::runtime::PositionCollisionHit> {
+        if (start[1] > 0 && end[1] <= 0) {
+            return opentony::runtime::PositionCollisionHit{
+                1, 2, 3, 4, 0x2000, {0, 0, 0}, {0, 0x1000, 0}, 0, 0};
+        }
+        return std::nullopt;
+    };
+    landing_hooks.on_air_contact = [](
+        PlayerState&,
+        const opentony::runtime::PositionCollisionHit& hit,
+        const opentony::runtime::PositionCommitResult&) {
+        return hit.normal[1] > 0;
+    };
+    const auto landed = PlayerPhysicsFrame::step(
+        landing_player,
+        landing_input,
+        landing_hooks);
+    CHECK(landed.landed);
+    CHECK(landing_player.physics_state() == 0);
+    CHECK(landing_player.last_state_request().reason
+        == opentony::runtime::kLandingReason);
+
+    PlayerState brake_player({0, 0, 0});
+    brake_player.set_physics_state(0);
+    PlayerPhysicsFrameHooks brake_hooks{};
+    brake_hooks.apply_ground_turn = false;
+    brake_hooks.integrate_position = false;
+    brake_hooks.ground_brake_input = [](
+        const PlayerState&,
+        const InputState&) -> std::optional<opentony::runtime::GroundBrakeInput> {
+        return opentony::runtime::GroundBrakeInput{
+            {},
+            0,
+            -0x1000,
+            0x100,
+            0,
+            0,
+            true,
+        };
+    };
+    const auto braked = PlayerPhysicsFrame::step(
+        brake_player,
+        landing_input,
+        brake_hooks);
+    CHECK(braked.ground_brake.has_value());
+    CHECK(braked.ground_brake->requested_state7);
+    CHECK(brake_player.physics_state() == 7);
+    CHECK(brake_player.last_state_request().reason
+        == opentony::runtime::kGroundStopReason);
+    CHECK(braked.dispatch.state == 7);
+
+    PlayerState damping_player;
+    damping_player.set_collision_response({30, -30, 20});
+    PlayerPhysicsFrameHooks damping_hooks{};
+    damping_hooks.velocity_damping_input = [](
+        const PlayerState&,
+        const opentony::runtime::PhysicsDispatchResult&) {
+        opentony::runtime::VelocityDampingInput config{};
+        return std::optional<opentony::runtime::VelocityDampingInput>{config};
+    };
+    const auto damping_frame = PlayerPhysicsFrame::step(
+        damping_player,
+        landing_input,
+        damping_hooks);
+    CHECK(damping_frame.velocity_damped);
+    CHECK(damping_player.collision_response()
+        == FixedPosition({23, -23, 0}));
+
+    std::cout << "Physics frame tests passed\n";
+}

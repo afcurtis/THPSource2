@@ -1,0 +1,48 @@
+version: 1
+id: pc-render-glue
+subsystem: renderer
+status: complete
+scope:
+  functions:
+  - 0x004d0a20
+  - 0x004d0a40
+  - 0x004d0bc0
+  - 0x004d3600
+  - 0x004d3a40
+  - 0x004d3a70
+  - 0x004d3ab0
+  - 0x004d40d0
+  - 0x004d4120
+  - 0x004d44d0
+  - 0x004d6090
+  - 0x004d60c0
+  - 0x004d60f0
+  - 0x004d7430
+  - 0x004d7480
+  - 0x004d7db0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/pc-platform.md
+  - re/evidence/fixtures/platform-calls-d3dm.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/pc_system.hpp
+  - src/runtime/pc_system.cpp
+  - re/gdb/probes/platform_specs.py
+  - re/gdb/probes/platform_specs_sys.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/platform_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_pc_platform.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups d3dm of platform_specs*.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`platform_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 16 of the 16 functions (the game-logic helpers of pc\d3d*.cpp: the pixel mask bit counters, the viewport rectangle, the begin-scene frame limiter and the scene end, the reversed ordering-table list and the free list, the gamma tables, the polygon extent test, the solid rectangles, the polygon heap and the software frame copy) are replayed over 2400 cases with no mismatch (at least 150 cases each; the committed fixtures keep the first 30 of each capture per function, 480 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - Direct3D, the software renderer's scene end, _controlfp, operator new / delete and the clock's sleep are services; the gamma power is the x87 intrinsic reproduced with long double.

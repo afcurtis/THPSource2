@@ -1,0 +1,47 @@
+version: 1
+id: m3d-matrix-helpers
+subsystem: collision
+status: complete
+scope:
+  functions:
+  - 0x004f5390
+  - 0x004f50d0
+  - 0x004f50f0
+  - 0x004f5f10
+  - 0x004f5430
+  - 0x004f53e0
+  - 0x004f5730
+  - 0x004f56c0
+  - 0x004f4fe0
+  - 0x004f5460
+  - 0x004f5780
+  - 0x004f4050
+  - 0x004f40d0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/m3d-culling-helpers.md
+  - re/evidence/fixtures/m3d-calls-m3dA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/m3d_matrix.cpp
+  - re/gdb/probes/m3d_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/m3d_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups m3d): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (m3d_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 13 of the 13 functions (the small matrix and GTE register helpers: the rotation from angles, the background colour and translation registers, the multiply-divide through the x87, the identity, transpose and copy of a 3x3 matrix, the rotation register loads, the multiplication of a matrix by the rotation or light matrix a column at a time and the ordering and conversion of a box''s corners) are replayed over 2600 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 390 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - nothing is a service here; the GTE register file is a window poked with random words.

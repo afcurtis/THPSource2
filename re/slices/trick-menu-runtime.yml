@@ -1,0 +1,97 @@
+version: 1
+id: trick-menu-runtime
+subsystem: tricks
+status: complete
+
+scope:
+  functions:
+    - 0x004bf860
+    - 0x004bf870
+    - 0x004bfa90
+    - 0x004bfab0
+    - 0x004bfc30
+    - 0x004bfd30
+    - 0x004c0120
+    - 0x004c0200
+    - 0x004c0230
+    - 0x004c0240
+    - 0x004c0430
+    - 0x004c0e90
+    - 0x004c0eb0
+    - 0x004c1080
+    - 0x004c13c0
+    - 0x004c13d0
+    - 0x004c2000
+    - 0x004c21a0
+    - 0x004c2700
+    - 0x004c29d0
+    - 0x004c2a10
+    - 0x004c2c10
+    - 0x004c2ed0
+    - 0x004c3050
+    - 0x004c33f0
+    - 0x004c3a80
+    - 0x004c3ca0
+    - 0x004c3d30
+    - 0x004c3dd0
+    - 0x004c40b0
+    - 0x004c40d0
+    - 0x004c40e0
+    - 0x004c4300
+  types: []
+  globals: []
+
+shared:
+  functions:
+    - 0x004c3350
+    - 0x004c1310
+    - 0x004c2890
+    - 0x004c2800
+    - 0x004c3cf0
+    - 0x004c36d0
+    - 0x004c38f0
+
+artifacts:
+  evidence:
+    - re/evidence/functions/trick-menu-runtime.md
+    - re/evidence/fixtures/trkscr-calls-trkloop.txt
+    - re/evidence/fixtures/trkscr-calls-trkscr.txt
+  native:
+    - src/runtime/trick_screens.hpp
+    - src/runtime/trick_screens_screen.cpp
+    - src/runtime/trick_screens_menu.cpp
+    - src/runtime/trick_screens_pages.cpp
+    - src/runtime/trick_screens_input.cpp
+    - src/runtime/create_screens.hpp
+    - src/runtime/trick_menu.hpp
+    - src/runtime/trick_menu.cpp
+    - src/runtime/trick_database.hpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - src/runtime/skater_window_helpers.hpp
+    - re/gdb/probes/frontend_specs_trick.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_menu.py
+    - re/gdb/probes/frontend_specs_skwin.py
+    - re/gdb/probes/frontend_specs_skstat.py
+    - re/gdb/probes/frontend_specs_screens.py
+    - re/gdb/probes/frontend_specs_screens_cases.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/trick_screens_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/trick_screens_test.cpp
+    - tests/test_trick_screens.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the trkscr and trkloop groups): the retail function is called on a random legal state built in a scratch slab (a trick menu with its manager, binding block, lists and widgets; fake lists, prompts and children whose methods are reported services; real rows built in the arena); the return value, every written byte and the ordered service calls are compared with the native replay (`trick_screens_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 40 of the 40 functions (the 7 decision functions of trick-menu-logic included) are replayed over 1180 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the trick manager's constructor, destructor and unlock state, the career's cheat test, purchase test and spending, and the engine's model, spool, sprite and render calls are seams reported by name with the arguments retail passed; the screen loop is replayed with its window's step, update, draw and deleting destructor as seams.

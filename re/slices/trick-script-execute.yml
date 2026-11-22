@@ -1,0 +1,47 @@
+version: 1
+id: trick-script-execute
+subsystem: tricks
+status: complete
+
+scope:
+  functions:
+    - 0x004be450
+    - 0x004be3b0
+    - 0x004be3c0
+    - 0x004be3e0
+  types:
+    - RuntimeSkaterMovementState
+  globals:
+    - TricksBinaryBase
+    - AnimationClock
+    - AnimationTimeScale
+
+shared:
+  functions:
+    - 0x004bf6c0
+    - 0x0048f720
+    - 0x004904d0
+    - 0x0048f5f0
+    - 0x0048f8f0
+
+artifacts:
+  evidence:
+    - re/evidence/functions/trick-script-runtime.md
+    - re/evidence/functions/bin-runtime.md
+    - re/evidence/fixtures/trick-warehouse.txt
+  native:
+    - src/runtime/trick_script.hpp
+    - src/runtime/trick_script.cpp
+    - src/runtime/retail_image.hpp
+    - scripts/make_trick_trace_fixture.py
+  tests:
+    - src/runtime/trick_script_test.cpp
+    - src/runtime/trick_retail_trace_test.cpp
+    - tests/test_trick_script.py
+
+open_questions: []
+
+completion:
+  - "625 retail Warehouse script executions (a natural ollie plus forced launches: twelve distinct flips and grabs, and two state scripts) replay from their raw 0x3538-byte skater image, and again stand-alone from the Execute entry image, with identical images, service calls and arguments; 40 of the 85 defined opcodes were exercised and the interpreter corrections to bin-runtime.md (0x43, 0x16, 0x3a, 0x1e, 0x31, 0x49, undefined commands) are recorded."
+  - "Documented exclusion, not a blocker - the 45 opcodes no recording reached (grind, manual, plant and spin scripts) are disassembly-derived (a handful - 0x16, 0x2c, 0x3a, 0x3d, 0x3e, 0x39, 0x43, 0x49, 0x09 - are also unit tested); opcode 0x21 (basis rotation) raises TrickScriptFault until a trace exercises it."
+  - "Documented exclusion, not a blocker - the service bodies (Bail, Trick_TakeOff, Trick_Land, the point timer, animation and sound) are trace seams; the scoring ones are the trick-score-stack slice (native since Phase 4.10b)."

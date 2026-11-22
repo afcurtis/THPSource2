@@ -1,0 +1,20 @@
+version: 1
+level: warehouse
+frames: 256
+
+# The recovered Warehouse ollie gate is driven by the CROSS action record
+# (pad position, not trick name; docs/HAL.md "Input"); keep that mapping
+# explicit until the upstream user-facing binding is reconstructed.
+input:
+  - frame: 20
+    action: cross
+    state: press
+  - frame: 28
+    action: cross
+    state: release
+
+forensics:
+  - all
+
+expect:
+  retail: match

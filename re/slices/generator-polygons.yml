@@ -1,0 +1,59 @@
+version: 1
+id: generator-polygons
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004417c0
+  - 0x004417e0
+  - 0x00441830
+  - 0x00441850
+  - 0x00441880
+  - 0x004419c0
+  - 0x00441aa0
+  - 0x00441ae0
+  - 0x00441cd0
+  - 0x00441da0
+  - 0x00442100
+  - 0x00442210
+  - 0x00442670
+  - 0x00442780
+  - 0x00442970
+  - 0x00442ae0
+  - 0x00442e90
+  - 0x00442f40
+  - 0x004431f0
+  - 0x00443200
+  - 0x00443210
+  - 0x00443250
+  - 0x00443290
+  - 0x004432b0
+  - 0x004432d0
+  - 0x004434e0
+  - 0x00443580
+  - 0x004435e0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/generator-objects.md
+  - re/evidence/fixtures/gen-calls-gpoly.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/gen_objs.hpp
+  - src/runtime/gen_objs_poly.cpp
+  - re/gdb/probes/gen_specs.py
+  - re/gdb/probes/gen_specs_poly.py
+  - re/gdb/probes/gen_specs_model.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/gen_objs_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_generator_objects.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of gen_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`gen_objs_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 28 of the 28 functions (the ring-of-points polygons and polygon lists of the generator) are replayed over 2795 cases with no mismatch (at least 97 cases each).'
+- Documented exclusion, not a blocker - the engine's progress call is a service; appending to a loop, walking a ring as a chain and an empty polygon with no points loop for ever or fault in retail and are not generated; the integer square root is the engine's float-based one, replayed in the port.

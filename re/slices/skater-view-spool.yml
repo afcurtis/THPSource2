@@ -1,0 +1,42 @@
+version: 1
+id: skater-view-spool
+subsystem: frontend
+status: complete
+scope:
+  functions:
+  - 0x004a62b0
+  - 0x004a6340
+  - 0x004a63b0
+  - 0x004a6440
+  - 0x004a6560
+  - 0x004a6720
+  - 0x004a67a0
+  - 0x004a67c0
+  - 0x004a6880
+  - 0x004a68f0
+  - 0x004a6bf0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/player-spool.md
+  - re/evidence/fixtures/pspool-calls-view.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/skater_spool.hpp
+  - src/runtime/skater_spool.cpp
+  - re/gdb/probes/pspool_specs.py
+  - re/gdb/probes/pspool_specs_view.py
+  - re/gdb/probes/pspool_specs_file.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/player_spool_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_player_spool.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of pspool_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`player_spool_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 11 of the 11 functions (player_spool.cpp, the skater view''s spool state) are replayed over 1430 cases with no mismatch (at least 130 cases each).'
+- Documented exclusion, not a blocker - the skater manager, the file-name builder, the part-manifest parser, the preview object and the PSX region calls are services; SkaterView_ResetSpool (native in PlayerSelect) is a service here; a null model file would fault inside Mem_Copy in retail and is not generated.

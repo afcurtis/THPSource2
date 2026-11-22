@@ -1,0 +1,78 @@
+#include "fixed_step_driver.hpp"
+
+#include "tests/test_assets.hpp"
+#include "tests/test_check.hpp"
+#include <filesystem>
+#include <iostream>
+#include <string>
+
+namespace {
+
+[[nodiscard]] std::string asset_path(const char* relative) {
+    const std::filesystem::path root =
+        opentony::test::data_dir();
+    return (root / relative).string();
+}
+
+} // namespace
+
+int main() {
+    const std::string trg = asset_path("SKWARE_T.TRG");
+    const std::string psx = asset_path("SKWARE.PSX");
+    if (!opentony::test::have_file(trg)
+        || !opentony::test::have_file(psx)) {
+        return opentony::test::exit_code();
+    }
+
+    opentony::trg::LevelRuntime level(trg, psx, asset_path(""));
+    level.initialize();
+    opentony::runtime::PlayerState player;
+    opentony::runtime::GameplayFrame gameplay(level, player);
+    opentony::runtime::FixedStepDriver driver(
+        gameplay,
+        opentony::runtime::FixedStepConfig{16, 2, 0x80});
+    const auto bindings = opentony::runtime::InputBindings::movement_defaults();
+    opentony::runtime::DirectInputKeyboardState keyboard{};
+    keyboard[opentony::runtime::kDikLeft] = 0x80;
+
+    const auto partial = driver.advance(15, keyboard, bindings);
+    CHECK(!partial.stepped);
+    CHECK(partial.steps == 0);
+    CHECK(driver.accumulated_ms() == 15);
+
+    const auto first = driver.advance(1, keyboard, bindings);
+    CHECK(first.stepped);
+    CHECK(first.steps == 1);
+    CHECK(first.consumed_ms == 16);
+    CHECK(first.dropped_ms == 0);
+    CHECK(first.last.frame_index == 1);
+    CHECK(first.last.frame_scale_q8 == 0x80);
+    CHECK(first.last.input.action_mask()
+        == opentony::runtime::movement_bit(
+            opentony::runtime::MovementAction::Left));
+
+    const auto analog = driver.advance(
+        16,
+        0,
+        static_cast<std::int8_t>(0x29),
+        0);
+    CHECK(analog.stepped);
+    CHECK(analog.steps == 1);
+    CHECK(analog.last.input.action_mask() == 0);
+    CHECK(analog.last.input.horizontal_axis() == 0x29);
+    CHECK(analog.last.input.effective_movement_mask()
+        == opentony::runtime::movement_bit(
+            opentony::runtime::MovementAction::Right));
+    CHECK(analog.last.input.movement(
+        opentony::runtime::MovementAction::Right).pressed);
+
+    const auto capped = driver.advance(80, keyboard, bindings);
+    CHECK(capped.steps == 2);
+    CHECK(capped.consumed_ms == 32);
+    CHECK(capped.dropped_ms == 48);
+    CHECK(capped.last.frame_index == 4);
+    CHECK(driver.accumulated_ms() == 0);
+
+    std::cout << "Fixed-step driver tests passed\n";
+    return opentony::test::exit_code();
+}

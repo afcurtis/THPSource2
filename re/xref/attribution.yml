@@ -1,0 +1,149 @@
+# Source-file attribution for functions with no assert path (4.12 Cartography). `tony xref coverage` reads
+# this after re/xref/source-units.yml and the PSX unit matches; neither of those is changed by it.
+#
+# Two sections, same row shape: every function whose address lies in [first, last] gets `unit`.
+#   reviewed:   hand-checked rows. They win over `generated`, and `scripts/neighbour_scan.py --write-attribution`
+#               never touches them. Give `basis` and `note` (what you read).
+#   generated:  rewritten by `python scripts/neighbour_scan.py --write-attribution` from the unattributed runs:
+#     interior  both neighbours are the same file (MSVC emits an object's functions contiguously);
+#     layout    a run between two files, split where the callers and the data statics (a static is shared
+#               only by one object's functions, laid out in object order) point from one file to the other;
+#               margin = votes separating the chosen split from the next best. On a hold-out of 64 known file
+#               boundaries (an attributed window hidden, then re-derived) the layout split was right 60 times (94%):
+#               treat it as a hint that the first task of the porting session (walk the range in the objdump)
+#               confirms, like the Ghidra function boundaries it already corrects.
+#   Functions the evidence cannot place stay unattributed; `re/xref/milestones.yml` assigns them to a
+#   sub-milestone by address range instead.
+# A `unit` starting with `~` names a library or area, not a Neversoft source file.
+version: 1
+
+reviewed:
+
+generated:
+  - {first: 0x004011e0, last: 0x004012d0, unit: "baddy.cpp", basis: layout, margin: 8}
+  - {first: 0x004027c0, last: 0x004027f0, unit: "baddy.cpp", basis: interior, margin: 0}
+  - {first: 0x0040ae20, last: 0x0040ae40, unit: "bit2.cpp", basis: interior, margin: 0}
+  - {first: 0x0040be40, last: 0x0040be60, unit: "camera.cpp", basis: interior, margin: 0}
+  - {first: 0x004103b0, last: 0x004103b0, unit: "camera.cpp", basis: interior, margin: 0}
+  - {first: 0x004117f0, last: 0x00411f00, unit: "camera.cpp", basis: layout, margin: 8}
+  - {first: 0x00418610, last: 0x00418610, unit: "commonfe.cpp", basis: interior, margin: 0}
+  - {first: 0x00418980, last: 0x00418980, unit: "commonfe.cpp", basis: interior, margin: 0}
+  - {first: 0x00418b60, last: 0x00418b60, unit: "commonfe.cpp", basis: interior, margin: 0}
+  - {first: 0x00418d30, last: 0x00418d30, unit: "commonfe.cpp", basis: interior, margin: 0}
+  - {first: 0x00418f20, last: 0x00418f20, unit: "commonfe.cpp", basis: interior, margin: 0}
+  - {first: 0x004191f0, last: 0x004191f0, unit: "commonfe.cpp", basis: interior, margin: 0}
+  - {first: 0x0041c490, last: 0x0041c4a0, unit: "create.cpp", basis: interior, margin: 0}
+  - {first: 0x00423c90, last: 0x00423cb0, unit: "create_color.cpp", basis: layout, margin: 2}
+  - {first: 0x00424870, last: 0x004248e0, unit: "create_spool.cpp", basis: layout, margin: 2}
+  - {first: 0x00427e40, last: 0x00427e40, unit: "creedit.cpp", basis: interior, margin: 0}
+  - {first: 0x00429680, last: 0x00429910, unit: "perwin.cpp", basis: interior, margin: 0}
+  - {first: 0x0042aab0, last: 0x0042aab0, unit: "appwin.cpp", basis: interior, margin: 0}
+  - {first: 0x0042b070, last: 0x0042b070, unit: "appwin.cpp", basis: interior, margin: 0}
+  - {first: 0x0042df60, last: 0x0042e180, unit: "cresel.cpp", basis: interior, margin: 0}
+  - {first: 0x0042f540, last: 0x0042f700, unit: "crowd.cpp", basis: interior, margin: 0}
+  - {first: 0x004301a0, last: 0x004301a0, unit: "db.cpp", basis: interior, margin: 0}
+  - {first: 0x004302c0, last: 0x004302c0, unit: "db.cpp", basis: interior, margin: 0}
+  - {first: 0x00432180, last: 0x00432180, unit: "dust.cpp", basis: layout, margin: 2}
+  - {first: 0x00433090, last: 0x004333c0, unit: "leveleditor.cpp", basis: layout, margin: 2}
+  - {first: 0x00439540, last: 0x00439540, unit: "leveleditor.cpp", basis: layout, margin: 4}
+  - {first: 0x004397d0, last: 0x00439900, unit: "levelgen.cpp", basis: layout, margin: 4}
+  - {first: 0x0043f5a0, last: 0x0043f6c0, unit: "levelgen.cpp", basis: layout, margin: 2}
+  - {first: 0x004436d0, last: 0x004436d0, unit: "genobjs.cpp", basis: layout, margin: 20}
+  - {first: 0x0044ad80, last: 0x0044ad80, unit: "fonttools.cpp", basis: interior, margin: 0}
+  - {first: 0x0045ef80, last: 0x0045ef80, unit: "m3d.cpp", basis: interior, margin: 0}
+  - {first: 0x00462490, last: 0x00462490, unit: "m3dcolij.cpp", basis: layout, margin: 2}
+  - {first: 0x00464bb0, last: 0x00464c00, unit: "m3dutils.cpp", basis: layout, margin: 2}
+  - {first: 0x00466b70, last: 0x00466bb0, unit: "main.cpp", basis: interior, margin: 0}
+  - {first: 0x00466c10, last: 0x00466de0, unit: "main.cpp", basis: interior, margin: 0}
+  - {first: 0x0046b0a0, last: 0x0046b510, unit: "mainmenu.cpp", basis: interior, margin: 0}
+  - {first: 0x0046b690, last: 0x0046b690, unit: "mainmenu.cpp", basis: interior, margin: 0}
+  - {first: 0x0046c670, last: 0x0046c670, unit: "mech.cpp", basis: interior, margin: 0}
+  - {first: 0x0046d010, last: 0x0046d940, unit: "mech.cpp", basis: interior, margin: 0}
+  - {first: 0x0046dd20, last: 0x0046dd20, unit: "mech.cpp", basis: interior, margin: 0}
+  - {first: 0x0046e7f0, last: 0x0046e7f0, unit: "mem.cpp", basis: layout, margin: 12}
+  - {first: 0x0046f460, last: 0x0046f480, unit: "mem.cpp", basis: interior, margin: 0}
+  - {first: 0x0046f550, last: 0x0046f940, unit: "menu.cpp", basis: layout, margin: 2}
+  - {first: 0x0046fe90, last: 0x0046fe90, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x00470530, last: 0x00470540, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x004707e0, last: 0x004707e0, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x00470940, last: 0x00470940, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x00470a70, last: 0x00470a70, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x00470d20, last: 0x00470d20, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x00470f50, last: 0x00471050, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x004711b0, last: 0x004711b0, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x00471750, last: 0x00471750, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x00472b50, last: 0x00472b50, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x00473220, last: 0x00473290, unit: "menu.cpp", basis: interior, margin: 0}
+  - {first: 0x00473690, last: 0x00473690, unit: "mess.cpp", basis: interior, margin: 0}
+  - {first: 0x004739d0, last: 0x004739d0, unit: "mess.cpp", basis: interior, margin: 0}
+  - {first: 0x00480c30, last: 0x00480c30, unit: "ob.cpp", basis: interior, margin: 0}
+  - {first: 0x0048b2c0, last: 0x0048b2c0, unit: "panel.cpp", basis: interior, margin: 0}
+  - {first: 0x0048d030, last: 0x0048d040, unit: "panel.cpp", basis: interior, margin: 0}
+  - {first: 0x0048d830, last: 0x0048d830, unit: "panel.cpp", basis: interior, margin: 0}
+  - {first: 0x0048e620, last: 0x0048e620, unit: "panel.cpp", basis: interior, margin: 0}
+  - {first: 0x0048e8a0, last: 0x0048e950, unit: "panel.cpp", basis: interior, margin: 0}
+  - {first: 0x0048ea80, last: 0x0048eb70, unit: "physics.cpp", basis: layout, margin: 38}
+  - {first: 0x0049fef0, last: 0x0049fef0, unit: "platform.cpp", basis: interior, margin: 0}
+  - {first: 0x004a0710, last: 0x004a1270, unit: "platform.cpp", basis: interior, margin: 0}
+  - {first: 0x004a1440, last: 0x004a15a0, unit: "player_ui.cpp", basis: layout, margin: 2}
+  - {first: 0x004a19f0, last: 0x004a19f0, unit: "player_ui.cpp", basis: interior, margin: 0}
+  - {first: 0x004a3110, last: 0x004a3110, unit: "playsel.cpp", basis: interior, margin: 0}
+  - {first: 0x004a3bd0, last: 0x004a3bd0, unit: "playsel.cpp", basis: interior, margin: 0}
+  - {first: 0x004a48e0, last: 0x004a48e0, unit: "playsel.cpp", basis: interior, margin: 0}
+  - {first: 0x004a5690, last: 0x004a5690, unit: "playsel.cpp", basis: interior, margin: 0}
+  - {first: 0x004a5880, last: 0x004a6260, unit: "playsel.cpp", basis: layout, margin: 2}
+  - {first: 0x004a7730, last: 0x004a77e0, unit: "playsel.cpp", basis: layout, margin: 2}
+  - {first: 0x004a78b0, last: 0x004a78f0, unit: "playsel.cpp", basis: layout, margin: 2}
+  - {first: 0x004a9fd0, last: 0x004a9fd0, unit: "rail.cpp", basis: interior, margin: 0}
+  - {first: 0x004aaf10, last: 0x004aaf30, unit: "rail.cpp", basis: interior, margin: 0}
+  - {first: 0x004ab9c0, last: 0x004ab9c0, unit: "redbook.cpp", basis: layout, margin: 12}
+  - {first: 0x004ac430, last: 0x004ac610, unit: "screentools.cpp", basis: layout, margin: 4}
+  - {first: 0x004ac7c0, last: 0x004ac800, unit: "screentools.cpp", basis: interior, margin: 0}
+  - {first: 0x004acb50, last: 0x004acbd0, unit: "screentools.cpp", basis: interior, margin: 0}
+  - {first: 0x004ad870, last: 0x004ad890, unit: "sfx.cpp", basis: interior, margin: 0}
+  - {first: 0x004ad9b0, last: 0x004ad9b0, unit: "sfx.cpp", basis: interior, margin: 0}
+  - {first: 0x004ad9d0, last: 0x004ada10, unit: "sfx.cpp", basis: interior, margin: 0}
+  - {first: 0x004b50a0, last: 0x004b50a0, unit: "spool.cpp", basis: layout, margin: 2}
+  - {first: 0x004b70b0, last: 0x004b70b0, unit: "statwin.cpp", basis: interior, margin: 0}
+  - {first: 0x004b7430, last: 0x004b77b0, unit: "statedit.cpp", basis: layout, margin: 2}
+  - {first: 0x004b9610, last: 0x004b9710, unit: "texteffects.cpp", basis: interior, margin: 0}
+  - {first: 0x004b9860, last: 0x004b9860, unit: "texteffects.cpp", basis: interior, margin: 0}
+  - {first: 0x004b9b30, last: 0x004b9c80, unit: "texteffects.cpp", basis: interior, margin: 0}
+  - {first: 0x004bd1e0, last: 0x004bd1e0, unit: "trickdb.cpp", basis: layout, margin: 10}
+  - {first: 0x004bd700, last: 0x004bd740, unit: "trickob.cpp", basis: layout, margin: 10}
+  - {first: 0x004bdd00, last: 0x004be350, unit: "trickob.cpp", basis: layout, margin: 2}
+  - {first: 0x004be3b0, last: 0x004be3e0, unit: "trickscript.cpp", basis: layout, margin: 2}
+  - {first: 0x004c4570, last: 0x004c4620, unit: "tricktips.cpp", basis: interior, margin: 0}
+  - {first: 0x004c4b10, last: 0x004c4b10, unit: "trig.cpp", basis: layout, margin: 6}
+  - {first: 0x004c9400, last: 0x004c9400, unit: "utils.cpp", basis: interior, margin: 0}
+  - {first: 0x004c96d0, last: 0x004c96d0, unit: "utils.cpp", basis: interior, margin: 0}
+  - {first: 0x004c9880, last: 0x004c9880, unit: "utils.cpp", basis: interior, margin: 0}
+  - {first: 0x004c9fd0, last: 0x004ca0a0, unit: "utils.cpp", basis: interior, margin: 0}
+  - {first: 0x004d3f50, last: 0x004d4120, unit: "pc\\d3dpoly.cpp", basis: layout, margin: 2}
+  - {first: 0x004d44d0, last: 0x004d44d0, unit: "pc\\d3dpoly.cpp", basis: layout, margin: 2}
+  - {first: 0x004d6090, last: 0x004d60f0, unit: "pc\\d3dpoly.cpp", basis: layout, margin: 2}
+  - {first: 0x004d7430, last: 0x004d7430, unit: "pc\\d3dpoly.cpp", basis: layout, margin: 2}
+  - {first: 0x004d7480, last: 0x004d7480, unit: "pc\\d3dpoly.cpp", basis: layout, margin: 2}
+  - {first: 0x004dae00, last: 0x004dae00, unit: "pc\\d3dtimer.cpp", basis: layout, margin: 2}
+  - {first: 0x004dbd90, last: 0x004dbd90, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004dbee0, last: 0x004dbee0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004dc050, last: 0x004dc0b0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004dc100, last: 0x004dc3a0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004dc620, last: 0x004dc9e0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004dcb00, last: 0x004dcb00, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004dcbc0, last: 0x004dd6d0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004dd890, last: 0x004dd890, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004ddb70, last: 0x004ddbe0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004ddc00, last: 0x004ddce0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004dddb0, last: 0x004de270, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004de300, last: 0x004de5f0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004de7c0, last: 0x004de7c0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004de9c0, last: 0x004de9c0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004deb00, last: 0x004deb50, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004dece0, last: 0x004defc0, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004df030, last: 0x004df030, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004df160, last: 0x004df160, unit: "pc\\netgame.cpp", basis: layout, margin: 4}
+  - {first: 0x004f6400, last: 0x004f6400, unit: "pc\\thstub.cpp", basis: layout, margin: 2}
+  - {first: 0x004f6660, last: 0x004f6660, unit: "pc\\winmain.cpp", basis: layout, margin: 2}
+  - {first: 0x004f6850, last: 0x004f6c60, unit: "pc\\winmain.cpp", basis: layout, margin: 2}
+  - {first: 0x004f6d00, last: 0x004f6d00, unit: "pc\\winmain.cpp", basis: layout, margin: 2}

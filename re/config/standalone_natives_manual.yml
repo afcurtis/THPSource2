@@ -1,0 +1,162 @@
+# Written by hand (tony/kit_hooks.py MANUAL_NATIVES_PATH). The generated rows are in standalone_natives.yml and come from the adapter tables of the replay
+# tests; these natives have none, because Phase 4 modelled them on value-owned C++ types (src/assets/{resource,pre,fnt}_runtime) and no test builds a Kit
+# for them. src/runtime/resource_kit.* is that Kit: the same functions on the retail memory model, so the objects other natives read (the file layer's
+# words, the PRE manager, the font table) are written as retail writes them. Conventions are checked against each function's `ret` by `tony hooks verify`.
+version: 1
+
+natives:
+  - {name: FileIO_AddDirToFileName, address: 0x00448d00, kit: resource, call: "add_dir_to_file_name(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: FileIO_AddSubDirToFileName, address: 0x00448d30, kit: resource, call: "add_sub_dir_to_file_name(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: FileIO_OpenResource, address: 0x00449030, kit: resource, call: "open_resource(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  - {name: FileIO_LoadResource, address: 0x00449230, kit: resource, call: "load_resource(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: FileIO_SyncResource, address: 0x00449660, kit: resource, call: "sync_resource()", returns: false, convention: cdecl, stack_args: 0}
+  - {name: FileIO_GetSubDir, address: 0x004496f0, kit: resource, call: "get_sub_dir()", returns: true, convention: cdecl, stack_args: 0}
+  - {name: FileIO_SetSubDir, address: 0x00449700, kit: resource, call: "set_sub_dir(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: Font_Parse, address: 0x00449cd0, kit: resource, call: "font_parse(self, a[0])", returns: true, convention: thiscall, stack_args: 1}
+  - {name: Font_Load, address: 0x0044ada0, kit: resource, call: "font_load(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  - {name: Font_Create, address: 0x0044aea0, kit: resource, call: "font_create(a[0], a[1])", returns: true, convention: cdecl, stack_args: 2}
+  - {name: Font_Find, address: 0x0044b000, kit: resource, call: "font_find(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  - {name: Font_Unload, address: 0x0044b0a0, kit: resource, call: "font_unload(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: String_FindNoCase, address: 0x004b82b0, kit: resource, call: "find_no_case(a[0], a[1])", returns: true, convention: cdecl, stack_args: 2}
+  - {name: PRE_CreateManager, address: 0x004a8ee0, kit: resource, call: "create_manager()", returns: false, convention: cdecl, stack_args: 0}
+  - {name: PRE_InitializeManager, address: 0x004a9000, kit: resource, call: "initialize_manager(self)", returns: true, convention: thiscall, stack_args: 0}
+  - {name: PRE_Load, address: 0x004a90f0, kit: resource, call: "load(self, a[0], a[1])", returns: false, convention: thiscall, stack_args: 2}
+  - {name: PRE_LoadIntoSlot, address: 0x004a9110, kit: resource, call: "load_into_slot(self, a[0], a[1])", returns: false, convention: thiscall, stack_args: 2}
+  - {name: PRE_FindEmbeddedResource, address: 0x004a9410, kit: resource, call: "find_embedded(self, a[0], a[1])", returns: true, convention: thiscall, stack_args: 2}
+  - {name: D3DTex_AllocRecord, address: 0x004d9880, kit: resource, call: "alloc_record()", returns: true, convention: cdecl, stack_args: 0}
+  - {name: PRE_FindEntryInBuffer, address: 0x004a9480, kit: resource, call: "find_entry_in_buffer(a[0], a[1], a[2])", returns: true, convention: stdcall, stack_args: 3}
+  # milestone 7c: the two in-scope functions between Options_Run and its first frame that had a typed model only
+  - {name: PRE_Unload, address: 0x004a9330, kit: resource, call: "unload(self, a[0])", returns: false, convention: thiscall, stack_args: 1}
+  - {name: FileIO_Exists, address: 0x00449460, kit: resource, call: "file_exists(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  # milestone 9: the cold boot's functions that had a typed model only
+  - {name: FileIO_Init, address: 0x00448f50, kit: resource, call: "file_init()", returns: false, convention: cdecl, stack_args: 0}
+  - {name: Rnd, address: 0x004c9340, kit: core, call: "random(S(a[0]))", returns: true, convention: cdecl, stack_args: 1}
+  - {name: Tricks_InitializeManager, address: 0x004bb4f0, kit: createobj, call: "trick_manager_construct(self)", returns: true, convention: thiscall, stack_args: 0}
+  - {name: TrickTable_BuildForPlayer, address: 0x004bcf00, kit: createobj, call: "trick_table_build(self, a[0], a[1])", returns: false, convention: thiscall, stack_args: 2}
+  - {name: Spool_FindEnviroItem, address: 0x004b1ef0, kit: world, call: "spool_find_enviro_item(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  - {name: TrickTips_Reset, address: 0x004c4570, kit: createobj, call: "tips_reset()", returns: false, convention: cdecl, stack_args: 0}
+  - {name: TrickScript_CommandSize, address: 0x004bf6c0, kit: skater, call: "trick_script_command_size(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  - {name: TrickScript_ReadWord, address: 0x004be3c0, kit: skater, call: "trick_script_read_word(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  - {name: TRG_ConstructSubtype0x0192, address: 0x0049f250, kit: world, call: "construct_subtype_0x0192(self, a[0], a[1])", returns: true, convention: thiscall, stack_args: 2}
+  - {name: TRG_ConstructTrafficObject, address: 0x00412640, kit: world, call: "construct_traffic_object(self, a[0], a[1], a[2])", returns: true, convention: thiscall, stack_args: 3}
+  # 12 s5: the traffic car's per-frame update (the car's vtable slot 3; world_traffic.cpp) and the octagonal distance it asks for
+  - {name: TRG_UpdateTrafficObject, address: 0x00412960, kit: world, call: "update_traffic_object(self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: Utils_CrapDist, address: 0x004c9620, kit: core, call: "crap_distance_of(a[0], a[1])", returns: true, convention: cdecl, stack_args: 2}
+  - {name: TRG_CreateScriptObject, address: 0x00401060, kit: world, call: "construct_script_object(self, a[0], a[1])", returns: true, convention: thiscall, stack_args: 2}
+  - {name: Powerup_CreateFromTrigger, address: 0x004a8e50, kit: world, call: "powerup_create_from_trigger(a[0], a[1], a[2], a[3], a[4])", returns: true, convention: cdecl, stack_args: 5}
+  - {name: Powerup_Construct, address: 0x004a7c50, kit: world, call: "powerup_construct(self, a[0], a[1], a[2], a[3], a[4], a[5])", returns: true, convention: thiscall, stack_args: 6}
+  - {name: TrickConfig_InitializeCharacter, address: 0x004170d0, kit: career, call: "career.initialize_trick_config(S(a[0]), a[1])", returns: false, convention: cdecl, stack_args: 2}
+  # the trick menu's unlock of section 6's tricks when cheat 0 is unlocked (TrickMenu_Construct: this = its manager, character 0, alternate 1)
+  - {name: TrickDatabase_ApplyUnlockState, address: 0x004bbd70, kit: career, call: "career.apply_trick_unlock_state(self, S(a[0]), (a[1] & 0xff) != 0)", returns: false, convention: thiscall, stack_args: 2}
+  # the main menu's pick-by-mouse methods (slot 7; in no symbol table) and the wheel's circle test (scope.yml files it under directplay)
+  - {name: NetMouse_HitCircle, address: 0x004dbfd0, kit: net, call: "hit_circle(a[0], a[1], a[2])", returns: true, convention: cdecl, stack_args: 3}
+  - {name: MainMenuWheel_PickByMouse, address: 0x004dcf80, kit: net, call: "main_menu_wheel_pick(self)", returns: true, convention: thiscall, stack_args: 0}
+  - {name: MainMenuWindow_PickByMouse, address: 0x004dd140, kit: net, call: "main_menu_window_pick(self)", returns: true, convention: thiscall, stack_args: 0}
+  - {name: Sprite_DrawRotated, address: 0x00457940, kit: render, call: "sprite_draw_rotated(self, S(a[0]), S(a[1]), S(a[2]))", returns: false, convention: thiscall, stack_args: 3}
+  # the two rows 5.4a left out because their replay test hands them TRICKS.BIN from the fixture (reset_source(c)): live, Career::reset_save_image loads it as
+  # retail's trick manager does, so the source is empty
+  - {name: Career_ResetSaveImage, address: 0x004138f0, kit: career, call: "career.reset_save_image({})", returns: false, convention: cdecl, stack_args: 0}
+  - {name: Career_ApplyLoadedSave, address: 0x004165d0, kit: career, call: "career.apply_loaded_save({})", returns: false, convention: cdecl, stack_args: 0}
+  - {name: Animation_Cycle, address: 0x00480890, kit: skater, call: "animation_cycle(self, a[0], a[1])", returns: false, convention: thiscall, stack_args: 2}
+  # the multimedia timer's callback: the standalone's Game_FrameTick seam delivers it once a call, as the hooked build's lockstep clock does (src/hooks/clock.cpp)
+  - {name: SimulationTimeTimerCallback, address: 0x004dace0, kit: math, call: "timer_callback(a[2])", returns: false, convention: stdcall, stack_args: 5}
+  # the pick-by-mouse methods (vtable slot 7) of the window-graph classes and their rectangle test (src/runtime/net_mouse.cpp). scope.yml files them under the netgame because
+  # nothing calls them directly; every menu screen calls them through the vtable.
+  - {name: NetMouse_HitRect, address: 0x004dbf90, kit: net, call: "hit_rect(a[0], a[1], a[2], a[3])", returns: true, convention: cdecl, stack_args: 4}
+  - {name: MenuList_PickByMouse, address: 0x004dc480, kit: net, call: "menu_list_pick(self)", returns: true, convention: thiscall, stack_args: 0}
+  - {name: ScreenElement_PickByMouse, address: 0x004dc9f0, kit: net, call: "element_pick(self)", returns: true, convention: thiscall, stack_args: 0}
+  - {name: TextScreenElement_PickByMouse, address: 0x004dca60, kit: net, call: "text_element_pick(self)", returns: true, convention: thiscall, stack_args: 0}
+  - {name: SpriteScreenElement_PickByMouse, address: 0x004dcb30, kit: net, call: "sprite_element_pick(self)", returns: true, convention: thiscall, stack_args: 0}
+  - {name: SlicedImage2_PickByMouse, address: 0x004dcb70, kit: net, call: "image_pick(self)", returns: true, convention: thiscall, stack_args: 0}
+  - {name: PromptWindow_PickByMouse, address: 0x004dcc20, kit: net, call: "prompt_window_pick(self)", returns: true, convention: thiscall, stack_args: 0}
+  # the texture layer (src/runtime/texture_kit.*, 7b continued): retail's D3DTex_* on the surface store of src/runtime/surface_store.*
+  - {name: D3DTex_OpenImage, address: 0x004d8df0, kit: texture, call: "open_image(a[0], a[1])", returns: true, convention: cdecl, stack_args: 2}
+  - {name: D3DTex_EnsureSourcePixels, address: 0x004d8990, kit: texture, call: "ensure_source_pixels(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: D3DTex_UploadRgbPixels, address: 0x004d9310, kit: texture, call: "upload_rgb_pixels(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: D3DTex_UploadIndexedPixels, address: 0x004d9630, kit: texture, call: "upload_indexed_pixels(a[0], a[1], a[2])", returns: false, convention: cdecl, stack_args: 3}
+  - {name: D3DTex_UploadTexture, address: 0x004d8f10, kit: texture, call: "upload_texture(a[0], a[1], a[2], a[3])", returns: false, convention: cdecl, stack_args: 4}
+  # the rest of the texture layer and the sprite layer (7b continued, part 3): at the addresses of the seams of the same names
+  - {name: D3DTex_DestroyRecord, address: 0x004d8b50, kit: texture, call: "destroy_record(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  - {name: D3DTex_GrayTexture, address: 0x004d9f50, kit: texture, call: "gray_texture(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: D3DTex_LoadIndexedBitmap, address: 0x004d9950, kit: texture, call: "load_indexed_bitmap(a[0], a[1], a[2], a[3])", returns: true, convention: cdecl, stack_args: 4}
+  - {name: D3DSprite_BuildTiles, address: 0x004d83a0, kit: texture, call: "build_tiles(a[0], a[1], a[2])", returns: true, convention: cdecl, stack_args: 3}
+  - {name: D3DSprite_Create, address: 0x004d74a0, kit: texture, call: "sprite_create(self, a[0], a[1], a[2])", returns: true, convention: thiscall, stack_args: 3}
+  - {name: D3DSprite_Destroy, address: 0x004d78c0, kit: texture, call: "sprite_destroy(self)", returns: false, convention: thiscall, stack_args: 0}
+  # the PSX region parser (src/runtime/psx_env_kit.*, 7b continued, part 4): PsxSpool reaches the first by the service `parse_environment`
+  - {name: PSX_ParseEnvironment, address: 0x004b2450, kit: psxenv, call: "parse_environment(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: PSX_FinalizeEnvironment, address: 0x004647c0, kit: psxenv, call: "finalize_environment(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  # the draw path (src/runtime/draw_kit.*, milestone 7c): the ordering-table walk onto the HAL, and the scene bracket at the addresses of its two hal seams
+  - {name: Db_ClearOrderingTable, address: 0x004d3b00, kit: draw, call: "clear_ordering_table(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: D3D_DrawPolygonList, address: 0x004d3160, kit: draw, call: "draw_polygon_list(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: D3DPoly_StartScene, address: 0x004d3b40, kit: draw, call: "start_scene(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: D3D_PresentFrame, address: 0x004d0c30, kit: draw, call: "present_frame()", returns: false, convention: cdecl, stack_args: 0, unchecked: "its one ret (0x004d0cb7, plain) comes before the error tails, which end in exit(); takes no arguments"}
+  # milestone 8c: the D3D_Draw* handlers the retail walk dispatches to (D3DPrimitiveDispatchTable), each by the PSX command it draws (src/trg/render_command_dispatch.cpp has the same map),
+  # the viewport rectangle and the buffer clear. Thiscalls with the packet in ECX; the state the walk sets is read from the retail words (DrawKit::draw_handler).
+  - {name: D3D_DrawSolidTriangle, address: 0x004d42f0, kit: draw, call: "draw_handler(0x20, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawTexturedTriangle, address: 0x004d45f0, kit: draw, call: "draw_handler(0x24, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawSolidQuad, address: 0x004d49e0, kit: draw, call: "draw_handler(0x28, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawTexturedQuad, address: 0x004d4bf0, kit: draw, call: "draw_handler(0x2c, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawGouraudTriangle, address: 0x004d5040, kit: draw, call: "draw_handler(0x30, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawTexturedGouraudTriangle, address: 0x004d5280, kit: draw, call: "draw_handler(0x34, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawGouraudQuad, address: 0x004d56c0, kit: draw, call: "draw_handler(0x38, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawTexturedGouraudQuad, address: 0x004d5960, kit: draw, call: "draw_handler(0x3c, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawSolidRectangle, address: 0x004d5e40, kit: draw, call: "draw_handler(0x60, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawLine, address: 0x004d6560, kit: draw, call: "draw_handler(0x40, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawLineStrip, address: 0x004d6120, kit: draw, call: "draw_handler(0x48, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawClosedLineStrip, address: 0x004d6320, kit: draw, call: "draw_handler(0x4c, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawColoredLine, address: 0x004d66f0, kit: draw, call: "draw_handler(0x50, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_DrawGeneralPolygon, address: 0x004d68b0, kit: draw, call: "draw_handler(0xb0, self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: D3D_SetViewportRect, address: 0x004d36c0, kit: draw, call: "set_viewport_rect(a[0], a[1], a[2], a[3])", returns: false, convention: cdecl, stack_args: 4}
+  - {name: D3D_ClearBuffers, address: 0x004d0ec0, kit: draw, call: "clear_buffers()", returns: false, convention: cdecl, stack_args: 0, unchecked: "its plain ret (0x004d0f7a) is reached by the early exit when there is no device; the error tail ends in exit()"}
+  # milestone 9b: the model-part order table, a service of Skater_MergeModelParts and SkaterSpool_ApplyPartIndices (WorldKit has the function; no replay test table calls it by address)
+  - {name: Skater_AssignModelPartOrder, address: 0x00480cd0, kit: world, call: "assign_model_part_order(self, a[0], a[1])", returns: false, convention: thiscall, stack_args: 2}
+  # milestone 9b: the animation step of an object (the retail-memory form of the cursor model: the skater views and the front end's preview objects run it)
+  - {name: Animation_Advance, address: 0x00480950, kit: world, call: "animation_advance(self)", returns: false, convention: thiscall, stack_args: 0}
+  - {name: Animation_InvokeUpdateHooks, address: 0x00480fa0, kit: world, call: "invoke_update_hooks(self)", returns: false, convention: thiscall, stack_args: 0}
+  # milestone 9b: an empty virtual method (a lone ret; Ghidra lists no function there) that the skater object's update slot holds
+  - {name: Object_EmptyMethod, address: 0x004027b0, kit: psx, call: "nothing_a()", returns: false, convention: thiscall, stack_args: 0}
+  # milestone 9b: slot 7 of the skater bio window (the mouse over its scroll bar); Ghidra lists no function there
+  - {name: BioWindow_MouseHook, address: 0x004dcf00, kit: screens, call: "player_select.bio_mouse_hook(self)", returns: false, convention: thiscall, stack_args: 0}
+  # milestone 9b: the used-palette-entry count of a texture (the board-material choice of the skater views scores by it)
+  - {name: D3DTex_CountUsedPaletteEntries, address: 0x004da260, kit: texture, call: "count_used_palette_entries(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  # milestone 9b: slot 7 of the menu pages (the mouse on the scroll arrows and the items); Ghidra lists no function there
+  - {name: MenuPage_MouseHook, address: 0x004dd200, kit: screens, call: "menu.page_mouse_hook(self)", returns: true, convention: thiscall, stack_args: 0}
+  # empty virtual methods of the menu pages (xor al,al; ret), which the pages' slots hold; Ghidra lists no function at them
+  - {name: MenuPage_ReturnFalseA, address: 0x004dd1f0, kit: math, call: "psx_return_zero()", returns: true, convention: thiscall, stack_args: 0}
+  - {name: MenuPage_ReturnFalseB, address: 0x004dd370, kit: math, call: "psx_return_zero()", returns: true, convention: thiscall, stack_args: 0}
+  - {name: MenuPage_ReturnFalseC, address: 0x004dd380, kit: math, call: "psx_return_zero()", returns: true, convention: thiscall, stack_args: 0}
+  # milestone 10: the model submission chain on retail memory (src/runtime/render_model.cpp; the value-owned model and its 279 retail calls are src/trg/render_model_submit.*, and
+  # render_model_kit_trace_test.cpp replays the same calls through the Kit). M3D_SetGeometryState and the other submit wrappers reach the first; the other three are its callees.
+  - {name: M3D_SubmitModelState, address: 0x004d14d0, kit: render, call: "model_submit_state(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: M3D_TransformVertices, address: 0x004d29e0, kit: render, call: "model_transform_vertices(a[0], S(a[1]))", returns: false, convention: cdecl, stack_args: 3}
+  - {name: M3D_SubmitFacePolygons, address: 0x004d18b0, kit: render, call: "model_submit_faces()", returns: false, convention: cdecl, stack_args: 0}
+  - {name: M3D_BuildD3DPolygon, address: 0x004d1d40, kit: render, call: "model_build_polygon(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  # milestone 10: slot 7 of the level select's globe (the mouse over it presses the element's buttons); Ghidra lists no function there
+  - {name: LevelGlobe_PickByMouse, address: 0x004dcec0, kit: net, call: "level_globe_pick(self)", returns: true, convention: thiscall, stack_args: 0}
+  # milestone 10: slot 2 of the bitmap image (the image again from a BMP in memory: the career's level pictures); Ghidra lists no function there
+  - {name: BmpImage_ReloadFromData, address: 0x00457700, kit: render, call: "bmp_image_reload(self, a[0])", returns: false, convention: thiscall, stack_args: 1}
+  # milestone 10c: the trigger command interpreter on the retail memory and the trig.cpp helpers under it (src/runtime/world_trig_commands.cpp; they had only the value model of src/trg)
+  - {name: TRG_SendPulse, address: 0x004c58b0, kit: world, call: "trg_send_pulse(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: TRG_ExecuteCommandList, address: 0x004c5b00, kit: world, call: "trg_execute_command_list(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: SendSignalToNode, address: 0x004c5b30, kit: world, call: "send_signal_to_node(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: TRG_SendSignalToNodes, address: 0x004c5b60, kit: world, call: "trg_send_signal_to_nodes(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: TRG_SuspendObjectByNode, address: 0x004c5c00, kit: world, call: "trg_suspend_object_by_node(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: SendUnSuspend, address: 0x004c5c40, kit: world, call: "send_unsuspend(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: TRG_ApplyActivationOrSuspendList, address: 0x004c5c70, kit: world, call: "trg_apply_activation_or_suspend_list(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: TRG_InterpretCommandStream, address: 0x004c5dc0, kit: world, call: "trg_interpret_command_stream(a[0], a[1], a[2])", returns: false, convention: cdecl, stack_args: 3}
+  - {name: TRG_SendVisible, address: 0x004c77f0, kit: world, call: "trg_send_visible(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: TRG_SendKillFromNode, address: 0x004c7a00, kit: world, call: "trg_send_kill_from_node(a[0], a[1])", returns: false, convention: cdecl, stack_args: 2}
+  - {name: KillInList, address: 0x004c7bf0, kit: world, call: "kill_in_list(a[0], a[1], a[2])", returns: false, convention: cdecl, stack_args: 3}
+  - {name: TRG_SkipCommandPayload, address: 0x004c7c50, kit: world, call: "trg_skip_command_payload(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  # milestone 10e: the level's node walk on the retail memory (src/runtime/world_trig_nodes.cpp; it had only the value model of src/trg)
+  - {name: TRG_CreateObject, address: 0x004c5460, kit: world, call: "trg_create_object(a[0])", returns: true, convention: cdecl, stack_args: 1}
+  - {name: TRG_RegisterCameraPoint, address: 0x00411f30, kit: world, call: "trg_register_camera_point(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: TRG_ParseNodes, address: 0x004c8130, kit: world, call: "trg_parse_nodes()", returns: false, convention: cdecl, stack_args: 0}
+  # milestone 10e: the object lists of ob.cpp on the retail memory (src/runtime/world_object.cpp); native_hooks.yml keeps the first two as hooked engine services
+  - {name: ObjectList_PushHead, address: 0x004801d0, kit: world, call: "object_list_push_head(self, a[0])", returns: false, convention: thiscall, stack_args: 1}
+  - {name: ObjectList_Remove, address: 0x004801f0, kit: world, call: "object_list_remove(self, a[0])", returns: false, convention: thiscall, stack_args: 1}
+  - {name: Object_SuspendToList, address: 0x004802f0, kit: world, call: "object_suspend_to_list(self, a[0])", returns: false, convention: thiscall, stack_args: 1}
+  - {name: CBody__UnSuspend, address: 0x004803b0, kit: world, call: "object_unsuspend(self)", returns: false, convention: thiscall, stack_args: 0}
+  # milestone 10e: the per-frame object loop (the first frame of the Hangar); native_hooks.yml keeps it as a hooked engine service
+  - {name: Ob_AI, address: 0x00480ff0, kit: world, call: "object_ai_frame(a[0])", returns: false, convention: cdecl, stack_args: 1}
+  - {name: Animation_Start, address: 0x00480730, kit: world, call: "animation_start(self, a[0], static_cast<std::int32_t>(a[1]), static_cast<std::int32_t>(a[2]), a[3])", returns: false, convention: thiscall, stack_args: 4}

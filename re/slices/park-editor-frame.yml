@@ -1,0 +1,33 @@
+version: 1
+id: park-editor-frame
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x00433a40
+  - 0x00433cb0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-editor.md
+  - re/evidence/fixtures/leveleditor-calls-eod.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/level_editor.hpp
+  - src/runtime/level_editor_object.cpp
+  - re/gdb/probes/editor_specs_obj.py
+  - re/gdb/probes/editor_specs.py
+  - re/gdb/probes/editor_specs_view.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_editor_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_editor.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of editor_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_editor_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 2 of the 2 functions (the editor''s frame: update (menus and modes, the requests to rebuild the park, the camera, cursor and interface) and draw (the interface, the menu, the gap prompts, the park, the cursor)) are replayed over 1200 cases with no mismatch (at least 600 cases each; the committed fixtures keep the first 30 of each capture per function, 60 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the park generator, the camera, the cursor, the interface and the renderer are services; the menu objects are fake objects whose virtual methods are reported services.

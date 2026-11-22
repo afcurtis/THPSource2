@@ -1,0 +1,52 @@
+version: 1
+id: multi-select-screen
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x0047ba30
+    - 0x0047ba50
+    - 0x0047ba60
+    - 0x0047ba70
+    - 0x0047c290
+    - 0x0047c2b0
+    - 0x0047c3e0
+    - 0x0047c460
+    - 0x0047c4a0
+    - 0x0047c550
+    - 0x0047c560
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/multi-select-screen.md
+    - re/evidence/fixtures/multi-calls-mulloop.txt
+    - re/evidence/fixtures/multi-calls-mulwin.txt
+  native:
+    - src/runtime/multi_select.hpp
+    - src/runtime/multi_select.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - re/gdb/probes/frontend_specs_multi.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/select_screens_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/select_screens_test.cpp
+    - tests/test_select_screens.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the mulwin and mulloop groups: the window built by hand with real text rows and a fake list, fake pool objects whose virtual methods are reported services): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`select_screens_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 11 of the 11 functions are replayed over 890 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's sprite, sound, card, model and prompt calls and the screen loop's window methods are seams reported by name with the arguments retail passed; the loop's frame waits for the clock with a spin a forced call cannot satisfy, so it is replayed on frames that end at once (the unit tests cover the rest).

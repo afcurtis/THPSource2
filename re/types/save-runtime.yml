@@ -1,0 +1,391 @@
+version: 1
+types:
+  - name: RuntimeMmuSaveManager
+    kind: fixed_layout
+    size: 0xb4c
+    confidence: confirmed
+    description: The card manager (Mmu_* 0x00473d20..0x00476200), a sub-object at +0x1f8 of the 0xdd0-byte RuntimeMmuScreen. It lists the THPS2_*.SAV files of the card directory, hands out the registered save buffers and moves them through the libcard emulation. The 15th file record's last word (+0x90) is the first file type word (the scan clears the records, then writes the types); nothing reads that word as a record field.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        description: "vtable 0x005192e4 once constructed; 0x005184b4 (the base class) after Mmu_ResetVtable"
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x04
+        name: file_records
+        type: array<RuntimeMmuFileRecord,15>
+        overlay_group: record_tail
+        confidence: confirmed
+        description: The 15 records the directory scan fills (stride 0x94, the card holds 15 blocks); the active count is file_count.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x8b0
+        name: file_types
+        type: array<i32,15>
+        overlay_group: record_tail
+        confidence: confirmed
+        description: "Runtime file type values: 1 career, 2 replay, 3 custom park, 4 other."
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x928
+        name: display_names
+        type: array<RuntimeMmuDisplayName,15>
+        confidence: confirmed
+        description: User-facing names read back from the 0x200-byte file headers (0x21 bytes each).
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0xb18
+        name: file_count
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0xb1c
+        name: card_state
+        type: i32
+        confidence: confirmed
+        description: "Card-ready/state word checked before scan, read, and write operations (0 ready; 1, 3 and 4 not)."
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0xb20
+        name: free_card_blocks
+        type: i32
+        confidence: confirmed
+        description: Remaining 8192-byte blocks computed from the 15-block card capacity and the discovered file sizes.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0xb28
+        name: save_buffer_count
+        type: i32
+        confidence: confirmed
+        description: Number of caller-registered save buffers; the save path accepts at most four.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0xb2c
+        name: save_buffer_pointers
+        type: array<pointer<void>,4>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0xb3c
+        name: save_buffer_sizes
+        type: array<u32,4>
+        confidence: confirmed
+        description: Registered buffer sizes; each must be a multiple of 128 bytes.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+
+  - name: RuntimeMmuFileRecord
+    kind: fixed_layout
+    size: 0x94
+    confidence: confirmed
+    description: One directory entry of the card library emulation (the PC build keeps the PlayStation DIRENTRY shape with a 128-byte name). Mmu_ScanDirectory (0x004e8d40) fills it and chains the records; the Kit reads the name and the size.
+    fields:
+      - offset: 0x00
+        name: file_name
+        type: array<char,128>
+        confidence: confirmed
+        description: The file name the directory scan copied (strncpy of 0x80 bytes, zero padded).
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x84
+        name: file_size
+        type: u32
+        confidence: confirmed
+        description: "The scan stores 0x2000 here (one card block); the manager sums it for free_card_blocks and the replay load checks it for 3 or 6 blocks."
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x88
+        name: next_record
+        type: pointer<RuntimeMmuFileRecord>
+        confidence: confirmed
+        description: The scan links record i to record i + 1 and clears the last one.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+
+  - name: RuntimeMmuDisplayName
+    kind: fixed_layout
+    size: 0x21
+    confidence: confirmed
+    description: One display name of the card manager, a 32-character string with its terminator.
+    fields:
+      - offset: 0x00
+        name: text
+        type: array<char,33>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/save-runtime.md
+
+  - name: RuntimeMmuScreen
+    kind: fixed_layout
+    size: 0xdd0
+    confidence: observed
+    description: The save-card screen (Mmu_Screen* 0x00476b00..0x00479f60), the global MmuManager at 0x0056ad00; a window (0xac bytes) with a Font object, the card manager and the screen's widgets and state. Vtable 0x00519308.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xac
+        name: font
+        type: RuntimeFont
+        confidence: confirmed
+        description: A copy of the s2tricks.fnt Font object (0x14c bytes), the screen text font.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0x1f8
+        name: card
+        type: RuntimeMmuSaveManager
+        confidence: confirmed
+        description: The card manager sub-object (0xb4c bytes).
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xd44
+        name: banner
+        type: pointer<RuntimeFrontElement>
+        confidence: observed
+        description: The banner text element.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xd48
+        name: blocks_needed
+        type: pointer<RuntimeFrontElement>
+        confidence: observed
+        description: The "blocks needed" text element (saves).
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xd4c
+        name: blocks_free
+        type: pointer<RuntimeFrontElement>
+        confidence: observed
+        description: The "blocks free" text element (saves).
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xd50
+        name: delete_hint
+        type: pointer<RuntimeFrontElement>
+        confidence: observed
+        description: The delete hint text element (loads); 0 for a save.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xd54
+        name: file_list
+        type: pointer<void>
+        confidence: observed
+        description: The ScrollList of the files.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xd58
+        name: style_matching
+        type: pointer<RuntimeFrontMenuProperties>
+        confidence: observed
+        description: The row style of the files of the screen's own type.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xd5c
+        name: style_other
+        type: pointer<RuntimeFrontMenuProperties>
+        confidence: observed
+        description: The row style of the other types.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xd60
+        name: rows
+        type: array<pointer<void>,16>
+        confidence: observed
+        description: The 16 rows of the list (a file row each, then the empty-slot row).
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xda0
+        name: busy
+        type: u32
+        confidence: observed
+        description: 1 while the card is being scanned.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xda4
+        name: display_state
+        type: u32
+        confidence: observed
+        description: "0 browse, 1 not enough room, 2 card inserted warning, 3 overwrite question, 4 delete question, 5 name entry, 6 formatting, 7 deleting, 8 saving, 9 loading, 10 no files, 11..14 messages, 15 name exists."
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xda8
+        name: file_type
+        type: u32
+        confidence: observed
+        description: 1 career, 2 replay, 3 park.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xdac
+        name: confirm_box
+        type: pointer<void>
+        confidence: observed
+        description: The yes/no confirm box.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xdb0
+        name: message_box
+        type: pointer<void>
+        confidence: observed
+        description: The message text box.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xdb4
+        name: counter
+        type: i32
+        confidence: observed
+        description: The frames a message state waits out.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xdb8
+        name: name_entry
+        type: pointer<void>
+        confidence: observed
+        description: The name entry control.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xdbc
+        name: saving
+        type: u32
+        confidence: observed
+        description: 1 when saving, 0 when loading.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xdc0
+        name: timer
+        type: i32
+        confidence: observed
+        description: The message timer.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xdc4
+        name: result
+        type: u32
+        confidence: observed
+        description: 1 done, 2 back; 0 while the screen runs.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xdc8
+        name: prompts
+        type: pointer<RuntimeMmuPromptGroup>
+        confidence: observed
+        description: The prompt group (saves); 0 for a load.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xdcc
+        name: button_flags
+        type: u32
+        confidence: observed
+        description: "The button flags: bit 0 select, 1 delete, 2 accept, 3 back."
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+
+  - name: RuntimeMmuPromptGroup
+    kind: fixed_layout
+    size: 0x208
+    confidence: observed
+    description: The prompt window group of a save screen (0x00476560), vtable 0x005192e8; a window with the four button prompts and their font.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xac
+        name: prompts
+        type: array<pointer<RuntimeFrontElement>,4>
+        confidence: observed
+        description: The select, delete, accept and back prompt windows.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+      - offset: 0xbc
+        name: font
+        type: RuntimeFont
+        confidence: confirmed
+        description: The Font object the prompts share (s2font2).
+        evidence:
+          - re/evidence/functions/save-runtime.md
+          - re/evidence/functions/front-screens.md
+
+  - name: RuntimeMmuSaveHeader
+    kind: fixed_layout
+    size: 0x200
+    confidence: confirmed
+    description: First 512 bytes of a Windows THPS2 save file produced by the PC MMU compatibility layer.
+    fields:
+      - offset: 0x00
+        name: signature
+        type: array<char,2>
+        confidence: confirmed
+        description: ASCII SC signature.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x02
+        name: format_action_byte
+        type: u8
+        confidence: confirmed
+        description: Header byte equal to 0x10 plus the action type passed to the header builder.
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x03
+        name: action_type
+        type: u8
+        confidence: confirmed
+        description: "Save family selector: 1 career, 2 replay, or 3 custom park."
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x60
+        name: user_name
+        type: array<char,32>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x80
+        name: registered_block_0
+        type: array<u8,128>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x100
+        name: registered_block_1
+        type: array<u8,128>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/save-runtime.md
+      - offset: 0x180
+        name: registered_block_2
+        type: array<u8,128>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/save-runtime.md

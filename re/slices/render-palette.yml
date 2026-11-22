@@ -1,0 +1,60 @@
+version: 1
+id: render-palette
+subsystem: renderer
+status: complete
+scope:
+  functions:
+  - 0x0048a0b0
+  - 0x0048a320
+  - 0x0048a360
+  - 0x0048a3b0
+  - 0x0048a400
+  - 0x0048a420
+  - 0x0048a490
+  - 0x0048a500
+  - 0x0048a590
+  - 0x0048a6f0
+  - 0x0048a700
+  - 0x0048a7e0
+  - 0x0048aad0
+  - 0x0048ab00
+  - 0x004da460
+  - 0x004da4b0
+  - 0x004da4d0
+  - 0x004da550
+  - 0x004da580
+  - 0x004da590
+  - 0x004da620
+  - 0x004da680
+  - 0x004da780
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/renderer-palette.md
+  - re/evidence/fixtures/render-calls-rpalA.txt
+  - re/evidence/fixtures/render-calls-rpcB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/render_palette.cpp
+  - re/gdb/probes/render_specs2.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/render_retail_calls_test.cpp
+  - tests/test_render_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rpal, rpc): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (render_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 23 of the 23 functions (the palette slots of the PSX video memory (initialisation, the source lookup, the free slots, the creation of a palette from PSX colours, its copy to and from memory) and the palette cache of the D3D texture layer (the records, the conversion of 15-bit colours to the device format, the re-upload of the textures that use a palette)) are replayed over 920 cases with no mismatch (at least 40 cases each; the committed fixtures keep the first 30 of each capture per function, 690 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the VRAM allocator, the PSX clear and load of an image, the texture re-upload and the CRT allocator are services.

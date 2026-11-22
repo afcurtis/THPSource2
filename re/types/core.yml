@@ -1,0 +1,650 @@
+version: 1
+types:
+  - name: RuntimeListObject
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: >-
+      The head every object of the game's intrusive lists shares for the core sweeps (DeleteList, the box kill and visibility sweeps, the platform angle test, the environment-item hit):
+      a vtable whose slot 0 deletes with a flag and slot 2 kills, the visibility word, the Q12 position, two angles, the model index inside the object's region, the region and the
+      next pointer. Only the fields those functions read or write are named. The trigger factory's objects (RuntimeTriggerObjectHeader) are a subset of the same memory.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/core-utilities.md
+      - offset: 0x04
+        name: visibility_flags
+        type: u16
+        confidence: confirmed
+        description: The word the visibility sweeps set (0x41, 0x01, 0x40) and clear; Init_Cleanup mode 2 clears bit 10.
+        evidence:
+          - re/evidence/functions/core-utilities.md
+          - re/evidence/functions/core-startup.md
+      - offset: 0x08
+        name: position
+        type: RuntimeIntVector3
+        confidence: confirmed
+        description: Q12 world position (x, y, z).
+        evidence:
+          - re/evidence/functions/core-utilities.md
+      - offset: 0x14
+        name: pitch_angle
+        type: i16
+        confidence: observed
+        description: The angle CPlatform__AI compares with the pitch Camera_BuildLookAngles answers (angles[0]).
+        evidence:
+          - re/evidence/functions/core-utilities.md
+      - offset: 0x16
+        name: yaw_angle
+        type: i16
+        confidence: observed
+        description: The angle CPlatform__AI compares with the yaw (angles[1]).
+        evidence:
+          - re/evidence/functions/core-utilities.md
+      - offset: 0x1a
+        name: model_index
+        type: u16
+        confidence: observed
+        description: Index into the model-pointer table of the object's region (Exp_HitEnvItem).
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x1f
+        name: region
+        type: u8
+        confidence: observed
+        description: The region slot (stride 0x44) the object's model lives in.
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x20
+        name: next
+        type: pointer<RuntimeListObject>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/core-utilities.md
+          - re/evidence/functions/core-startup.md
+      - offset: 0x68
+        name: list_flags
+        type: u16
+        confidence: observed
+        description: Utils_FlagListObjects sets bit 2 of this word on every object whose protect byte has no bit 6.
+        evidence:
+          - re/evidence/functions/core-utilities.md
+      - offset: 0x6a
+        name: protect_flags
+        type: u8
+        confidence: confirmed
+        description: Bit 5 keeps DeleteList from deleting the object; bit 6 keeps Utils_FlagListObjects from flagging it (and M3dColij_LineToSphere from testing it).
+        evidence:
+          - re/evidence/functions/core-startup.md
+          - re/evidence/functions/m3d-culling-helpers.md
+      - offset: 0xae
+        name: bounding_radius
+        type: u16
+        confidence: observed
+        description: The radius of the sphere M3dColij_LineToSphere tests the line against (times the caller's scale, Q12 like the position).
+        evidence:
+          - re/evidence/functions/m3d-culling-helpers.md
+      - offset: 0x18
+        name: field_18
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x24
+        name: colour
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x34
+        name: previous
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x38
+        name: saved_colour
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x44
+        name: flash_count
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x46
+        name: field_46
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x64
+        name: suspended_list
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x86
+        name: field_86
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x9e
+        name: field_9e
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xa4
+        name: sprite
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xa8
+        name: field_a8
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xaa
+        name: field_aa
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xac
+        name: field_ac
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xb0
+        name: field_b0
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's object base-class methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+
+  - name: RuntimeTypeTaggedListNode
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: >-
+      A member of the list at 0x0055f704 that RuntimeObject_UpdateVisibilityBounds ends with: next pointer at +8 (not +0x20), position at +0x10, a type byte at +0x3b (only type 2 is swept)
+      and a result byte at +0x4a. Only the fields that sweep reads or writes are named.
+    fields:
+      - offset: 0x08
+        name: next
+        type: pointer<RuntimeTypeTaggedListNode>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/core-utilities.md
+      - offset: 0x10
+        name: position
+        type: RuntimeIntVector3
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/core-utilities.md
+      - offset: 0x3b
+        name: kind
+        type: u8
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/core-utilities.md
+      - offset: 0x4a
+        name: result_flag
+        type: u8
+        confidence: confirmed
+        description: The sweep sets it to 1 (show) or clears it (one player).
+        evidence:
+          - re/evidence/functions/core-utilities.md
+
+  - name: RuntimeViewportRecord
+    kind: fixed_layout
+    size: 0xa4
+    confidence: observed
+    description: >-
+      One of the viewport records at 0x0055f7c8 (the stride is 0xa4). Utils_CalculateSpatialAttenuation reads the camera position (whole units) and the 3x3 rotation matrix of the viewport
+      being drawn.
+    fields:
+      - offset: 0x04
+        name: camera_position
+        type: RuntimeIntVector3
+        confidence: observed
+        description: Camera position in whole world units (the attenuation shifts it left by 12 to compare with Q12 positions).
+        evidence:
+          - re/evidence/functions/core-utilities.md
+      - offset: 0x74
+        name: rotation
+        type: RuntimeQ12Matrix
+        confidence: observed
+        description: The rotation matrix the attenuation loads into the GTE.
+        evidence:
+          - re/evidence/functions/core-utilities.md
+
+  - name: RuntimeRelocatableModuleNode
+    kind: fixed_layout
+    size: 0x34
+    confidence: confirmed
+    description: A loaded relocatable module (made by RelocatableModule_LoadPair), a node of a doubly linked list whose head is the word at 0x0056b89c.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        description: Always 0x004ac060 (RelocatableModule_Destroy, an assertion that always fails).
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x04
+        name: entry
+        type: pointer<void>
+        confidence: confirmed
+        description: The loaded code block (name.bin); its first word is the entry point called with the node.
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x08
+        name: name_hash
+        type: u32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x2c
+        name: next
+        type: pointer<RuntimeRelocatableModuleNode>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x30
+        name: previous
+        type: pointer<RuntimeRelocatableModuleNode>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/core-packages.md
+
+  - name: RuntimePkrPackageHeader
+    kind: fixed_layout
+    size: 0x10
+    confidence: confirmed
+    description: The 16-byte header PKR_PreLoad reads from the package stream.
+    fields:
+      - offset: 0x00
+        name: signature
+        type: u32
+        confidence: confirmed
+        description: "'PKR2' (0x32524b50)."
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x08
+        name: entry_count
+        type: u32
+        confidence: confirmed
+        description: Number of 0x28-byte entries.
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x0c
+        name: file_count
+        type: u32
+        confidence: confirmed
+        description: Number of 0x30-byte file records (RuntimePkrFileRecord).
+        evidence:
+          - re/evidence/functions/core-packages.md
+
+  - name: RuntimeBufferedStreamObject
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: >-
+      The stream object the constructor at 0x004ebf10 initialises (a vtable at 0x00519a18, a 0x2458-byte buffer area, a position word and two flag bytes). Only the words the constructor and
+      destructor touch are named.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        description: Always 0x00519a18.
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x04
+        name: open_state
+        type: u32
+        confidence: observed
+        description: Nonzero makes the destructor call 0x004ebfe0 (the close).
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x2458
+        name: position_marker
+        type: i32
+        confidence: observed
+        description: The constructor sets it to -1.
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x245c
+        name: flag_245c
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x245d
+        name: flag_245d
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+
+  - name: RuntimeExplosionParticle
+    kind: fixed_layout
+    size: 0x10
+    confidence: observed
+    description: One entry of an explosion object's burst (Exp_Construct).
+    fields:
+      - offset: 0x00
+        name: position
+        type: RuntimeIntVector3
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x0c
+        name: red
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x0d
+        name: green
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x0e
+        name: blue
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+
+  - name: RuntimeExplosionObject
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: The explosion object Exp_Construct builds after its base-class constructor (vtable 0x005189ec). Only the fields the constructor writes or reads are named.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x10
+        name: position
+        type: RuntimeIntVector3
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x40
+        name: particle_count
+        type: i32
+        confidence: observed
+        description: Set by the base-class constructor; the burst has this many entries.
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x44
+        name: particles
+        type: pointer<RuntimeExplosionParticle>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x48
+        name: origin
+        type: RuntimeIntVector3
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x54
+        name: red
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x55
+        name: green
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x56
+        name: blue
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x58
+        name: start
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x60
+        name: extra
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-packages.md
+      - offset: 0x64
+        name: random_phase
+        type: u32
+        confidence: observed
+        description: Rnd(0x1000) at construction.
+        evidence:
+          - re/evidence/functions/core-packages.md
+
+  - name: RuntimeRenderState
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: >-
+      The render state the pointer at 0x00560fd4 names. The polygon helpers of main.cpp read the ordering-table pointers and the arena base; only those fields are named.
+    fields:
+      - offset: 0x84
+        name: ordering_table
+        type: u32
+        confidence: observed
+        description: Pointer to the ordering table the dimming quads and the screen flip use (the link of a primitive is word 2 of the table).
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x88
+        name: viewport_table
+        type: u32
+        confidence: observed
+        description: Pointer to the ordering table the viewport's quads link into (the head word is the first word).
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x8c
+        name: viewport_table_alias
+        type: u32
+        confidence: observed
+        description: Set to the table at +0x88 plus the viewport's 0x8000 offset by M3D_RenderStage.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0xb0
+        name: arena_base
+        type: u32
+        confidence: observed
+        description: The base of the polygon arena; the arena end is this plus the arena size word.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+
+  - name: RuntimeScreenPrimitive
+    kind: fixed_layout
+    size: 0x1c
+    confidence: observed
+    description: >-
+      A 2D screen primitive of the polygon arena (the arena cursor advances by 0x1c): the ordering-table link, a colour word (three channel bytes and the code byte at +7: 0x28 a quad, 0x2a the dimming quad), four
+      vertices of two shorts each (the quad's second and third are exchanged) and the depth float (-1.0 when both ordering tables are the same table).
+    fields:
+      - offset: 0x00
+        name: link
+        type: u32
+        confidence: observed
+        description: The next primitive of the ordering-table bucket.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x04
+        name: colour_word
+        type: u32
+        overlay_group: colour
+        confidence: observed
+        description: The colour and code word Display_AddQuad stores as its ninth argument.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x04
+        name: red
+        type: u8
+        overlay_group: colour
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x05
+        name: green
+        type: u8
+        overlay_group: colour
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x06
+        name: blue
+        type: u8
+        overlay_group: colour
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x07
+        name: code
+        type: u8
+        overlay_group: colour
+        confidence: observed
+        description: The primitive code the flip walks on.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x08
+        name: x0
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x0a
+        name: y0
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x0c
+        name: x1
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x0e
+        name: y1
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x10
+        name: x2
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x12
+        name: y2
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x14
+        name: x3
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x16
+        name: y3
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x18
+        name: depth
+        type: f32
+        confidence: observed
+        description: -1.0 when the two ordering tables are the same, else the viewport's depth word as a float.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+
+  - name: RuntimeViewportRect
+    kind: fixed_layout
+    size: 0x18
+    confidence: observed
+    description: >-
+      One of the nine screen rectangles from 0x00533fa8 (stride 0x18: the whole screen, then a pair per layout). LaunchGame fills the edges from the screen size (the right half of a vertical split has
+      right = width and left = width / 2); PlayAway_Init fills +0xc and Display +0xe of the first.
+    fields:
+      - offset: 0x00
+        name: right
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x02
+        name: bottom
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x04
+        name: left
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x06
+        name: top
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x0c
+        name: field_0c
+        type: u16
+        confidence: observed
+        description: PlayAway_Init stores 0xd55 (the whole screen and the top and left halves) or 0x8e3 here.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x0e
+        name: field_0e
+        type: u16
+        confidence: observed
+        description: Display stores the answer of function 0x0040f1f0 here for the first rectangle.
+        evidence:
+          - re/evidence/functions/core-main-loop.md

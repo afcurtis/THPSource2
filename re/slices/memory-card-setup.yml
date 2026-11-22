@@ -1,0 +1,55 @@
+version: 1
+id: memory-card-setup
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x00479f20
+  - 0x00479f40
+  - 0x00479f90
+  - 0x0047a030
+  - 0x0047a060
+  - 0x0047a080
+  - 0x0047a090
+  - 0x0047a0b0
+  - 0x0047a220
+  - 0x0047a480
+  - 0x0047a6c0
+  - 0x0047a8a0
+  - 0x0047aa50
+  - 0x0047ac40
+  - 0x0047ac60
+  - 0x0047ace0
+  - 0x0047ad50
+  - 0x0047adb0
+  - 0x0047ae10
+  - 0x0047b190
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/memory-card-layer.md
+  - re/evidence/fixtures/mmu-calls-mmuC.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/heap_kit.hpp
+  - src/runtime/mmu_kit.hpp
+  - src/runtime/mmu_setup.cpp
+  - re/gdb/probes/mmu_specs.py
+  - re/gdb/probes/mmu_specs_mgr.py
+  - re/gdb/probes/mmu_specs_misc.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/mmu_retail_calls_test.cpp
+  - tests/test_memory_card_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mmu): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (mmu_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 20 of the 20 functions (the screen''s flags and result, the buffer registration, the card library start and stop, the six set-up functions (career, replay and park saves and loads), the screen''s per-frame entry points and the finalising of a screen (a loaded career or replay is handed to the game)) are replayed over 2000 cases with no mismatch (at least 100 cases each; the committed fixtures keep the first 30 of each capture per function, 600 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the screen's constructor and destructor are services here (the screen is the `save-card-screen` slice); a null `MmuManager` is only asserted, never reached by the generated states.

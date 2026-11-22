@@ -1,0 +1,210 @@
+version: 1
+types:
+  - name: RuntimeFont
+    kind: fixed_layout
+    size: 0x14c
+    confidence: observed
+    description: Runtime font object allocated by Font_Create; it owns glyph_count + 1 entries, including the blank/sentinel glyph.
+    fields:
+      - offset: 0x04
+        name: horizontal_align
+        type: u32
+        confidence: observed
+        description: Text alignment along x (kFontHAlign).
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x08
+        name: vertical_align
+        type: u32
+        confidence: observed
+        description: Text alignment along y.
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x0c
+        name: spacing
+        type: u32
+        confidence: observed
+        description: Glyph spacing.
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: Set beside the spacing by every screen font; not read by the Kits that set it.
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x14
+        name: red
+        type: u32
+        confidence: observed
+        description: The colour Font_SetRGB writes (0x80 is neutral).
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x18
+        name: green
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x1c
+        name: blue
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x21
+        name: shadow
+        type: u8
+        confidence: observed
+        description: The shadow flag.
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x24
+        name: shadow_x
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x28
+        name: shadow_y
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x30
+        name: scale
+        type: u32
+        confidence: observed
+        description: The text scale (0x1000 is 1.0).
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x34
+        name: glyph_entries
+        type: pointer<RuntimeFontGlyphEntry>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x38
+        name: glyph_count
+        type: u32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x3c
+        name: packed_atlas_format
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+
+  - name: RuntimeFontGlyphEntry
+    kind: fixed_layout
+    size: 0x08
+    confidence: confirmed
+    description: Per-glyph entry in the font object's pointer/atlas table.
+    fields:
+      - offset: 0x00
+        name: glyph_object
+        type: pointer<RuntimeFontGlyphImage>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x04
+        name: source_byte_0
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x05
+        name: source_byte_1
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x06
+        name: source_byte_2
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+
+  - name: RuntimeFontDiskGlyphRecord
+    kind: fixed_layout
+    size: 0x10
+    confidence: observed
+    description: Four-word glyph record in an FNT file before the shared 16-colour table and packed glyph data.
+    fields:
+      - offset: 0x00
+        name: packed_data_row_units
+        type: u32
+        confidence: observed
+        description: Full word used with the record height byte to advance the packed glyph-data cursor.
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x04
+        name: source_metric_1
+        type: u32
+        confidence: observed
+        description: Low byte is copied to the runtime entry at +0x05 and is passed as the decoded image height.
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x08
+        name: source_metric_2
+        type: u32
+        confidence: observed
+        description: Low byte is copied to the runtime entry at +0x06; its public glyph metric meaning remains open.
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x0c
+        name: glyph_width
+        type: u32
+        confidence: observed
+        description: Low byte is copied to the runtime entry at +0x04 and is passed as the decoded image width.
+        evidence:
+          - re/evidence/functions/font-runtime.md
+
+  - name: RuntimeFontGlyphImage
+    kind: fixed_layout
+    size: 0x5c
+    confidence: observed
+    description: Image object allocated for one decoded FNT glyph and attached to the font glyph entry.
+    fields:
+      - offset: 0x40
+        name: image_width
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x42
+        name: image_height
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x4e
+        name: slice_width
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x50
+        name: slice_height
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x58
+        name: image_bpp_mode
+        type: u8
+        confidence: confirmed
+        description: "Image-library mode derived from input bpp: 4 -> 2, 8 -> 1, 16 -> 0."
+        evidence:
+          - re/evidence/functions/font-runtime.md
+      - offset: 0x5a
+        name: atlas_format_word
+        type: u16
+        confidence: observed
+        description: Packed font atlas/format word passed to the image setup constructor.
+        evidence:
+          - re/evidence/functions/font-runtime.md

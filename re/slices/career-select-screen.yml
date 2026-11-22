@@ -1,0 +1,55 @@
+version: 1
+id: career-select-screen
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x004173d0
+    - 0x004173f0
+    - 0x00417400
+    - 0x00417410
+    - 0x00417aa0
+    - 0x00417ac0
+    - 0x00417bf0
+    - 0x00417c90
+    - 0x00417ce0
+    - 0x00417d70
+    - 0x00417e30
+    - 0x00417f90
+    - 0x00418140
+    - 0x00418150
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/career-select-screen.md
+    - re/evidence/fixtures/carsel-calls-carloop.txt
+    - re/evidence/fixtures/carsel-calls-carwin.txt
+  native:
+    - src/runtime/career_select.hpp
+    - src/runtime/career_select.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - re/gdb/probes/frontend_specs_carsel.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/select_screens_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/select_screens_test.cpp
+    - tests/test_select_screens.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the carwin and carloop groups: the window built by hand in a scratch slab with real text rows and a fake list, fake pool objects whose virtual methods are reported services): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`select_screens_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 14 of the 14 functions are replayed over 1200 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's sprite, sound, card, model and prompt calls and the screen loop's window methods are seams reported by name with the arguments retail passed; the loop's frame waits for the clock with a spin a forced call cannot satisfy, so it is replayed on frames that end at once (the unit tests cover the rest).

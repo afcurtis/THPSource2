@@ -1,0 +1,45 @@
+version: 1
+id: park-rails
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x00439b70
+  - 0x0043a280
+  - 0x0043bcd0
+  - 0x0043e7c0
+  - 0x0043e980
+  - 0x0043f5e0
+  - 0x0043f6c0
+  - 0x0043f710
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-generator.md
+  - re/evidence/fixtures/levelgen-calls-lgt.txt
+  - re/evidence/fixtures/levelgen-calls-lgt3.txt
+  - re/evidence/fixtures/levelgen-calls-lgz.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/gen_objs.hpp
+  - src/runtime/level_gen.hpp
+  - src/runtime/level_gen_load.cpp
+  - src/runtime/level_gen_rails.cpp
+  - re/gdb/probes/levelgen_specs.py
+  - re/gdb/probes/levelgen_specs_pieces.py
+  - re/gdb/probes/levelgen_specs_edit.py
+  - re/gdb/probes/levelgen_specs_prk.py
+  - re/gdb/probes/levelgen_specs_region.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_gen_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_generator.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of levelgen_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_gen_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 8 of the 8 functions (the park library loader, the variant choice, the rails loaded from the trigger file, the rail outlines of the pieces, the trigger file builder and the fog) are replayed over 1416 cases with no mismatch (at least 33 cases each; the committed fixtures keep the first 30 of each capture per function, 240 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the trigger node constructors and virtual calls are services (the stub writes the vtable); the fifth point of a three-point element is a stack leftover and is not compared; list B's deadline is the live clock.

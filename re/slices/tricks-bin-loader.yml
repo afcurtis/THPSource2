@@ -1,0 +1,42 @@
+version: 1
+id: tricks-bin-loader
+subsystem: physics
+status: complete
+scope:
+  functions:
+  - 0x00492a90
+  - 0x00492b20
+  - 0x00492b60
+  - 0x00492ba0
+  - 0x00492c70
+  - 0x00492d10
+  - 0x00492d50
+  - 0x00492de0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/skater-tricks-and-bail.md
+  - re/evidence/fixtures/skater-calls-physA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/skater_kit.hpp
+  - src/runtime/skater_tricks_load.cpp
+  - re/gdb/probes/phys_specs_load.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/skater_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups phl): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (skater_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 8 of the 8 functions (the tricks.bin loader and the trick script table parser: the load and unload, the extra animation list (reset, register, lookup) and the parse of the stream and table) are replayed over 2000 cases with no mismatch (at least 250 cases each; the committed fixtures keep the first 30 of each capture per function, 240 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the file loader, Mem_Delete, the word reader and the command size of the interpreter, the skater manager and the runtime table builder are services; the probe's fake file holds only legal streams.

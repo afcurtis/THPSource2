@@ -1,0 +1,55 @@
+version: 1
+id: career-save-image
+subsystem: career
+status: complete
+
+scope:
+  functions:
+    - 0x004138f0
+    - 0x00413c10
+    - 0x00413d60
+    - 0x00413ed0
+    - 0x004165d0
+    - 0x004166f0
+    - 0x004171e0
+    - 0x00417260
+  types: []
+  globals: []
+
+shared:
+  functions:
+    - 0x00416050
+    - 0x0047b8d0
+
+artifacts:
+  evidence:
+    - re/evidence/functions/career-save-runtime.md
+    - re/evidence/fixtures/career-calls-progress.txt
+    - re/evidence/fixtures/career-calls-systems.txt
+  native:
+    - src/runtime/career_save.cpp
+    - src/runtime/career.cpp
+    - src/runtime/career.hpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/career_tables.cpp
+    - src/runtime/career_tables.hpp
+    - scripts/generate_career_tables.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/career_calls.py
+    - re/gdb/probes/career_state.py
+    - re/gdb/probes/career_specs.py
+    - re/gdb/probes/career_specs_more.py
+    - re/gdb/probes/career_specs_skater.py
+    - re/gdb/probes/career_specs_competition.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/career_retail_calls_test.cpp
+    - src/runtime/career_test.cpp
+    - tests/test_career.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/career_calls.py`): random legal state poked into the career records, skater manager, level, game mode and player; the retail function called with its outside services stubbed; the return value, every written byte and the ordered service calls compared with the native replay, and a changed fixture value makes the replay fail. 8 of the 8 save-image functions (live-state serialisation, pad view pointers, load application, save preparation, custom appearance copies, the initial-image reset) are replayed over 106 cases with no mismatch; the reset case replays with TRICKS.BIN as retail has it loaded and the trick database and binding code of milestone 4.7b.'
+  - Documented exclusion, not a blocker - the random draws of the initial high-score names are scripted from the retail call's own results (only their order and arguments are compared), and the corrupt-file path's custom-skater reload (create.cpp, 0x004236d0) is a reported service call.

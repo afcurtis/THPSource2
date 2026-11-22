@@ -1,0 +1,65 @@
+version: 1
+id: pc-menu-widgets
+subsystem: pc-input
+status: complete
+scope:
+  functions:
+  - 0x004dc050
+  - 0x004dc090
+  - 0x004dc0b0
+  - 0x004dc0c0
+  - 0x004dc100
+  - 0x004dc160
+  - 0x004dc180
+  - 0x004dc370
+  - 0x004dc3a0
+  - 0x004dc620
+  - 0x004dc7b0
+  - 0x004dc9e0
+  - 0x004dcb00
+  - 0x004dcbc0
+  - 0x004dd520
+  - 0x004dd6d0
+  - 0x004dc530
+  - 0x004dc5c0
+  - 0x004dc630
+  - 0x004dc640
+  - 0x004dc8a0
+  - 0x004dc8d0
+  - 0x004dc9d0
+  - 0x004dcea0
+  - 0x004dceb0
+  - 0x004dd170
+  - 0x004dd180
+  - 0x004dc190
+  - 0x004dd390
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/network-layer.md
+  - re/evidence/fixtures/net-calls-mouseA.txt
+  - re/evidence/fixtures/net-calls-pickA.txt
+  - re/evidence/fixtures/net-calls-edtC.txt
+  - re/evidence/fixtures/net-calls-ptrB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/net_game.hpp
+  - src/runtime/net_mouse.cpp
+  - re/gdb/probes/net_specs.py
+  - re/gdb/probes/net_specs_state.py
+  - re/gdb/probes/net_specs_play.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/net_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_net_game.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mouse of net_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`net_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 16 of the 16 functions (the pointer-driven menu widgets: the key-name table lookups, the text entry control, the saved-park list, the slider and menu-row mouse pick, the sprite colour and tint, the lobby banner style and the empty hooks) are replayed over 3200 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 480 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the font calls, the menu row's constructor and destructor, the file search, the allocator, the rectangle test (0x004dbf90) and the pending-button store are services; the CRT's stricmp, strchr and _ftol are the native equivalents.

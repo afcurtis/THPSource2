@@ -1,0 +1,54 @@
+version: 1
+id: world-small-methods
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004128a0
+  - 0x004128c0
+  - 0x0049f340
+  - 0x0049f360
+  - 0x0049f440
+  - 0x004a07d0
+  - 0x004a81d0
+  - 0x004a81f0
+  - 0x004a8250
+  - 0x004a8260
+  - 0x004a8280
+  - 0x004a8290
+  - 0x004a82c0
+  - 0x004a82e0
+  - 0x004a8b4c
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/world-small-methods.md
+  - re/evidence/fixtures/world-calls-wpgB.txt
+  - re/evidence/fixtures/world-calls-wpkA.txt
+  - re/evidence/fixtures/world-calls-wppA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/world_kit.hpp
+  - src/runtime/world_extra.cpp
+  - re/gdb/probes/world_specs_extra.py
+  - re/gdb/probes/world_specs_glow.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/world_specs.py
+  tests:
+  - src/runtime/world_retail_calls_test.cpp
+  - tests/test_world_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups wpp, wpg): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (world_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 15 of the 15 functions (the small methods of the platform, the power-up and the traffic object: the destructors, the platform put at a position, the power-up''s kill, setters, release of its glow, its mark as dying and the glow function itself (called with the power-up in ebp, through a trampoline)) are replayed over 3750 cases with no mismatch (at least 250 cases each; the committed fixtures keep the first 30 of each capture per function, 450 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the object lists, the sprite and the glow's methods, the power-up's physics and the sound are services.

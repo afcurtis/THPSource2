@@ -1,0 +1,81 @@
+version: 1
+id: physics
+subsystem: physics
+status: complete
+
+scope:
+  functions:
+    - 0x004956f0
+    - 0x004957c0
+    - 0x00495cc0
+    - 0x00496360
+    - 0x00496550
+    - 0x00490730
+    - 0x0049b500
+    - 0x00491780
+    - 0x00497aa0
+    - 0x00497df0
+    - 0x00497f40
+    - 0x00497960
+    - 0x0049c060
+    - 0x0049bad0
+    - 0x0049d080
+    - 0x0049d9c0
+    - 0x0049dad0
+    - 0x0049db80
+    - 0x0049e680
+    - 0x00492190
+    - 0x00491c90
+  types:
+    - RuntimeSkaterMovementState
+    - RuntimeCollisionQueryRecord
+  globals:
+    - AnimationClock
+    - AnimationTimeScale
+    - CollisionResultFlagSurface40
+    - CollisionResultFlagInverse23
+    - CollisionResultFlagFace80
+    - CollisionResultFlagInverse24
+    - CollisionSurfaceClass
+
+shared:
+  functions:
+    - 0x00493370
+    - 0x00496060
+    - 0x0049b010
+    - 0x004ca8f0
+
+artifacts:
+  evidence:
+    - re/evidence/functions/physics-states.md
+    - re/evidence/functions/physics.md
+    - re/evidence/functions/player-physics-collision-recovery.md
+    - re/evidence/functions/player-frame-integration.md
+    - re/evidence/fixtures/player-frame-integration.json
+  native:
+    - re/native/functions.yml
+    - src/runtime/gameplay_frame.cpp
+    - src/runtime/physics_frame.cpp
+    - src/runtime/player_state.cpp
+    - src/runtime/player_state.hpp
+    - src/runtime/ground_surface_response.hpp
+    - src/runtime/ground_surface_response.cpp
+    - src/runtime/collision_recovery.hpp
+    - src/runtime/collision_recovery.cpp
+    - src/runtime/collision_recovery_test.cpp
+  tests:
+    - tests/test_native_progress.py
+    - src/runtime/player_frame_integration_test.cpp
+    - src/runtime/physics_frame_test.cpp
+    - src/runtime/player_state_test.cpp
+
+open_questions: []
+
+completion:
+  - A deterministic native GameplayFrame fixture covers one ordinary grounded and one air-to-landing frame across input history, action history, movement, collision, commit, state transition, and animation request.
+  - The selected producer/consumer order and fixed-point values are recorded in the compact integration fixture.
+  - The frame-head +0x2dac producer (0x0049e6b8..0x0049e804) drives native replay from the skater stat, entry state and recorded state-2 draw instead of the recorded pre-frame word; a stat mutation diverges, the real stat matches 256/256. The one remaining post-frame hook input, the +0x2c10 divisor written by TrickScript_Execute, moved to the planned trick-script-physics-writes slice.
+  - The 0x0049b010 contract is owned by the complete ground-motion-ordinary slice; its Autokick-off decay path 0x0049d630 is a separate, still unnamed function recorded as an open question in ground-movement.md.
+  - The grounded turn rounding is closed by the complete ground-turn-lean slice's analog-lean fixtures, and all five Warehouse strict native replays match 256/256.
+  - 0x00493370 runs every frame and its non-grounded branch covers every state but 0/7. The +0x40/+0x60 records and the DAT_0056b7f0 gate, the 0x64000 fast step, the +0x3060 re-press window and the +0x2e80 spin gate are modelled and confirmed by a live retail trace (four native fixtures); +0x2e84 is modelled at its 0x00497f40 consumer. The spin-count producer moved to the planned air-spin-controls slice.
+  - The long-standing physics_frame_test ordering failure was a fixture outside the retail 0x74 support window; both sides of that window are now tested and ctest is 81/81.

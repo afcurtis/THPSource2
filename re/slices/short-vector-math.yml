@@ -1,0 +1,49 @@
+version: 1
+id: short-vector-math
+subsystem: math
+status: complete
+scope:
+  functions:
+  - 0x004cadc0
+  - 0x004cae50
+  - 0x004cae80
+  - 0x004caeb0
+  - 0x004caed0
+  - 0x004cafa0
+  - 0x004cb0e0
+  - 0x004cb130
+  - 0x004cb180
+  - 0x004cb1d0
+  - 0x004cb220
+  - 0x004cb270
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/short-vector-math.md
+  - re/evidence/fixtures/video-calls-vbtA.txt
+  - re/evidence/fixtures/video-calls-vcsA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/video_kit.hpp
+  - src/runtime/video_shorts.cpp
+  - re/gdb/probes/video_specs.py
+  - re/gdb/probes/video_specs_more.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/video_retail_calls_test.cpp
+  - tests/test_camera_video_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups vbt, vcs): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (video_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 12 of the 12 functions (the vector class of shorts (vector.cpp): length, the scaling and division by a scalar (in place and into a result), the shifts, the negation and the angle difference, and the two scalar-by-vector helpers) are replayed over 3800 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 360 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the square root runs through the GTE (a window of register words poked with random values) and is truncated as the port's math kit does; a division by zero faults in retail and ends the case in an error, which is skipped.

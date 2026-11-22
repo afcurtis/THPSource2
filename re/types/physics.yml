@@ -1,0 +1,690 @@
+version: 1
+types:
+  - name: RuntimeSkaterMovementState
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: Evidence-backed movement fields on the gameplay skater object; raw physics-state values are fixed and semantic labels remain provisional.
+    fields:
+      - offset: 0x08
+        name: position_x_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x0c
+        name: position_y_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x10
+        name: position_z_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x14
+        name: restart_auxiliary
+        type: u32
+        confidence: observed
+        description: Adjacent u32 copied from the selected type-8 TRG restart record before the restart-facing helper runs.
+        evidence:
+          - re/evidence/functions/restart-runtime.md
+      - offset: 0x18
+        name: restart_auxiliary_word
+        type: u16
+        confidence: observed
+        description: Adjacent u16 copied from the selected type-8 TRG restart record; its high-word companion at +0x16 contributes to the restart yaw angle.
+        evidence:
+          - re/evidence/functions/restart-runtime.md
+      - offset: 0x2f40
+        name: outer_floor_distance
+        type: i32
+        confidence: confirmed
+        description: Upward-query hit Y minus current player Y minus 0x1e000, written by FUN_00490730 before its restart/service decision.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x4c
+        name: collision_response_vector
+        type: array<i32,3>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x58
+        name: acceleration_vector
+        type: array<i32,3>
+        confidence: confirmed
+        description: State-gated fixed-point acceleration words written from the player-relative source vector by the post-action helper; scale is -1, -4, or -8 in independently recovered branches.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0xbc
+        name: position_history_x
+        type: i32
+        confidence: confirmed
+        description: Physics dispatcher copies the live X position here before the next state-specific handoff.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0xc0
+        name: position_history_y
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0xc4
+        name: position_history_z
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x30b8
+        name: physics_state
+        type: u32
+        confidence: confirmed
+        description: Raw eight-way physics dispatcher state; retain the numeric value alongside provisional on-ground/in-air/rail/etc. labels.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x3200
+        name: position_commit_bypass_gate
+        type: u32
+        confidence: confirmed
+        description: FUN_00496060 reads this word as a direct-commit gate. Nonzero stores proposed XYZ without collision resolution. Its only setter is Skater_GroundedBounceProbe (0x00495a74, with the directional endpoint write); Skater_PhysicsFrame clears it at 0x0049f224 after its outer commit, so it lives for one physics frame.
+        evidence:
+          - re/evidence/functions/position-write-path.md
+          - re/evidence/fixtures/player-frame-integration.json
+      - offset: 0x30c4
+        name: physics_state_result
+        type: u32
+        confidence: observed
+        description: Secondary state/result word cleared by several dispatcher paths and set to one by numeric state 2.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2ccc
+        name: action_record_bank
+        type: pointer<void>
+        confidence: confirmed
+        description: Player-relative pointer to the 16-byte action-record bank consumed by the action/physics step.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2e78
+        name: brake_mode
+        type: i32
+        confidence: observed
+        description: Grounded action step's wide-limit/brake selector; state 0/7 uses it to choose the doubled turn step and +/-0x5a000 limit.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2e7c
+        name: steering_active
+        type: i32
+        confidence: observed
+        description: Grounded action step clears this at entry and sets it when a digital or analog target branch is selected, including a repeated input at a turn cap.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2dc8
+        name: ground_motion_threshold
+        type: i32
+        confidence: observed
+        description: Threshold read by the grounded acceleration producer when comparing the response speed metric; FUN_0049e680 refreshes it before the outer floor/restart helper.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2dd4
+        name: ground_motion_lock
+        type: i32
+        confidence: observed
+        description: Lock predicate that suppresses the grounded acceleration producer.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2df8
+        name: ground_motion_mode
+        type: i32
+        confidence: observed
+        description: Grounded motion mode read and updated by FUN_0049df00; mode 1 advances to mode 3 at the selected strict speed boundary.
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/ground-movement.md
+      - offset: 0x2f2c
+        name: ground_motion_cooldown
+        type: i32
+        confidence: observed
+        description: Cooldown word written as 2 by the mode-1 branch and related ground-motion modes.
+        evidence:
+          - re/evidence/functions/ground-movement.md
+      - offset: 0x29c8
+        name: ground_physics_block_29c8
+        type: i32
+        confidence: observed
+        description: First aggregate block predicate tested by FUN_0049df00 before the grounded mode switch; semantic owner remains open.
+        evidence:
+          - re/evidence/functions/ground-movement.md
+      - offset: 0x2dd0
+        name: ground_physics_block_2dd0
+        type: i32
+        confidence: observed
+        description: Second aggregate block predicate tested by FUN_0049df00 before the grounded mode switch; semantic owner remains open.
+        evidence:
+          - re/evidence/functions/ground-movement.md
+      - offset: 0x2f64
+        name: ground_physics_block_2f64
+        type: i32
+        confidence: observed
+        description: Fourth aggregate block predicate tested by FUN_0049df00 before the grounded mode switch; semantic owner remains open.
+        evidence:
+          - re/evidence/functions/ground-movement.md
+      - offset: 0x3144
+        name: movement_target_x
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x3148
+        name: movement_target_z
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2c94
+        name: movement_delta_rate_x
+        type: i32
+        confidence: observed
+        description: Rate word paired with the pending movement accumulator at +0x2ca0 in the action/position integration pass.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2c98
+        name: movement_delta_rate_y
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2c9c
+        name: movement_delta_rate_z
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2ca0
+        name: movement_delta_accumulator_x
+        type: i32
+        confidence: observed
+        description: Pending movement accumulator consumed by the shared basis/position integration pass.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2ca4
+        name: movement_delta_accumulator_y
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x2ca8
+        name: movement_delta_accumulator_z
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x31a1
+        name: heading_input
+        type: i8
+        confidence: confirmed
+        description: Signed controller lean byte consumed by the grounded analog target branch; magnitude 0x1a is the inclusive response threshold.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x31a2
+        name: heading_deadband
+        type: i8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x30f4
+        name: forward_basis_vector
+        type: array<i32,3>
+        confidence: observed
+        description: Published forward basis consumed by collision response/orientation and recovery helpers; the same storage is also used as a player-relative source by earlier action code.
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0xf4
+        name: heading_angle_candidate
+        type: u16
+        confidence: confirmed
+        description: Heading/animation frame driven toward a target by Skater_ApproachHeadingFrame; original angle units and public enum names remain open.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0xf6
+        name: animation_state
+        type: u16
+        confidence: observed
+        description: Current animation identifier read by the grounded acceleration producer for its state-specific correction branches.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0x107
+        name: animation_finished
+        type: u8
+        confidence: observed
+        description: Animation completion/enable byte read by the producer's early event branch and cleared by the mode-1 animation-control handoff; event dispatch remains outside the movement boundary.
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/ground-movement.md
+      - offset: 0x30b0
+        name: ground_animation_service_argument
+        type: u32
+        confidence: observed
+        description: Player word passed to the surface-eligible mode-1 animation/audio service; its owner and interpretation remain open.
+        evidence:
+          - re/evidence/functions/ground-movement.md
+      - offset: 0x2dd8
+        name: heading_transition_override
+        type: i32
+        confidence: observed
+        description: Selects the alternate heading transition branch when nonzero.
+        evidence:
+          - re/evidence/functions/physics.md
+      - offset: 0xd8
+        name: object_rail_flags
+        type: u8
+        confidence: observed
+        description: Object flag byte bit 1 consumed by StartGrind's stance-side turn flag update.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2e18
+        name: rail_relative_vector
+        type: array<i32,3>
+        confidence: observed
+        description: Relative vector written while deriving the perpendicular direction for the rail-entry turn flags.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2e88
+        name: rail_entry_sequence_count
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2e8c
+        name: rail_type
+        type: i32
+        confidence: observed
+        description: Rail type selector consumed by the StartGrind sound switch; rail-type semantics remain open.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2e90
+        name: outer_floor_recovery_gate_rail_entry_active
+        type: i32
+        confidence: observed
+        description: "Context-shared word: zero enables the FUN_00490730 outer floor/restart chain, while the rail-entry path uses nonzero as its active marker."
+        evidence:
+          - re/evidence/functions/physics-states.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e94
+        name: rail_entry_landing_marker
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2e98
+        name: rail_previous_node
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2e9c
+        name: rail_current_node
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2ea8
+        name: rail_entry_position
+        type: array<i32,3>
+        confidence: observed
+        description: TRG-produced position copied into the live position and both entry-position snapshots.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2eb4
+        name: rail_entry_direction
+        type: array<i32,3>
+        confidence: observed
+        description: TRG-produced rail direction negated for entry velocity/flag math and restored before StartGrind returns.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2ecc
+        name: rail_entry_position_copy
+        type: array<i32,3>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2ed8
+        name: rail_entry_mode
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2eec
+        name: rail_entry_animation_marker
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2ef4
+        name: rail_speed_delta
+        type: i32
+        confidence: observed
+        description: Type-7 random speed delta updated after the node-change quantum and consumed by the rail handler.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2efc
+        name: rail_speed_metric
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2bf0
+        name: rail_turn_flag
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2bf4
+        name: rail_turn_mismatch_flag
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2bf8
+        name: rail_stance_flag
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2be8
+        name: rail_normal_alignment_flag
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2bec
+        name: rail_normal_direction_flag
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2c04
+        name: rail_derived_pattern
+        type: i32
+        confidence: observed
+        description: Pattern value derived from +0x2bfc/+0x2c00 and the turn flag before trick services execute.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2c0c
+        name: rail_entry_effect
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2c78
+        name: rail_vector_gate_x
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2c7c
+        name: rail_vector_gate_z
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2cb0
+        name: movement_delta_accumulator_extra_x
+        type: i32
+        confidence: observed
+        description: Additional pending movement word cleared with the +0x2c94..+0x2ca8 block by the geometry-hint branch.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2cb4
+        name: movement_delta_accumulator_extra_y
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2c80
+        name: surface_response_action_gate
+        type: i32
+        confidence: confirmed
+        description: Command/action gate read by the grounded surface-response phase and cleared by the transient reset helper.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+          - re/evidence/functions/bin-runtime.md
+      - offset: 0x2c84
+        name: surface_response_phase_refresh_gate
+        type: i32
+        confidence: observed
+        description: Read after the wrapped response phase to suppress the refresh service; direct PC stores found in scope are clears only.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c88
+        name: surface_response_phase_countdown
+        type: i32
+        confidence: confirmed
+        description: Action-phase countdown decremented by 0x0049e430 when the phase crosses a 0x1000 boundary.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2c8c
+        name: surface_response_phase
+        type: i32
+        confidence: confirmed
+        description: Fixed-point phase advanced by the +0x2c90 rate and AnimationTimeScale.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c90
+        name: surface_response_phase_rate
+        type: i32
+        confidence: confirmed
+        description: Fixed-point phase rate consumed by 0x0049e430 and cleared when its countdown expires.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2cbc
+        name: surface_response_transient_auxiliary
+        type: i32
+        confidence: observed
+        description: Cleared by the guarded 0x0048f5f0 transient reset; semantic producer remains provisional.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2cc8
+        name: surface_response_action_context
+        type: i32
+        confidence: observed
+        description: Presence gate for 0x0048f5f0; its numeric value is produced by adjacent animation/game-mode services.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2d90
+        name: surface_response_timer
+        type: i32
+        confidence: confirmed
+        description: Recovery/action latch seeded to 0xf by 0x0048f5f0 and consumed/decayed by 0x00496360.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e80
+        name: signed_surface_action_spin_phase
+        type: i32
+        confidence: observed
+        description: Signed action-spin phase consumed by 0x00493370; 0x0048f5f0 clears it except in state 2.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+          - re/evidence/functions/physics.md
+      - offset: 0x3064
+        name: trick_dispatch_flag
+        type: i32
+        confidence: observed
+        description: Nonzero post-TrickInput_SelectSequence flag that invokes StartGrind from landing cleanup.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x3074
+        name: surface_response_reset_flag_3074
+        type: i32
+        confidence: observed
+        description: Cleared by 0x0048f5f0 before its transient action/reset services.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3078
+        name: surface_response_reset_flag_3078
+        type: i32
+        confidence: observed
+        description: Cleared by 0x0048f5f0; broader trick/level ownership remains provisional.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x307c
+        name: surface_response_reset_flag_307c
+        type: i32
+        confidence: observed
+        description: Cleared by 0x0048f5f0; broader trick/level ownership remains provisional.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3214
+        name: surface_response_mode_auxiliary_list_flag
+        type: i32
+        confidence: observed
+        description: Cleared through 0x0046ce60 only when LevelEventGameModeSelector is 2 or 4.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x304c
+        name: rail_update_count
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x3070
+        name: rail_sequence_update_count
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2de0
+        name: ollie_latch
+        type: i32
+        confidence: observed
+        description: Latched launch word cleared by the geometry-hint StartGrind branch.
+        evidence:
+          - re/evidence/functions/physics-states.md
+      - offset: 0x2c68
+        name: collision_recovery_correction_gate
+        type: i32
+        confidence: observed
+        description: Ground recovery word cleared by the ordinary branch of Skater_ExitGroundCollisionRecovery after its state request.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c74
+        name: bounce_heading_gate
+        type: i32
+        confidence: observed
+        description: Grounded bounce predicate read by Skater_GroundedBounceProbe before the optional 200-heading response path.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29d0
+        name: collision_recovery_stream
+        type: i32
+        confidence: observed
+        description: Pending action stream/reference consumed by the ordinary collision-recovery exit before +0x29c8 is cleared.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3068
+        name: collision_recovery_auxiliary_x
+        type: i32
+        confidence: observed
+        description: Auxiliary collision-recovery word cleared by Skater_ExitGroundCollisionRecovery.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x306c
+        name: collision_recovery_auxiliary_y
+        type: i32
+        confidence: observed
+        description: Auxiliary collision-recovery word cleared by Skater_ExitGroundCollisionRecovery.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ddc
+        name: collision_recovery_active
+        type: i32
+        confidence: observed
+        description: Set to one by the ordinary collision-recovery exit before its animation/action cleanup.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e0c
+        name: outer_floor_reference_bounce_restore_position
+        type: array<i32,3>
+        confidence: confirmed
+        description: "Context-shared saved XYZ: FUN_00490730 consumes it as the persistent outer recovery reference, while the final grounded bounce helper uses it to restore its saved position."
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3100
+        name: collision_basis_right
+        type: array<i32,3>
+        confidence: confirmed
+        description: Fixed-point tangent/right basis used by grounded bounce and support probes.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x310c
+        name: collision_basis_up
+        type: array<i32,3>
+        confidence: confirmed
+        description: Fixed-point up/ground-normal basis used by bounce and recovery probes.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3130
+        name: orientation_recovery_progress
+        type: i32
+        confidence: confirmed
+        description: Recovery progress compared strictly against 0x18001; exact 0x18000 selects the stored target normal.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3134
+        name: orientation_recovery_base
+        type: array<i32,3>
+        confidence: confirmed
+        description: Full-width normal/base vector eased toward the target short normal by the orientation recovery helper.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2da4
+        name: support_recovery_distance
+        type: i32
+        confidence: observed
+        description: Ground support/recovery threshold accumulator compared with the secondary sweep distance plus 0x74.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2db4
+        name: collision_face_recovery_flags
+        type: i32
+        confidence: observed
+        description: Collision/recovery result word receiving the face-bit output on the long support branch.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2d9c
+        name: steep_surface_response_accumulator
+        type: i32
+        confidence: observed
+        description: Signed accumulator updated from the state-2 surface normal response angle and compared with -0x400.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3128
+        name: recovery_normal_packed
+        type: array<i32,2>
+        confidence: observed
+        description: Packed recovery-normal storage written by the grounded collision branch for later state-2 response consumption.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3118
+        name: collision_surface_correction
+        type: array<i32,3>
+        confidence: observed
+        description: Projected surface correction published by the grounded collision path before the outer frame handoff.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x80
+        name: recovery_target_normal_short
+        type: array<i16,3>
+        confidence: observed
+        description: Short target normal selected at the terminal orientation-recovery branch.
+        evidence:
+          - re/evidence/functions/player-physics-collision-recovery.md
+
+  - name: RuntimeCollisionQueryRecord
+    kind: alias
+    target: SLineInfo
+    confidence: observed
+    description: Compatibility alias for the canonical collision query layout.

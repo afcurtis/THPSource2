@@ -1,0 +1,65 @@
+version: 1
+id: loading-goals-screen
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x0045d010
+    - 0x0045d5e0
+    - 0x0045d680
+    - 0x0045d690
+    - 0x0045d760
+    - 0x0045d7a0
+    - 0x0045d830
+    - 0x0045db40
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/goals-screens.md
+    - re/evidence/fixtures/goal-calls-competition.txt
+    - re/evidence/fixtures/goal-calls-displays.txt
+    - re/evidence/fixtures/goal-calls-goalsrun.txt
+    - re/evidence/fixtures/goal-calls-levelpic.txt
+    - re/evidence/fixtures/goal-calls-lighteditor.txt
+    - re/evidence/fixtures/goal-calls-loading.txt
+    - re/evidence/fixtures/goal-calls-medals.txt
+    - re/evidence/fixtures/goal-calls-tag.txt
+    - re/evidence/fixtures/goal-calls-trgrecord.txt
+    - re/evidence/fixtures/goal-calls-videowin.txt
+  native:
+    - src/runtime/goals.hpp
+    - src/runtime/goals_competition.cpp
+    - src/runtime/goals_displays.cpp
+    - src/runtime/goals_windows.cpp
+    - src/runtime/goals_lights.cpp
+    - src/runtime/goals_loading.cpp
+    - src/runtime/goals_objects.cpp
+    - src/runtime/goals_tag.cpp
+    - src/runtime/goals_dispatch.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - re/gdb/probes/frontend_specs_goals.py
+    - re/gdb/probes/frontend_specs_goals_cases.py
+    - re/gdb/probes/frontend_specs_goals_win.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/goals_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - tests/test_goals_screens.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the glds and ggls groups: the engine''s frame, draw, sprite and font calls are seams; the checklist loop is replayed on frames that end it): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`goals_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 8 of the 8 functions are replayed over 566 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's sprite, sound, card, model and prompt calls and the screen loop's window methods are seams reported by name with the arguments retail passed; the loop's frame waits for the clock with a spin a forced call cannot satisfy, so it is replayed on frames that end at once (the unit tests cover the rest).

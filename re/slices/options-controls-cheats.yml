@@ -1,0 +1,77 @@
+version: 1
+id: options-controls-cheats
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x00487490
+    - 0x00487c10
+    - 0x00487c30
+    - 0x00487dc0
+    - 0x00487dd0
+    - 0x00487f60
+    - 0x00488160
+    - 0x00488410
+    - 0x00488480
+    - 0x004884c0
+    - 0x00488590
+    - 0x004885c0
+    - 0x004885d0
+    - 0x00488d50
+    - 0x00488d70
+    - 0x00488e30
+    - 0x00488e40
+    - 0x004891a0
+    - 0x00489240
+    - 0x004892a0
+    - 0x00489350
+    - 0x00489390
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/options-screen.md
+    - re/evidence/fixtures/opt-calls-optchk.txt
+    - re/evidence/fixtures/opt-calls-optctl.txt
+    - re/evidence/fixtures/opt-calls-optgap.txt
+    - re/evidence/fixtures/opt-calls-optloop.txt
+    - re/evidence/fixtures/opt-calls-optmenu.txt
+    - re/evidence/fixtures/opt-calls-optmov.txt
+    - re/evidence/fixtures/opt-calls-optscore.txt
+    - re/evidence/fixtures/opt-calls-optsnd.txt
+    - re/evidence/fixtures/opt-calls-optstub.txt
+    - re/evidence/fixtures/opt-calls-optvid.txt
+  native:
+    - src/runtime/options.hpp
+    - src/runtime/options_menu.cpp
+    - src/runtime/options_gaps.cpp
+    - src/runtime/options_scores.cpp
+    - src/runtime/options_pages.cpp
+    - src/runtime/options_controls.cpp
+    - src/runtime/options_dispatch.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - re/gdb/probes/frontend_specs_opt.py
+    - re/gdb/probes/frontend_specs_opt_pages.py
+    - re/gdb/probes/frontend_specs_opt_ctl.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/options_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - tests/test_options_screen.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the optctl and optchk groups: pages built by hand with real text rows for the buttons and fake lists, the career''s cheat calls are seams): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`options_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 22 of the 22 functions are replayed over 879 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's sprite, sound, card, model and prompt calls and the screen loop's window methods are seams reported by name with the arguments retail passed; the loop's frame waits for the clock with a spin a forced call cannot satisfy, so it is replayed on frames that end at once (the unit tests cover the rest).

@@ -1,0 +1,16 @@
+version: 1
+description: Boot, main menu to Create-a-Skater (Right x4), Custom Skater Roster, an empty slot opens the editor, Esc back to the roster.
+deliveries: 4800
+keys:
+  - {poll: 530, key: right, hold: 5}
+  - {poll: 560, key: right, hold: 5}
+  - {poll: 590, key: right, hold: 5}
+  - {poll: 620, key: right, hold: 5}
+  - {poll: 710, key: enter, hold: 5}
+  - {poll: 900, key: enter, hold: 5}
+  - {poll: 1400, key: f9, hold: 3}
+  - {poll: 1500, key: esc, hold: 5}
+  - {poll: 2000, key: f9, hold: 3}
+# Heap-pointer cells of the D3D and DirectInput wrappers (low byte moves by 0x20 once native code has run in
+# the process); found by a byte diff of retail against native-all at delivery 2.
+masks: ["55dce8:4", "55dd0c:8", "55dd28:4", "55dd5c:4", "6a04c4:8", "6a7674:8"]

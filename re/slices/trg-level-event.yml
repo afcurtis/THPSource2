@@ -1,0 +1,49 @@
+version: 1
+id: trg-level-event
+subsystem: scripting
+status: complete
+
+scope:
+  functions:
+    - 0x00466c10
+    - 0x00469a30
+    - 0x00469de0
+  types:
+    - RuntimeLevelEventState
+  globals:
+    - LevelEventStateWord
+    - LevelEventLatch
+    - LevelEventSecondaryStateWord
+    - LevelEventFlag
+
+artifacts:
+  evidence:
+    - re/evidence/functions/level-event-runtime.md
+  native:
+    - src/trg/level_trigger_state.hpp
+    - src/trg/level_trigger_state.cpp
+    - src/runtime/level_event_owner.hpp
+    - src/runtime/level_event_owner.cpp
+    - src/runtime/player_state.hpp
+    - src/runtime/player_state.cpp
+    - src/runtime/physics_replay.hpp
+    - src/runtime/gameplay_session.hpp
+    - src/runtime/gameplay_session.cpp
+    - src/runtime/level_frame.hpp
+    - src/runtime/gameplay_frame.cpp
+    - src/camera/camera_runtime.hpp
+    - src/camera/camera_runtime.cpp
+  tests:
+    - src/trg/trg_runtime_test.cpp
+    - src/trg/level_trigger_state_test.cpp
+    - src/runtime/level_event_owner_test.cpp
+
+open_questions: []
+
+completion:
+  - Opcode 0x009e is proven operand-free in normal and conditional-skip paths, including stream-boundary failures.
+  - Mode-8/mode-9 raw counter writes and first-call latch initialization are represented with explicit caller inputs.
+  - Eligible per-frame countdown, animation selection, camera-step deltas, replay reset, completion, and pending-score handoffs have deterministic tests.
+  - FUN_0044e0f0 (end-of-run ranking and menu transition) and FUN_004dee50 (load synchronisation and diagnostics) belong to the front-end/results and streaming work; the trigger service does not consume their results.
+  - The three helper functions are characterised in level-event-runtime.md (0x004ab9c0 is a two-write leaf; 0x004dee50 is a load-sync and logging wait; 0x0044e0f0 is the end-of-run handler) and none returns a value into the trigger stream.
+  - LevelEventGameplayOwner applies animation, replay-slot, score, and camera writes with raw player-field names preserved where semantics remain open.

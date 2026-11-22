@@ -1,0 +1,38 @@
+version: 1
+id: skater-rail-events
+subsystem: physics
+status: complete
+scope:
+  functions:
+  - 0x00490ae0
+  - 0x00490c70
+  - 0x00490e30
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/skater-model-and-effects.md
+  - re/evidence/fixtures/skater-calls-physF.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/skater_kit.hpp
+  - src/runtime/skater_events.cpp
+  - re/gdb/probes/phys_specs_events.py
+  - re/gdb/probes/rail_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/skater_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups phe): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (skater_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 3 of the 3 functions (the rail events: the registration of the trick object a rail node links to, the completion of the gap such an object names, and the handplant that registers it) are replayed over 900 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 90 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the trigger layer (node links, command lists), the environment item lookup, the trick object layer, the gap routines, `Trick_TakeOff` (its effect on the skater is a scripted answer), the sound and the animation player are services; the node table has forward links only, because a rail walk through a cycle never ends in retail.

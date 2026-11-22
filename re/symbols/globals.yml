@@ -1,0 +1,1117 @@
+version: 1
+globals:
+  - address: 0x0056e31c
+    name: SimulationPublicTick
+    description: integer public tick published by the multimedia timer callback
+    confidence: observed
+    evidence:
+      - re/evidence/functions/simulation-time-callback.md
+  - address: 0x0056e320
+    name: SimulationTime
+    description: integer simulation-time value published by the multimedia timer callback
+    confidence: observed
+    evidence:
+      - re/evidence/functions/simulation-time-callback.md
+  - address: 0x006a0590
+    name: TimerPublicAccumulator
+    description: double accumulator converted into SimulationPublicTick by the timer callback
+    confidence: observed
+    evidence:
+      - re/evidence/functions/simulation-time-callback.md
+  - address: 0x006a0598
+    name: TimerSimulationAccumulator
+    description: double accumulator converted into SimulationTime when both pause gates are clear
+    confidence: observed
+    evidence:
+      - re/evidence/functions/simulation-time-callback.md
+  - address: 0x006a05a0
+    name: TimerState
+    description: callback-owned multimedia timer state record
+    confidence: observed
+    evidence:
+      - re/evidence/functions/simulation-time-callback.md
+  - address: 0x029d6920
+    name: AudioBankRecords
+    gdb_aliases:
+      - audio_banks
+    description: 0x80 runtime sound-bank records, each with eight voice/buffer pointers
+    confidence: observed
+    evidence:
+      - re/evidence/functions/audio-runtime.md
+  - address: 0x029d7d20
+    name: AudioSoundIdMap
+    gdb_aliases:
+      - audio_sound_map
+    description: sound-id to sound-description pointer map
+    confidence: observed
+    evidence:
+      - re/evidence/functions/audio-runtime.md
+  - address: 0x029d8360
+    name: AudioDevice
+    gdb_aliases:
+      - audio_device
+    description: active audio-device object used to create runtime sound buffers
+    confidence: inferred
+    evidence:
+      - re/evidence/functions/audio-runtime.md
+  - address: 0x005685f4
+    name: AnimationClock
+    gdb_aliases:
+      - animation_clock
+    description: integer global animation clock used by mode-3 playback
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/animation.md
+  - address: 0x0056865c
+    name: AnimationTimeScale
+    gdb_aliases:
+      - animation_time_scale
+    description: global 8.8-style frame-time scale multiplied into animation rate
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/animation.md
+  - address: 0x00568810
+    name: AnimationClockAccumulator
+    gdb_aliases:
+      - animation_clock_accumulator
+    description: sub-frame global accumulator from which the integer animation clock is derived
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/animation.md
+  - address: 0x0056a858
+    name: Player
+    gdb_aliases:
+      - player
+      - player_objects
+    description: two-entry table of gameplay skater object pointers; entry zero is at this address and entry one is at +4
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/game-loop.md
+      - re/evidence/functions/player-runtime.md
+  - address: 0x00534620
+    name: PlayerHookPacketTemplates
+    description: Eleven initialized 0x14-byte player hook-packet templates selected by the skater model index
+    confidence: observed
+    evidence:
+      - re/evidence/functions/skater-asset-runtime.md
+  - address: 0x0053a3b8
+    name: SkaterModelNameTable
+    description: Static 20-row skater/costume name table with 0x170-byte rows; the selector reads the first four 8-byte-spaced entries per row
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/skater-asset-runtime.md
+  - address: 0x0053a514
+    name: SkaterSelectionRecords
+    description: Twenty 0x170-byte skater selection records; flag bit 0x02 marks the enabled custom-skater rows used by Skater_MapEnabledIndex
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/skater-asset-runtime.md
+  - address: 0x0056a898
+    name: CurrentLevel
+    gdb_aliases:
+      - current_level
+    description: current level index
+    confidence: inferred
+    evidence:
+      - re/evidence/functions/game-loop.md
+      - re/evidence/functions/level-load.md
+  - address: 0x00560fd0
+    name: RenderPolygonArenaCursor
+    description: current cursor in the per-view polygon arena; the view record advances it by 0x14, polygon construction advances it by 0xc0, and rejected attempts rewind one slot before linking
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x00568628
+    name: RenderPolygonArenaEnd
+    description: exclusive end checked by the fixed-size per-view polygon allocator
+    confidence: observed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x0056433c
+    name: RenderBucketHeads
+    description: per-view bucket table whose 8-byte slots hold the intrusive polygon-list heads
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x00518484
+    name: RenderWindingThreshold
+    description: projected winding comparison threshold; the retail data value is zero
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x00563b08
+    name: RenderReverseWinding
+    description: nonzero state selecting the reverse projected-winding rejection rule
+    confidence: observed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x0058f30c
+    name: RenderDepthModeSelector
+    description: renderer state word whose masked 0x6000 value selects the caller-resolved depth offset before 0x004d26b0
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x00563a64
+    name: RenderDepthOffset2000
+    description: caller-resolved depth offset selected when the renderer state mask equals 0x2000
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x00563a7c
+    name: RenderDepthOffset4000
+    description: caller-resolved depth offset selected when the renderer state mask equals 0x4000
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x00563a88
+    name: RenderDepthOffset6000
+    description: caller-resolved depth offset selected when the renderer state mask equals 0x6000
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x0058089c
+    name: RenderNearDepth
+    description: near-depth clamp used by the depth classifier and ordinary transform clip test; live value is 10
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+  - address: 0x00563a38
+    name: RenderViewportEdges
+    description: pointer to the active raw viewport record; the clipper reads edges as [right, bottom, left, top]
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+      - re/evidence/functions/camera-system.md
+  - address: 0x00518d70
+    name: RenderProjectionUnitScale
+    description: unit numerator used when the near clipper inverts ordinary reciprocal depth; live value is 1.0
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+      - re/evidence/functions/camera-system.md
+  - address: 0x005808a0
+    name: RenderProjectionCenterX
+    description: screen-space projection center X consumed by ordinary and near-clipped vertex paths; live value is 320
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+      - re/evidence/functions/camera-system.md
+  - address: 0x005808a4
+    name: RenderProjectionCenterY
+    description: screen-space projection center Y consumed by ordinary and near-clipped vertex paths; live value is 240
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+      - re/evidence/functions/camera-system.md
+  - address: 0x005808a8
+    name: RenderProjectionDepthScale
+    description: reciprocal-depth projection scale consumed by ordinary and near-clipped vertex paths; live value is 384
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/render-packet-submission.md
+      - re/evidence/functions/camera-system.md
+  - address: 0x0056ad00
+    name: MmuManager
+    description: active PC save/card compatibility manager used by the MMU setup and frontend state machine
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/save-runtime.md
+  - address: 0x0056ad04
+    name: MmuCareerLoadBuffer
+    description: allocated 0x1e00-byte career load buffer registered with the MMU manager
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/save-runtime.md
+  - address: 0x00568a68
+    name: CareerSaveImage
+    gdb_aliases:
+      - career_save_image
+    description: contiguous 0x1dc4-byte career image copied into and out of the registered 0x1e00-byte career save buffer
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/career-save-runtime.md
+  - address: 0x0056ad08
+    name: MmuReplayLoadBuffer
+    description: allocated 0x280-byte replay/video load buffer registered with the MMU manager
+    confidence: observed
+    evidence:
+      - re/evidence/functions/save-runtime.md
+  - address: 0x00533ab4
+    name: CollisionQueryGeneration
+    gdb_aliases:
+      - collision_query_generation
+    description: 16-bit generation counter used to avoid rebuilding object collision caches during one query
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/blockmap-collision.md
+  - address: 0x0056a840
+    name: GrindTrickScriptOffsets
+    gdb_aliases:
+      - grind_trick_offsets
+    description: loaded TRICKS.BIN section table of signed offsets used to select grind scripts
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/bin-runtime.md
+  - address: 0x005685f0
+    name: TrickStateScriptOffsets
+    gdb_aliases:
+      - trick_state_script_offsets
+    description: loaded TRICKS.BIN section-2 signed offsets selected by the skater trick/state-start path
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/bin-runtime.md
+  - address: 0x0056a894
+    name: TricksBinaryBase
+    gdb_aliases:
+      - tricks_base
+    description: raw TRICKS.BIN buffer base used to resolve signed script offsets
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/bin-runtime.md
+  - address: 0x00568a50
+    name: PlayerOneTrickScriptTable
+    gdb_aliases:
+      - trick_table_p1
+    description: generated zero-terminated per-player trick key/script table for player one
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/bin-runtime.md
+  - address: 0x00568a4c
+    name: PlayerTwoTrickScriptTable
+    gdb_aliases:
+      - trick_table_p2
+    description: generated zero-terminated per-player trick key/script table for player two
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/bin-runtime.md
+  - address: 0x0056b7f8
+    name: ExtraAnimationListCursor
+    gdb_aliases:
+      - extra_animation_cursor
+    description: cursor into the extra-animation list populated while parsing trick scripts
+    confidence: observed
+    evidence:
+      - re/evidence/functions/bin-runtime.md
+  - address: 0x0056b7bc
+    name: ExtraAnimationCount
+    gdb_aliases:
+      - extra_animation_count
+    description: count of extra animations registered from TRICKS.BIN script command type 1
+    confidence: observed
+    evidence:
+      - re/evidence/functions/bin-runtime.md
+  - address: 0x0056dcac
+    name: CurrentItemsRegion
+    gdb_aliases:
+      - items_region
+    description: published PSX slot for the ordinary ITEMS region
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/items-runtime.md
+  - address: 0x0056dcad
+    name: CurrentSkMedalsRegion
+    gdb_aliases:
+      - skmedals_region
+    description: published PSX slot for the optional SKMEDALS region; 0xff means absent
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/items-runtime.md
+  - address: 0x0056dd5c
+    name: CurrentBitsRegion
+    gdb_aliases:
+      - bits_region
+    description: published PSX slot for the BITS named-resource region
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/items-runtime.md
+  - address: 0x0056db38
+    name: BitsResourceListHead
+    gdb_aliases:
+      - bits_resources
+    description: linked-list head of parsed BITS type-0x45 named-group resources
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/items-runtime.md
+  - address: 0x0056db90
+    name: TrickObjectListHead
+    gdb_aliases:
+      - trick_objects
+    description: head of the intrusive list of 0x18-byte TRG type-12/14 trick-object records
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/trick-object-runtime.md
+  - address: 0x00546110
+    name: WarehouseGapDefinitionTable
+    description: 132-record general/Warehouse gap-definition table with 0x2c-byte records and a 0xffff divider terminator
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/gap-runtime.md
+  - address: 0x0056dd58
+    name: ActiveGapDefinitionTable
+    description: Runtime-selected pointer to the compiled gap-definition table used by TRG command 0xc9; Warehouse uses 0x00546110, while other level families select alternate tables
+    confidence: observed
+    evidence:
+      - re/evidence/functions/gap-runtime.md
+  - address: 0x0055fa58
+    name: CameraPointNodeIndices
+    description: bounded u16 array of registered TRG type-13 camera-point node indices, with capacity 0x46
+    confidence: observed
+    evidence:
+      - re/evidence/functions/trg-runtime.md
+  - address: 0x0055fae4
+    name: CameraPointCount
+    description: count of registered TRG type-13 camera-point node indices
+    confidence: observed
+    evidence:
+      - re/evidence/functions/trg-runtime.md
+  - address: 0x00533f38
+    name: LevelEventGameModeSelector
+    description: mode selector read by the 0x00466c10 level-event branch and 0x00469a30/0x00469de0 consumers
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x0056db64
+    name: LevelEventVersusStateSelector
+    description: secondary mode selector compared with two by the mode-9 level-event branch
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x00568610
+    name: LevelEventStateWord
+    description: level-event step/state word initialized to 0x40 and cleared when the countdown finalizes a pending score
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x00568658
+    name: LevelEventLatch
+    description: one-shot level-event latch initialized by 0x00466c10
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x00568818
+    name: LevelEventSecondaryStateWord
+    description: level-event countdown initialized to 0x50, decremented by the per-frame finalizer, and reset/rearmed at event completion
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x006a3d49
+    name: LevelEventFlag
+    description: byte flag set by the first-call level-event initialization path
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x006a3d48
+    name: LevelEventMode9SideFlag
+    description: byte selecting the mode-9 level-event counter branch when versus state is 2
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x0056b798
+    name: LevelEventRawWord_0056b798
+    description: raw mode-8/mode-9 level-event counter word incremented by one branch of 0x00466c10
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x0056b79c
+    name: LevelEventRawWord_0056b79c
+    description: raw mode-8/mode-9 level-event counter word incremented by the complementary branch
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x0056b7a0
+    name: LevelEventRawWord_0056b7a0
+    description: raw level-event maximum word updated from the secondary player +0x2cdc value
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x0056b7a4
+    name: LevelEventRawWord_0056b7a4
+    description: raw level-event maximum word updated from the primary player +0x2cdc value
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x0056b7b0
+    name: LevelEventRawWord_0056b7b0
+    description: raw signed level-event step word updated by the mode-8/mode-9 counter branches
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x0056b7b4
+    name: LevelEventRawWord_0056b7b4
+    description: raw signed level-event step word updated by the complementary mode-8/mode-9 branches
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x0056b7dc
+    name: LevelEventRawWord_0056b7dc
+    description: raw mode-8/mode-9 level-event counter word incremented by one branch of 0x00466c10
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x0056b7e0
+    name: LevelEventRawWord_0056b7e0
+    description: raw mode-8/mode-9 level-event counter word incremented by the complementary branch
+    confidence: observed
+    evidence:
+      - re/evidence/functions/level-event-runtime.md
+  - address: 0x006a3f1c
+    name: ActionMask
+    gdb_aliases:
+      - action_mask
+    description: current per-player action mask
+    confidence: inferred
+    evidence:
+      - re/evidence/functions/input.md
+  - address: 0x006a43e0
+    name: KeyboardDevice
+    gdb_aliases:
+      - keyboard_device
+    description: DirectInput keyboard wrapper; state buffer begins at +4
+    confidence: observed
+    evidence:
+      - re/evidence/functions/input.md
+  - address: 0x006a43e4
+    name: KeyboardState
+    gdb_aliases:
+      - keyboard_state
+    description: 256-byte DirectInput keyboard state buffer
+    confidence: observed
+    evidence:
+      - re/evidence/functions/input.md
+  - address: 0x0056aff8
+    name: InputActionStates
+    gdb_aliases:
+      - input_action_states
+    description: base of the 16-byte per-action input state records
+    confidence: inferred
+    evidence:
+      - re/evidence/functions/input.md
+  - address: 0x0056b2f0
+    name: SourcePaletteLookupHead
+    description: head of the inline PSX source-palette lookup list
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/texture-runtime.md
+  - address: 0x0056cc18
+    name: SceneMaterialHashBuckets
+    description: 512-entry hash-bucket head table for PSX scene material records
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/asset-loading.md
+  - address: 0x00567fa0
+    name: ZoneCellReferencePointers
+    description: zone-indexed cell table whose entries are rewritten from disk object-index arrays to runtime object-pointer arrays
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/blockmap-collision.md
+      - re/evidence/functions/collision.md
+  - address: 0x00567a70
+    name: CollisionModelCache
+    type: array<SColCache,20>
+    description: twenty-entry rotating object/model face-cache descriptor table
+    confidence: observed
+    evidence:
+      - re/evidence/functions/blockmap-collision.md
+      - re/evidence/functions/collision.md
+  - address: 0x005643b0
+    name: CollisionFaceCache
+    type: SFaceCache
+    description: shared 0x1c-byte-per-face world-space collision AABB cache
+    confidence: observed
+    evidence:
+      - re/evidence/functions/blockmap-collision.md
+  - address: 0x0056af40
+    name: GameObjectListHead
+    type: pointer<RuntimeCollisionObject>
+    description: head of the separate gameplay-object list visited before static zone collision
+    confidence: observed
+    evidence:
+      - re/evidence/functions/blockmap-collision.md
+      - re/evidence/functions/trg-runtime.md
+      - re/evidence/functions/collision.md
+  - address: 0x0056af44
+    name: ActiveObjectListHead
+    description: adjacent intrusive-list head used by the object activation/relink helper
+    confidence: observed
+    evidence:
+      - re/evidence/functions/trg-runtime.md
+  - address: 0x0055f6bc
+    name: BaddyObjectListHead
+    description: intrusive list head supplied to the subtype-0xcb trigger constructor
+    confidence: observed
+    evidence:
+      - re/evidence/functions/trg-runtime.md
+  - address: 0x0055f6b0
+    name: TriggerScriptObjectListHead
+    description: intrusive list head for the 0xcc-byte records created by trigger command 0x00ab
+    confidence: observed
+    evidence:
+      - re/evidence/functions/trg-runtime.md
+  - address: 0x0056b860
+    name: RailRuntimeListHead
+    description: intrusive list head for type-10/type-11 rail runtime records
+    confidence: observed
+    evidence:
+      - re/evidence/functions/trg-runtime.md
+  - address: 0x00567f80
+    name: ZoneGridActive
+    description: active flag for the zone-grid runtime array
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/blockmap-collision.md
+      - re/evidence/functions/collision.md
+  - address: 0x00567cb0
+    name: AnimationTweenPoseBuffer
+    description: global 0x18-byte-per-part pose buffer used by animation interpolation and hook consumers
+    confidence: observed
+    evidence:
+      - re/evidence/functions/animation-runtime.md
+  - address: 0x00567f84
+    name: ZoneGridBounds
+    description: four fixed-point zone bounds with 0x660-byte per-zone storage stride
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/blockmap-collision.md
+  - address: 0x00567f94
+    name: ZoneGridCellSize
+    description: computed fixed-point X cell size for the active zone grid
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/blockmap-collision.md
+  - address: 0x00567f9c
+    name: ZoneGridCellCounts
+    description: packed X/Z cell counts for the active zone grid
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/blockmap-collision.md
+  - address: 0x0056d444
+    name: AnimationTablesByRegion
+    description: slot-indexed animation table pointers consumed by animation start/update
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/animation-runtime.md
+      - re/evidence/functions/psx-tags-runtime.md
+  - address: 0x0056d448
+    name: AnimationHierarchyTablesByRegion
+    description: slot-indexed compacted animation source/hierarchy table pointers
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/animation-runtime.md
+      - re/evidence/functions/psx-tags-runtime.md
+  - address: 0x0056d450
+    name: PsxRgbTablesByRegion
+    description: slot-indexed RGBS colour-table pointers used by render and colour-pulse consumers
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/psx-tags-runtime.md
+  - address: 0x0056d454
+    name: PsxTextureWibTablesByRegion
+    description: slot-indexed texture-WIB item-info table pointers consumed by model/face texture mutation
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/psx-tags-runtime.md
+  - address: 0x0056d458
+    name: PsxColourPulseTablesByRegion
+    description: slot-indexed colour-pulse table pointers consumed by pulse updates
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/psx-tags-runtime.md
+  - address: 0x005614d8
+    name: CustomParkItemRecords
+    description: ten expanded 0x2c-byte PRK item records used by level generation
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/custom-park-runtime.md
+  - address: 0x0056a1fc
+    name: CustomParkTrailingTable
+    description: copied 0x40-byte PRK trailing table
+    confidence: observed
+    evidence:
+      - re/evidence/functions/custom-park-runtime.md
+  - address: 0x0056d438
+    name: PsxObjectTablesByRegion
+    description: slot-indexed published 0x4c-stride PSX object arrays
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/custom-park-runtime.md
+      - re/evidence/functions/asset-loading.md
+      - re/evidence/functions/collision.md
+  - address: 0x0056d43c
+    name: PsxModelTablesByRegion
+    description: slot-indexed published PSX model-pointer arrays
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/custom-park-runtime.md
+      - re/evidence/functions/asset-loading.md
+  - address: 0x0056d440
+    name: PsxRawRegionsBySlot
+    description: slot-indexed raw/finalized PSX region pointers
+    confidence: observed
+    evidence:
+      - re/evidence/functions/custom-park-runtime.md
+  - address: 0x0056d428
+    name: PsxRegionNamesBySlot
+    description: 20-entry table of named PSX regions, each using a 0x44-byte name/metadata stride
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/trg-runtime.md
+      - re/evidence/functions/asset-loading.md
+  - address: 0x0056d9c8
+    name: PsxSpoolQueueEntries
+    description: 20-entry PSX scheduling queue with 0x11-byte name/mode records
+    confidence: observed
+    evidence:
+      - re/evidence/functions/skater-asset-runtime.md
+  - address: 0x00537c80
+    name: EnvironmentRegionSlots
+    description: two environment-list slots containing attached PSX region indices
+    confidence: observed
+    evidence:
+      - re/evidence/functions/psx-lifecycle.md
+      - re/evidence/functions/blockmap-collision.md
+  - address: 0x0056db28
+    name: PsxEnvironmentObjectListHead
+    description: head of the attached PSX environment-object list consumed by renderer and collision paths
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/psx-lifecycle.md
+      - re/evidence/functions/renderer.md
+      - re/evidence/functions/asset-loading.md
+  - address: 0x0056db34
+    name: PsxSpoolQueueCount
+    description: modulo-20 insertion index for the PSX scheduling queue
+    confidence: observed
+    evidence:
+      - re/evidence/functions/skater-asset-runtime.md
+  - address: 0x005615dc
+    name: PlayerSpoolBusy
+    description: shared busy flag set while player spool work is pending or being synchronized
+    confidence: observed
+    evidence:
+      - re/evidence/functions/skater-asset-runtime.md
+  - address: 0x0056e5f8
+    name: ReplayNumFrames
+    description: GVideoRestart replay frame-count field populated by the REC loader
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056b8d4
+    name: ReplayNumSkaters
+    description: GVideoRestart skater-count field populated by the REC loader
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056b8d6
+    name: ReplaySkater
+    description: GVideoRestart first skater selector
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056b8d7
+    name: ReplaySkater2
+    description: GVideoRestart second skater selector
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056b8da
+    name: ReplayLevel
+    description: GVideoRestart level field populated by the REC loader
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056b8dc
+    name: ReplayGame
+    description: GVideoRestart game-mode field populated by the REC loader
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e62c
+    name: ReplayHighlightRanges
+    description: five copied GVideoRestart highlight start/end pairs
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e5d8
+    name: ReplayPlaybackState0
+    description: first per-skater replay/video playback state block
+    confidence: observed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e5dc
+    name: ReplayStreamBuffer0
+    description: base pointer for the first 0x80000-byte replay stream buffer
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e5e0
+    name: ReplayStreamStart0
+    description: first stream state's reserved header/live-stream boundary pointer
+    confidence: observed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e5e4
+    name: ReplayStreamBoundary0
+    description: first stream state's internal boundary pointer
+    confidence: observed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e450
+    name: ReplayPlaybackState1
+    description: second per-skater replay/video playback state block
+    confidence: observed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e454
+    name: ReplayStreamBuffer1
+    description: base pointer for the optional second 0x80000-byte replay stream buffer
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e458
+    name: ReplayStreamStart1
+    description: second stream state's reserved header/live-stream boundary pointer
+    confidence: observed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e45c
+    name: ReplayStreamBoundary1
+    description: second stream state's internal boundary pointer
+    confidence: observed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x0056e774
+    name: ReplayHighlightCursor
+    description: active highlight index used by replay frame skipping
+    confidence: observed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x00561990
+    name: ReplayVideoRestartActive
+    description: frontend video-restart/replay session flag
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x00561c70
+    name: ReplayTwoSkaterMode
+    description: frontend replay flag set when the loaded header selects two skaters
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x00561c74
+    name: ReplayGameState
+    description: frontend replay game/state selector applied from the header
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x00561c88
+    name: ReplaySkaterManagerSlot0
+    description: first manager slot saved across a video-restart replay session
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x00561c8c
+    name: ReplaySkaterManagerSlot1
+    description: second manager slot saved across a video-restart replay session
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x00561c90
+    name: ReplayCurrentLevel
+    description: frontend level selector applied from the replay header
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/replay-runtime.md
+  - address: 0x006a0548
+    name: D3DLevelName
+    description: selected level-name string used as the configured PC texture subdirectory
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/texture-runtime.md
+  - address: 0x00549f24
+    name: D3DConfiguredTextureRootEnabled
+    description: static nonzero flag selecting the configured NEWTEX level-root bitmap path
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/texture-runtime.md
+  - address: 0x006a6964
+    name: D3DTextureMode
+    description: graphics/texture mode flag consulted by the PC bitmap lookup branch
+    confidence: observed
+    evidence:
+      - re/evidence/functions/texture-runtime.md
+  - address: 0x0065f82c
+    name: D3DPrimitiveDispatchTable
+    description: 256-entry polygon opcode-base handler table initialized by the renderer
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/renderer.md
+  - address: 0x006a0064
+    name: D3DPolygonFormatMode
+    description: current polygon command format/mode byte selected from opcode bit zero
+    confidence: observed
+    evidence:
+      - re/evidence/functions/renderer.md
+  - address: 0x006a0068
+    name: D3DPrimitiveSubmissionCount
+    description: per-frame primitive submission counter incremented by geometry handlers
+    confidence: observed
+    evidence:
+      - re/evidence/functions/renderer.md
+  - address: 0x0056b768
+    name: CollisionResultFlagSurface40
+    description: derived collision result flag from winning face flags bit 0x40
+    confidence: inferred
+    evidence:
+      - re/evidence/functions/collision.md
+  - address: 0x0056b7a8
+    name: CollisionResultFlagInverse23
+    description: derived collision result boolean from the inverse of face bit 23
+    confidence: inferred
+    evidence:
+      - re/evidence/functions/collision.md
+  - address: 0x0056b7ac
+    name: CollisionResultFlagFace80
+    description: derived collision result flag from face word zero bit 0x80
+    confidence: inferred
+    evidence:
+      - re/evidence/functions/collision.md
+  - address: 0x0056b7b8
+    name: CollisionResultFlagInverse24
+    description: derived collision result boolean from the inverse of face bit 24
+    confidence: inferred
+    evidence:
+      - re/evidence/functions/collision.md
+  - address: 0x0056b7e8
+    name: CollisionSurfaceClass
+    description: four-bit surface class derived from winning face flags
+    confidence: inferred
+    evidence:
+      - re/evidence/functions/collision.md
+  - address: 0x006a0588
+    name: TimerCaps
+    description: 'TIMECAPS from timeGetDevCaps (wPeriodMin, wPeriodMax), read by D3DTimer_Init to choose the timer period'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a05b8
+    name: TimerTickFrames
+    description: 'double: timer interval in 60 Hz frames (interval_ms * 60.0 * 0.001), set by D3DTimer_Init and every timer callback'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029d8374
+    name: MainWindow
+    description: 'HWND of the game window: CreateWindowExA result in Game_Startup; Game_FrameTick pumps only its messages'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a4500
+    name: SDXInput
+    description: 'SDX DirectInput wrapper: +4 IDirectInput7A, +8/+0xc keyboard/mouse back pointers, +0x10 HINSTANCE, +0x14 HWND, +0x2458 joystick count, +0x245c joystick found, +0x245d force-feedback joystick found'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a3f20
+    name: SDXMouse
+    description: 'SDX mouse wrapper: +4/+8 position, +0xc sensitivity (x/256), +0x14..+0x20 bounds, +0x28 device, +0x30/+0x34 last deltas, +0x38 button state machines, +0x50 acquired'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a42e8
+    name: SDXJoystick
+    description: 'SDX joystick wrapper: +4 DIJOYSTATE (lX, lY range -1000..1000; buttons at +0x34), +0x54 SDXInput, +0x58 device, +0x6c 32 button flags, +0xec acquired'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029da3c0
+    name: D3DDevice
+    description: 'IDirect3DDevice7 from IDirect3D7::CreateDevice in WINMAIN_InitDirect3D; BeginScene/EndScene/SetRenderState/DrawPrimitive target of the D3D_* renderer; released by D3D_Shutdown'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029da3a8
+    name: DirectDraw
+    description: 'IDirectDraw7 from DirectDrawCreateEx in WINMAIN_InitDirectDraw; creates the primary chain and the texture, sprite and Bink surfaces; released by D3D_Shutdown(1)'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029da3ac
+    name: D3DPrimarySurface
+    description: 'IDirectDrawSurface7 flipping primary created by WINMAIN_InitDirectDraw and WINMAIN_SwitchResolution; Flip target of D3D_PresentFrame, D3D_SaveScreenshot source, colour-filled by D3D_ClearBuffers'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029da3b0
+    name: D3DBackBuffer
+    description: 'back buffer attached to D3DPrimarySurface (GetAttachedSurface); the Direct3D render target, locked by D3D_LockBackBuffer; D3D_Shutdown clears it with the primary'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029da3a0
+    name: D3DSoftwareRenderer
+    description: 'nonzero while the software renderer is selected (WINMAIN_SwitchRenderer stores mode + 1); every D3D_* path branches on it'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029da380
+    name: DisplayVideoMemory
+    description: 'total video memory from IDirectDraw7::GetAvailableVidMem in WINMAIN_InitDirectDraw (doubled on Voodoo Rush boards); read only by WINMAIN_CanDoMode'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a052c
+    name: D3DTextureCaps
+    description: 'six dwords WINMAIN_InitDirect3D derives from the device description: power-of-two only, square only, maximum width and height (0x100), minimum width and height; read by D3DTex_UploadTexture, D3DSprite_BuildTiles and CreateBinkSurface'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a04c4
+    name: D3DSceneActive
+    description: 'byte: a scene is open; D3DPoly_StartScene sets it, D3DPOLY_EndScene clears it, D3D_DrawPolygonList draws only while it is set'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a04c5
+    name: D3DSceneListDrawn
+    description: 'byte: cleared by D3DPoly_StartScene, set by D3D_DrawPolygonList; nothing reads it'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x0056e7cc
+    name: DisplayModeIndex
+    description: 'options-menu index of the chosen resolution; WINMAIN_SwitchResolution(1) switches to DisplayModeNames[DisplayModeIndex]'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x0056e788
+    name: DisplayModeNames
+    description: 'null-terminated table of resolution names ("640x480", ...) that WINMAIN_BuildDisplayModeList fills once with the modes WINMAIN_CanDoMode accepts'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a00b4
+    name: ColorLevelRed
+    description: '256 red contributions (already shifted to bits 16-23) indexed by an 8-bit red level: the brightness/gamma table every D3D_Draw* colour goes through'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x005dd340
+    name: ColorLevelGreen
+    description: '256 green contributions (bits 8-15) indexed by an 8-bit green level; see ColorLevelRed'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x0069fc64
+    name: ColorLevelBlue
+    description: '256 blue contributions (bits 0-7) indexed by an 8-bit blue level; see ColorLevelRed'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x0061d82c
+    name: rFog
+    description: 'depth-cue table: red contribution indexed by red * 256 + fog level (0..255); with aFog, bFog, gFog'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x0065fc60
+    name: gFog
+    description: 'depth-cue table: green contribution indexed by green * 256 + fog level'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x0059d340
+    name: aFog
+    description: 'depth-cue table: alpha contribution indexed by alpha * 256 + fog level'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x005dd740
+    name: bFog
+    description: 'depth-cue table: blue contribution indexed by blue * 256 + fog level'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x00549d9c
+    name: fogThreshold
+    description: 'float: depth-cue start (DpqMin over the viewport edge, set by D3DPoly_StartScene); no fog while it is not below RenderProjectionUnitScale'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x00549d98
+    name: FogYonScale
+    description: 'float: far-plane scale of the depth-cue ratio, from VideoFogYonScale per scene'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x0069fc60
+    name: D3DPolyAlpha
+    description: 'alpha (0xAA000000) the ordering-table walk ORs into PSX packet colours: 0xff opaque, 0x80/0x40/0 by semi-transparency mode'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a04bc
+    name: TexpageBlendMode
+    description: 'current PSX semi-transparency mode (tpage >> 5 & 3) from DR_TPAGE (0xE1) packets and textured packets'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029da394
+    name: ScreenWidth
+    description: 'render target width in pixels (D3D_SubmitViewportRect scales PSX x by it / 512)'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029da398
+    name: ScreenHeight
+    description: 'render target height in pixels (D3D_SubmitViewportRect scales PSX y by it / 240)'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a6ce4
+    name: BinkMovie
+    description: 'the one open Bink handle (BinkOpen in StartBinkMovie, BinkClose in CloseBinkMovie), shared by the full-screen movies, the level-select clips and the music thread'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a6ce1
+    name: BinkMovieInTexture
+    description: 'byte: StartBinkMovie sets it when the movie decodes into its own texture surface (BinkMovieSurface; D3DTextureMode 0 or fewer than 200 lines) rather than into D3DPrimarySurface'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x006a6ce8
+    name: BinkMovieSurface
+    description: 'IDirectDrawSurface7: the texture surface CreateBinkSurface makes for a BinkMovieInTexture movie (power-of-two with pow2 texture caps); NextBinkFrame locks it, CloseBinkMovie releases it'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x029d68c0
+    name: AudioCaps
+    description: 'DSCAPS (0x60 bytes): Audio_Init zeroes it, sets dwSize = 0x60 and passes it to IDirectSound::GetCaps; nothing reads it afterwards'
+    confidence: confirmed
+    evidence:
+      - re/evidence/functions/hal-adapters.md
+  - address: 0x0056a3d8
+    name: AutoKickSetting
+    description: live per-player Autokick option flag (nonzero = On) read by Skater_UpdateAcceleration and Skater_DoGroundPhysics
+    confidence: observed
+    evidence:
+      - re/evidence/functions/autokick-option.md
+  - address: 0x0056a3e0
+    name: VibrationSetting
+    description: live per-player Vibration option flag (nonzero = On) read before the actuator helper 0x004896a0
+    confidence: observed
+    evidence:
+      - re/evidence/functions/autokick-option.md
+  - address: 0x0055fc2c
+    name: AutoKickState
+    description: controller-options menu copy of the per-player Autokick flag, defaulted to 1 by Options_ResetControllerDefaults
+    confidence: observed
+    evidence:
+      - re/evidence/functions/autokick-option.md
+  - address: 0x0055fc34
+    name: VibrationState
+    description: controller-options menu copy of the per-player Vibration flag, defaulted to 1 by Options_ResetControllerDefaults
+    confidence: observed
+    evidence:
+      - re/evidence/functions/autokick-option.md

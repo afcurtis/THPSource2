@@ -1,0 +1,49 @@
+version: 1
+id: pkr2-package-wrappers
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x004e9150
+  - 0x004e9200
+  - 0x004e92c0
+  - 0x004e9390
+  - 0x004e9480
+  - 0x004e9570
+  - 0x004e96b0
+  - 0x004e9780
+  - 0x004e9930
+  - 0x004e9b80
+  - 0x004ebf10
+  - 0x004ebf50
+  - 0x004ebf70
+  - 0x004e9630
+  - 0x004e9670
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/core-packages.md
+  - re/evidence/fixtures/core-calls-pkrA.txt
+  - re/evidence/fixtures/core-calls-pkrB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/core_pkr.cpp
+  - re/gdb/probes/core_specs_pkr.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/core_retail_calls_test.cpp
+  - tests/test_core_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups pkr): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (core_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 15 of the 15 functions (the PKR2 package wrappers: the run-length compression and decompression with one- and two-byte counts, the zlib wrappers, the compression dispatch by an entry''s method, the package header load and unload, and the stream object) are replayed over 4500 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 450 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - a run longer than 65,535 bytes (the two-byte count overflow of `PKR2_CompressWIBD`) would need a 64 KB source per case and is derived from the disassembly; with no buffer at all the stubbed zlib would write through a null pointer, so the probe never fails the first allocation of `PKR2_CompressZlib`.

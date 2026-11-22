@@ -1,0 +1,39 @@
+version: 1
+id: trick-menu-logic
+subsystem: tricks
+status: complete
+scope:
+  functions:
+  - 4993872
+  - 4985616
+  - 4991120
+  - 4990976
+  - 4996336
+  - 4994768
+  - 4995312
+  types: []
+  globals: []
+shared:
+  functions:
+  - 4284976
+  - 4285248
+  - 4285312
+artifacts:
+  evidence:
+  - re/evidence/functions/trick-menu-runtime.md
+  - re/evidence/functions/trick-database-runtime.md
+  - re/evidence/fixtures/trkscr-calls-trkloop.txt
+  - re/evidence/fixtures/trkscr-calls-trkscr.txt
+  native:
+  - src/runtime/trick_menu.cpp
+  - src/runtime/trick_menu.hpp
+  - src/runtime/trick_screens.hpp
+  - src/runtime/trick_screens_pages.cpp
+  tests:
+  - src/runtime/trick_menu_test.cpp
+  - src/runtime/trick_screens_retail_calls_test.cpp
+  - tests/test_trick_menu.py
+  - tests/test_trick_screens.py
+open_questions: []
+completion:
+- Retail forced calls on the trick menu's retail-memory state (the trick manager's records, the binding block, the combination lists and widgets) replay the bind, unbind, sort, assigned-record, specials-full, category-mask and button-glyph decisions through the 4.7b model with identical binding blocks and row orders (210 cases of the seven functions with no mismatch).

@@ -1,0 +1,347 @@
+version: 1
+types:
+  - name: RuntimeShortVector3
+    kind: fixed_layout
+    size: 0x06
+    confidence: confirmed
+    description: "Three signed 16-bit components: the GTE's V0..V2 and IR1..IR3 registers, and the Euler angle triple (x, y, z; 4096 per turn) the rotation builders read. Read by 0x004e24b0..0x004e3c40 and 0x004e80e0..0x004e8140."
+    fields:
+      - offset: 0x00
+        name: x
+        type: i16
+        confidence: confirmed
+        description: "first component (IR1, the X angle)"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x02
+        name: y
+        type: i16
+        confidence: confirmed
+        description: "second component (IR2, the Y angle)"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x04
+        name: z
+        type: i16
+        confidence: confirmed
+        description: "third component (IR3, the Z angle)"
+        evidence:
+          - re/evidence/functions/math-layer.md
+
+  - name: RuntimeIntVector3
+    kind: fixed_layout
+    size: 0x0c
+    confidence: confirmed
+    description: "Three 32-bit components: the GTE's MAC1..MAC3, TR and BK registers, and the vectors of 0x004e8460, 0x004e8480, 0x004e85a0 and 0x004f5f90 (Q12 where those functions say so)."
+    fields:
+      - offset: 0x00
+        name: x
+        type: i32
+        confidence: confirmed
+        description: "first component"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x04
+        name: y
+        type: i32
+        confidence: confirmed
+        description: "second component"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x08
+        name: z
+        type: i32
+        confidence: confirmed
+        description: "third component"
+        evidence:
+          - re/evidence/functions/math-layer.md
+
+  - name: RuntimeQ12Matrix
+    kind: fixed_layout
+    size: 0x12
+    confidence: confirmed
+    description: "A 3x3 Q12 rotation matrix: nine signed shorts, row major (rows at +0, +6, +0xc). The GTE's RT, LLM and LCM registers and the rotation of every matrix record."
+    fields:
+      - offset: 0x00
+        name: elements
+        type: array<i16,9>
+        confidence: confirmed
+        description: "row r, column c at index 3 * r + c"
+        evidence:
+          - re/evidence/functions/math-layer.md
+
+  - name: RuntimeMatrixTransform
+    kind: fixed_layout
+    size: 0x20
+    confidence: confirmed
+    description: "A rotation matrix with a translation: 0x004e8460 stores a vector at +0x14, and 0x004e8200 copies 32 bytes of a local matrix (the 14 bytes after the nine shorts are stack leftovers the replay does not compare)."
+    fields:
+      - offset: 0x00
+        name: rotation
+        type: RuntimeQ12Matrix
+        confidence: confirmed
+        description: "the nine Q12 shorts"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x14
+        name: translation
+        type: RuntimeIntVector3
+        confidence: confirmed
+        description: "written by Matrix_SetTranslation 0x004e8460"
+        evidence:
+          - re/evidence/functions/math-layer.md
+
+  - name: RuntimeShortTransform
+    kind: fixed_layout
+    size: 0x18
+    confidence: observed
+    description: "A twelve-short transform: the nine Q12 shorts and three shorts of translation. The M3D helpers load it into RT and TR (sign-extended), multiply two of them, or take the translation as a vector."
+    fields:
+      - offset: 0x00
+        name: rotation
+        type: RuntimeQ12Matrix
+        confidence: observed
+        evidence:
+          - re/evidence/functions/m3d-culling-helpers.md
+      - offset: 0x12
+        name: translation
+        type: RuntimeShortVector3
+        confidence: observed
+        evidence:
+          - re/evidence/functions/m3d-culling-helpers.md
+
+  - name: RuntimeLightSet
+    kind: fixed_layout
+    size: 0x20
+    confidence: observed
+    description: "The lights record M3D_ApplyHookTransform reads: the light matrix (nine shorts) and the background colour BK as three dwords."
+    fields:
+      - offset: 0x00
+        name: light
+        type: RuntimeQ12Matrix
+        confidence: observed
+        evidence:
+          - re/evidence/functions/m3d-culling-helpers.md
+      - offset: 0x14
+        name: background
+        type: RuntimeIntVector3
+        confidence: observed
+        evidence:
+          - re/evidence/functions/m3d-culling-helpers.md
+
+  - name: RuntimePsxRect
+    kind: fixed_layout
+    size: 0x08
+    confidence: confirmed
+    description: "A libgpu rectangle (x, y, width, height as 16-bit words). 0x004e87f0 copies it into a draw-area primitive and raises a zero width or height to 1."
+    fields:
+      - offset: 0x00
+        name: x
+        type: u16
+        confidence: confirmed
+        description: "left"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x02
+        name: y
+        type: u16
+        confidence: confirmed
+        description: "top"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x04
+        name: width
+        type: u16
+        confidence: confirmed
+        description: "width (0 becomes 1 in the primitive)"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x06
+        name: height
+        type: u16
+        confidence: confirmed
+        description: "height (0 becomes 1 in the primitive)"
+        evidence:
+          - re/evidence/functions/math-layer.md
+
+  - name: RuntimePsxDrawAreaPrimitive
+    kind: fixed_layout
+    size: 0x10
+    confidence: confirmed
+    description: "The primitive 0x004e87f0 fills (GPU command 0xe3 in the top byte of the second word, the rectangle at +8) and 0x004e8940 clears (command byte 0xe0, all other words zero)."
+    fields:
+      - offset: 0x00
+        name: tag
+        type: u32
+        confidence: confirmed
+        description: "ordering-table link; 0x004e8940 clears it, 0x004e87f0 leaves it"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x04
+        name: code_word
+        type: u32
+        confidence: confirmed
+        description: "the GPU command byte is the top byte: 0xe3 for the draw area, 0xe0 for the terminator"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x08
+        name: rect
+        type: RuntimePsxRect
+        confidence: confirmed
+        description: "the draw area; zeroed by the terminator"
+        evidence:
+          - re/evidence/functions/math-layer.md
+
+  - name: RuntimeGteRegisterFile
+    kind: fixed_layout
+    size: 0x120
+    confidence: confirmed
+    description: "The PlayStation geometry engine's register file as the PC build keeps it: plain globals at 0x006a3e00..0x006a3f20, read and written by the gte_* functions 0x004e2070..0x004e3d1f. Only the registers those functions name are fields."
+    fields:
+      - offset: 0x00
+        name: h
+        type: u32
+        confidence: confirmed
+        description: "H: distance of the projection plane (RTPS / RTPT divide it by SZ)"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x04
+        name: screen_xy
+        type: array<i16,6>
+        confidence: confirmed
+        description: "SX0 SY0 SX1 SY1 SX2 SY2; RTPS fills the middle pair, RTPT all three"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x10
+        name: rotation
+        type: RuntimeQ12Matrix
+        confidence: confirmed
+        description: "RT"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x34
+        name: ir0
+        type: i16
+        confidence: confirmed
+        description: "IR0: the interpolation factor of GPF / GPL"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x48
+        name: background
+        type: RuntimeIntVector3
+        confidence: confirmed
+        description: "BK: the background colour the light operations add"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x58
+        name: v0
+        type: RuntimeShortVector3
+        confidence: confirmed
+        description: "V0 (an 8-byte register: three shorts)"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x60
+        name: v1
+        type: RuntimeShortVector3
+        confidence: confirmed
+        description: "V1"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x68
+        name: v2
+        type: RuntimeShortVector3
+        confidence: confirmed
+        description: "V2"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x70
+        name: rgb_fifo
+        type: array<u8,12>
+        confidence: confirmed
+        description: "RGB0..RGB2 at +0, +4, +8 (bytes +3, +7, +11 are not touched)"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x80
+        name: light
+        type: RuntimeQ12Matrix
+        confidence: confirmed
+        description: "LLM: the light matrix"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0xa0
+        name: translation
+        type: RuntimeIntVector3
+        confidence: confirmed
+        description: "TR"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0xb0
+        name: ir
+        type: RuntimeShortVector3
+        confidence: confirmed
+        description: "IR1 IR2 IR3"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0xb8
+        name: mac
+        type: RuntimeIntVector3
+        confidence: confirmed
+        description: "MAC1 MAC2 MAC3"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0xc8
+        name: colour
+        type: RuntimeQ12Matrix
+        confidence: confirmed
+        description: "LCM: the colour matrix"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0xe8
+        name: ofx
+        type: u32
+        confidence: confirmed
+        description: "OFX"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0xec
+        name: ofy
+        type: u32
+        confidence: confirmed
+        description: "OFY"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0xf8
+        name: otz
+        type: u16
+        confidence: confirmed
+        description: "OTZ: the average Z AVSZ4 leaves"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0xfa
+        name: sz
+        type: array<u16,4>
+        confidence: confirmed
+        description: "SZ0..SZ3 (RTPT leaves its vertices in SZ3, SZ2 and SZ1)"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x104
+        name: lzcr
+        type: u32
+        confidence: confirmed
+        description: "LZCR"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x10c
+        name: mac0
+        type: u32
+        confidence: confirmed
+        description: "MAC0: NCLIP's result, stored twice"
+        evidence:
+          - re/evidence/functions/math-layer.md
+      - offset: 0x110
+        name: mac0_copy
+        type: u32
+        confidence: confirmed
+        description: "the second MAC0 word (NCLIP and AVSZ4 write it)"
+        evidence:
+          - re/evidence/functions/math-layer.md

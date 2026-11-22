@@ -1,0 +1,71 @@
+version: 1
+id: player-select-window-classes
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x004a1440
+    - 0x004a1510
+    - 0x004a1530
+    - 0x004a1540
+    - 0x004a1560
+    - 0x004a15a0
+    - 0x004a1670
+    - 0x004a1880
+    - 0x004a18a0
+    - 0x004a19f0
+    - 0x004a1b00
+    - 0x004a1b40
+    - 0x004a1dd0
+    - 0x004a1df0
+    - 0x004a1e00
+    - 0x004a1eb0
+    - 0x004a1ed0
+    - 0x004a1f20
+    - 0x004a1f40
+    - 0x004a1f50
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/player-select-window-classes.md
+    - re/evidence/fixtures/plsel-calls-bio.txt
+    - re/evidence/fixtures/plsel-calls-load.txt
+    - re/evidence/fixtures/plsel-calls-sel.txt
+    - re/evidence/fixtures/plsel-calls-selloop.txt
+    - re/evidence/fixtures/plsel-calls-uiw.txt
+    - re/evidence/fixtures/plsel-calls-view.txt
+  native:
+    - src/runtime/player_select.hpp
+    - src/runtime/player_select_ui.cpp
+    - src/runtime/player_select_dispatch.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - src/runtime/career.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_playsel.py
+    - re/gdb/probes/frontend_specs_playsel_cases.py
+    - re/gdb/probes/frontend_specs_playsel_sel.py
+    - re/gdb/probes/frontend_specs_playsel_bio.py
+    - re/gdb/probes/frontend_specs_playsel_view.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/player_select_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/player_select_test.cpp
+    - tests/test_player_select.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the uiw groups): the retail function is called on a random legal state built in a scratch slab (windows built by hand with fake pool objects whose virtual methods are reported services, real sprite, text and menu rows where a width or a text is computed, constructors run for real in the arena); the return value, every written byte and the ordered service calls are compared with the native replay (`player_select_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 20 of the 20 functions are replayed over 793 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's sprite, button-art and prompt-registration calls and the per-frame hook of a real vtable are seams reported by name with the arguments retail passed; the cases in which retail faults (a null font, a missing child) are skipped, not replayed.

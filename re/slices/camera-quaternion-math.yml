@@ -1,0 +1,44 @@
+version: 1
+id: camera-quaternion-math
+subsystem: camera
+status: complete
+scope:
+  functions:
+  - 0x004103b0
+  - 0x004a9650
+  - 0x004a9750
+  - 0x004a9820
+  - 0x004a9870
+  - 0x004a98c0
+  - 0x004a9910
+  - 0x004a9a00
+  - 0x004a9bf0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/camera-math.md
+  - re/evidence/fixtures/camera-calls-cmqA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/camera_kit.hpp
+  - src/runtime/camera_math.cpp
+  - re/gdb/probes/cam_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/camera_retail_calls_test.cpp
+  - tests/test_camera_video_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cmq): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (camera_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 9 of the 9 functions (the camera''s quaternion math in Q12: the product, the turn about an axis or a rotation vector, the conversion to and from a rotation matrix, the spherical interpolation and the shortest turn between two angles) are replayed over 3600 cases with no mismatch (at least 400 cases each; the committed fixtures keep the first 30 of each capture per function, 270 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the sine and cosine are the port's x87 emulation; the near-opposite branch of the interpolation (`dot + 0x1000 < 0x81`) is unreachable, because the shorter way round is taken first and leaves a dot product of at least 0; a division fault in retail is refused by the port.

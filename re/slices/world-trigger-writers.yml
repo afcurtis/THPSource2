@@ -1,0 +1,72 @@
+version: 1
+id: world-trigger-writers
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004c87c0
+  - 0x004c87e0
+  - 0x004c8800
+  - 0x004c8810
+  - 0x004c8870
+  - 0x004c88c0
+  - 0x004c88e0
+  - 0x004c88f0
+  - 0x004c8a20
+  - 0x004c8a50
+  - 0x004c8a70
+  - 0x004c8a80
+  - 0x004c8ab0
+  - 0x004c8bd0
+  - 0x004c8bf0
+  - 0x004c8c10
+  - 0x004c8c20
+  - 0x004c8c30
+  - 0x004c8c60
+  - 0x004c8c80
+  - 0x004c8c90
+  - 0x004c8cd0
+  - 0x004c8d00
+  - 0x004c8d20
+  - 0x004c8d30
+  - 0x004c8da0
+  - 0x004c8dd0
+  - 0x004c8df0
+  - 0x004c8e00
+  - 0x004c8e50
+  - 0x004c8e80
+  - 0x004c8ea0
+  - 0x004c8eb0
+  - 0x004c8ed0
+  - 0x004c8ee0
+  - 0x004c8ef0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/world-trigger-writers.md
+  - re/evidence/fixtures/world-calls-wcmA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/world_kit.hpp
+  - src/runtime/world_cmd.cpp
+  - re/gdb/probes/world_specs_cmd.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/world_specs.py
+  tests:
+  - src/runtime/world_retail_calls_test.cpp
+  - tests/test_world_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups wcm): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (world_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 36 of the 36 functions (the trigger-record writers: the base class and the seven classes derived from it (node, link, end, and four commands) with their constructors, destructors and the writers that fill a record''s bytes (the node''s position from the editor''s grid, the formatted name, the link''s words and the command words), and the editor words cleared by the last) are replayed over 10800 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 1080 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the formatter writes eight scripted bytes; the log line and the class delete's heap counter are services.

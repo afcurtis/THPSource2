@@ -1,0 +1,270 @@
+# Sub-milestone ownership of the in-scope functions (4.12 Cartography). `tony xref coverage` sizes each
+# sub-milestone from this file: functions without a native reconstruction, retail bytes, and the number of
+# sessions at the 4.10 ceiling (about 28 KB or 65 functions). A function belongs to the first matching
+# `ranges` row, else to the sub-milestone that lists its source unit (`re/xref/source-units.yml`,
+# `re/xref/attribution.yml`). Out-of-scope functions (`re/symbols/scope.yml`) belong to none.
+# The unit lists follow docs/phases/PHASE_4_SUMMARY.md; ranges override them, and the rows after the hand-written
+# ones place functions no source file claims by their neighbours (the reason says how).
+version: 1
+
+milestones:
+  - id: "4.10f2"
+    title: "Equipment select"
+    units: ["equipsel.cpp"]
+  - id: "4.10f3"
+    title: "Car, level and multi-player select, handicap"
+    units: ["carsel.cpp", "handicap.cpp", "levelsel.cpp", "levelselect2.cpp", "multisel.cpp", "multiselect.cpp"]
+  - id: "4.10g"
+    title: "Options"
+    units: ["options.cpp", "vidmenu.cpp", "videowin.cpp"]
+  - id: "4.10h"
+    title: "Goals, game-mode and competition screens"
+    units: ["competition.cpp", "goalwin.cpp", "displaygoals.cpp", "medals.cpp", "tapes.cpp", "tag.cpp", "card.cpp"]
+  - id: "4.10i"
+    title: "Frontend shell and flow (and what the earlier screens left)"
+    units: ["front.cpp", "frontend2.cpp", "frontpre.cpp", "rfront.cpp", "netmenu.cpp", "shell.cpp", "shellutils.cpp", "menu.cpp", "panel.cpp", "mainmenu.cpp", "credits.cpp", "textwin.cpp", "texteffects.cpp", "mess.cpp", "fonttools.cpp", "screentools.cpp", "commonfe.cpp", "appwin.cpp", "perwin.cpp", "statwin.cpp", "player_ui.cpp", "playsel.cpp", "font.cpp"]
+  - id: "4.11a"
+    title: "PSX region slots and the spool queue"
+    units: ["spool.cpp", "spooler.cpp", "player_spool.cpp", "pre.cpp", "fileio.cpp"]
+  - id: "4.11b"
+    title: "Generator object layer"
+    units: ["genobjs.cpp", "editorpieces.cpp", "editorpieces2.cpp", "faceremoval.cpp"]
+  - id: "4.11c"
+    title: "Park generator"
+    units: ["levelgen.cpp"]
+  - id: "4.11d"
+    title: "Editor state and piece operations"
+    units: ["editorglobal.cpp", "leveleditor.cpp"]
+  - id: "4.11e"
+    title: "Editor loop and interface"
+    units: []
+  - id: "4.13a"
+    title: "PC platform and input"
+    units: ["pad.cpp", "pc\\winmain.cpp", "pc\\thstub.cpp", "pc\\pcinput.cpp", "pc\\d3dfunc.cpp", "pc\\d3dpoly.cpp", "pc\\d3dsprite.cpp", "pc\\d3dtex.cpp", "pc\\d3dtimer.cpp"]
+  - id: "4.13b"
+    title: "Audio, movie interface and the netgame query surface"
+    units: ["sfx.cpp", "redbook.cpp", "crowd.cpp", "gamefmv.cpp", "pc\\soundlib.cpp", "pc\\pcmovie.cpp", "pc\\netgame.cpp", "pc\\dxplay.cpp"]
+  - id: "4.14a"
+    title: "GTE emulation, fixed-point math and PSX stubs"
+    units: []
+  - id: "4.14b"
+    title: "Memory-card layer (mmu.cpp) and heap (mem.cpp)"
+    units: ["mmu.cpp", "mem.cpp"]
+  - id: "4.14c"
+    title: "Core utilities and start-up"
+    units: ["main.cpp", "init.cpp", "utils.cpp", "exp.cpp", "vector.cpp", "quat.cpp", "strlib.cpp", "debug.cpp", "mips.cpp", "sqrttab.cpp", "vlc_bit.cpp", "pack.cpp"]
+  - id: "4.15a"
+    title: "Physics and collision"
+    units: ["physics.cpp", "rail.cpp", "m3dcolij.cpp"]
+  - id: "4.15b"
+    title: "Camera and the replay recorder (video.cpp)"
+    units: ["camera.cpp", "camera.h", "campt.cpp", "video.cpp"]
+  - id: "4.15c"
+    title: "World objects"
+    units: ["trig.cpp", "ob.cpp", "mech.cpp", "baddy.cpp", "car.cpp", "powerup.cpp", "platform.cpp", "trickob.cpp", "backgrnd.cpp"]
+  - id: "4.15d"
+    title: "Effects (particles, shatter, dust, logos)"
+    units: ["bit.cpp", "bit2.cpp", "blood.cpp", "dust.cpp", "shatter.cpp", "smoke.cpp", "flash.cpp", "dynamiclogo.cpp"]
+  - id: "4.15e"
+    title: "Rendering, textures and animation"
+    units: ["m3d.cpp", "m3dinit.cpp", "m3dutils.cpp", "m3dzone.cpp", "image.cpp", "pal.cpp", "hires.cpp", "light.cpp", "decomp.cpp", "db.cpp"]
+  - id: "4.15f"
+    title: "Create-a-skater objects, career and trick remainders"
+    units: ["create.cpp", "create_color.cpp", "create_spool.cpp", "create_stitch.cpp", "create_ui.cpp", "create_tex.cpp", "cre_tex.cpp", "cre_texset.cpp", "creedit.cpp", "cresave.cpp", "cresel.cpp", "custmgr.cpp", "statedit.cpp", "career.cpp", "skatmgr.cpp", "trickdb.cpp", "trickscript.cpp", "tricksel.cpp", "tricktips.cpp", "trickwin.cpp"]
+
+ranges:
+  # hand-written (reviewed)
+  # 4.10f3 walk of the carsel, handicap and multisel ranges: the screens' window classes sit outside the ranges the neighbour rule gave them
+  - {first: 0x00417bf0, last: 0x00417c8f, milestone: "4.10f3", note: "carsel.cpp: CareerSelect_Draw (the 4.12 range had no owner for it)"}
+  - {first: 0x004173d0, last: 0x00417aa0, milestone: "4.10f3", note: "carsel.cpp: the career select window's callbacks, constructor and delete (the 4.12 range gave them to 4.15f)"}
+  - {first: 0x00454e80, last: 0x00455d20, milestone: "4.10f3", note: "handicap.cpp: the handicap panel and window classes (the 4.12 range gave them to 4.13b)"}
+  - {first: 0x00455e10, last: 0x00455e8f, milestone: "4.10f3", note: "handicap.cpp: HandicapWindow_Draw (the 4.12 range had no owner for it)"}
+  - {first: 0x00455e90, last: 0x00455f00, milestone: "4.10f3", note: "handicap.cpp: the window's step and the screen loop"}
+  - {first: 0x00456090, last: 0x00456990, milestone: "4.15e", note: "hcull.cpp (the cull grid), the 'items' object class and the 2D box primitives: not the handicap screen's (the 4.12 range gave them to 4.10f3)"}
+  - {first: 0x004588c0, last: 0x004588f0, milestone: "4.10f3", note: "levelsel.cpp: the level select screen's callbacks and wrapper (the 4.12 range gave them to 4.14c)"}
+  - {first: 0x0047ba30, last: 0x0047c560, milestone: "4.10f3", note: "multisel.cpp: the window class, its callbacks and the screen loop (the 4.12 range gave the front of it to 4.14b)"}
+  - {first: 0x0047c6e0, last: 0x0047e240, milestone: "4.10i", note: "netmenu.cpp: the item-table initialisers, NetMenu_Main and the lobby window (the 4.12 range gave them to 4.10f3)"}
+  - {first: 0x004334d0, last: 0x0043651f, milestone: "4.11e", note: "first half of leveleditor.cpp (4.11e plan: 0x004334d0..0x00436520)"}
+  - {first: 0x004cebb0, last: 0x004cf420, milestone: "4.13a", note: "DirectX helper functions between vidmenu and d3dfunc; triage OOS or port"}
+  - {first: 0x004cf9b0, last: 0x004d0a40, milestone: "4.13a", note: "DirectX error text and surface helpers called from soundlib, d3dtex, d3dfunc"}
+  - {first: 0x004d11d0, last: 0x004d3160, milestone: "4.15e", note: "M3D submission (native since 4.6) in the d3dfunc to d3dpoly gap"}
+  - {first: 0x004d3600, last: 0x004d3600, milestone: "4.13a", note: "D3D_SubmitViewportRect"}
+  - {first: 0x004d3f50, last: 0x004d3f50, milestone: "4.15e", note: "setupFog: the 65,536-entry fog tables (four 256 KB arrays built with x87 ftol calls); 4.13a left it for a validation that compares tables by checksum"}
+  - {first: 0x004d7990, last: 0x004d7990, milestone: "4.15e", note: "the sprite quad builder (the 24-bit x87 render window: a forced call runs at 53 bits, so its replay needs the control word set first)"}
+  - {first: 0x004d7db0, last: 0x004d7db0, milestone: "4.13a", note: "D3D_CopyScreen"}
+  - {first: 0x004da460, last: 0x004da780, milestone: "4.15e", note: "palette cache records (Palette_*): pal.cpp neighbourhood"}
+  - {first: 0x004dab20, last: 0x004dab30, milestone: "4.13a", note: "timer helpers"}
+  - {first: 0x004dbd20, last: 0x004df160, milestone: "4.13b", note: "dxplay..netgame gap: game functions and the netgame query surface"}
+  - {first: 0x004e0dd0, last: 0x004e1370, milestone: "4.13b", note: "netgame remainder"}
+  - {first: 0x004e2070, last: 0x004e3e7f, milestone: "4.14a", note: "GTE emulation library, Math_Cross*, Fixed_CrossProductS16 and the 12-byte stubs"}
+  - {first: 0x004e3e80, last: 0x004e5460, milestone: "4.13a", note: "pcinput: bindings, key and joystick queries, action masks"}
+  - {first: 0x004e5461, last: 0x004e5720, milestone: "4.13a", note: "pcinput tail"}
+  - {first: 0x004e6e70, last: 0x004e73e0, milestone: "4.13b", note: "pcmovie interface the game calls (start, stop, music, volume)"}
+  - {first: 0x004e74f0, last: 0x004e7c5f, milestone: "4.13a", note: "PC file backends: PCinit, PCremove, PCcreate, PCwrite, FileIO_Backend*"}
+  - {first: 0x004e7c60, last: 0x004e8d3f, milestone: "4.14a", note: "three 370-byte helpers, fixed-point math and PSX library stubs"}
+  - {first: 0x004e8d40, last: 0x004e9140, milestone: "4.14b", note: "mmu helpers"}
+  - {first: 0x004e9150, last: 0x004ebf70, milestone: "4.14c", note: "PKR2 compress, decompress and the PKR loader (the zlib wrappers are game code)"}
+  - {first: 0x004ec930, last: 0x004ec930, milestone: "4.13a", note: "SDXMouse_SetBounds (kept in scope: the input adapter calls it)"}
+  - {first: 0x004f38d0, last: 0x004f38d0, milestone: "4.13b", note: "Audio_StopAll"}
+  - {first: 0x004f3980, last: 0x004f39e0, milestone: "4.14a", note: "tiny helpers called from utils, mech, powerup"}
+  - {first: 0x004f39f0, last: 0x004f5f4f, milestone: "4.15a", note: "collision and M3D transforms called from m3d.cpp, m3dcolij.cpp, m3dutils.cpp, physics"}
+  - {first: 0x004f5f50, last: 0x004f613f, milestone: "4.14a", note: "Fixed_* helpers and a few small utilities"}
+  - {first: 0x004f6140, last: 0x004f6d3f, milestone: "4.13a", note: "thstub and winmain game logic"}
+  - {first: 0x004f86f0, last: 0x004f86f0, milestone: "4.13a", note: "WINMAIN_ShutDown"}
+  - {first: 0x0047c460, last: 0x0047e240, milestone: "4.10f3", note: "inside the plan's multisel.cpp range 0x0047c2b0..0x0047e260"}
+  - {first: 0x0047e3c0, last: 0x0047fe20, milestone: "4.10i", note: "netmenu lobby screens: five of them read the netgame flag 0x006a3b21"}
+  - {first: 0x004ae730, last: 0x004af6b0, milestone: "4.15d", note: "shatter.cpp: the shard spawning and the shatter helpers (4.10i2 read the range: Shatter_Item, Shatter_Face, the triangle subdivision and the shard colours are effects code, not the shell and bitmap helpers the 4.12 attribution assumed)"}
+  # unattributed runs placed by their neighbours
+  - {first: 0x00401000, last: 0x00401100, milestone: "4.15c", note: "edge of backgrnd.cpp"}
+  - {first: 0x00402f80, last: 0x00403410, milestone: "4.15c", note: "between baddy.cpp and bit.cpp; callers favour 4.15c"}
+  - {first: 0x0040af70, last: 0x0040b570, milestone: "4.15d", note: "edge of bit2.cpp"}
+  - {first: 0x0040b5c0, last: 0x0040b5c0, milestone: "4.13a", note: "edge of ~oos"}
+  - {first: 0x0040b610, last: 0x0040b610, milestone: "4.13a", note: "edge of ~oos"}
+  - {first: 0x0040bce0, last: 0x0040bce0, milestone: "4.15b", note: "camera.cpp: Camera_SetOverrides (4.15b read the range)"}
+  - {first: 0x0040c070, last: 0x0040c170, milestone: "4.15b", note: "camera.cpp: the override save and restore (4.15b read the range)"}
+  - {first: 0x0040e000, last: 0x0040e060, milestone: "4.15b", note: "between two camera.h functions"}
+  - {first: 0x0040ed80, last: 0x0040f130, milestone: "4.15b", note: "camera.cpp: the tuning initialisers, the empty hooks and Camera_ClearFlag419 (4.15b read the range)"}
+  - {first: 0x0040f200, last: 0x0040f270, milestone: "4.15b", note: "camera.cpp: the debug bars and the debug pad (4.15b read the range)"}
+  - {first: 0x004117a0, last: 0x004117e0, milestone: "4.15b", note: "camera.cpp: the empty virtual hooks of the rig class (4.15b read the range)"}
+  - {first: 0x00412ef0, last: 0x00413000, milestone: "4.15c", note: "between car.cpp and career.cpp; callers favour 4.15c"}
+  - {first: 0x00417300, last: 0x00417aa0, milestone: "4.15f", note: "between career.cpp and carsel.cpp; callers favour 4.15f"}
+  - {first: 0x00417f90, last: 0x00418150, milestone: "4.10f3", note: "between carsel.cpp and commonfe.cpp; callers favour 4.10f3"}
+  - {first: 0x00419390, last: 0x00419420, milestone: "4.10i", note: "between commonfe.cpp and competition.cpp; callers favour 4.10i"}
+  - {first: 0x0041cda0, last: 0x0041d7d0, milestone: "4.15f", note: "between two create.cpp functions"}
+  - {first: 0x0041db50, last: 0x0041dc60, milestone: "4.15f", note: "between two cre_tex.cpp functions"}
+  - {first: 0x0041f060, last: 0x0041f060, milestone: "4.15f", note: "between two cre_texset.cpp functions"}
+  - {first: 0x00424550, last: 0x00424630, milestone: "4.15f", note: "between two create_color.cpp functions"}
+  - {first: 0x00425fa0, last: 0x00426310, milestone: "4.15f", note: "between create_ui.cpp and credits.cpp; callers favour 4.15f"}
+  - {first: 0x00426d90, last: 0x004277e0, milestone: "4.10i", note: "between credits.cpp and creedit.cpp; callers favour 4.10i"}
+  - {first: 0x004288a0, last: 0x004292d0, milestone: "4.15f", note: "between creedit.cpp and perwin.cpp: no caller evidence, taken from the left"}
+  - {first: 0x0042bcf0, last: 0x0042c6f0, milestone: "4.10i", note: "between appwin.cpp and cresave.cpp; callers favour 4.10i"}
+  - {first: 0x0042c860, last: 0x0042cd50, milestone: "4.15f", note: "between two cresave.cpp functions"}
+  - {first: 0x0042f100, last: 0x0042f2df, milestone: "4.15f", note: "between cresel.cpp and crowd.cpp: no caller evidence, taken from the left"}
+  - {first: 0x0042f2e0, last: 0x0042f370, milestone: "4.13b", note: "crowd.cpp: the crowd's sound slot, start and stop (4.13b read the range)"}
+  - {first: 0x0042f880, last: 0x0042f8d0, milestone: "4.15f", note: "between crowd.cpp and custmgr.cpp; callers favour 4.15f"}
+  - {first: 0x004305b0, last: 0x004305e0, milestone: "4.15e", note: "between two db.cpp functions"}
+  - {first: 0x00431190, last: 0x004311d0, milestone: "4.15e", note: "between decomp.cpp and dust.cpp: no caller evidence, taken from the left"}
+  - {first: 0x0043f710, last: 0x0043f710, milestone: "4.11c", note: "between levelgen.cpp and genobjs.cpp: no caller evidence, taken from the left"}
+  - {first: 0x0043f540, last: 0x0043f595, milestone: "4.11c", note: "levelgen.cpp: the floor pieces' flag setter, which Ghidra did not list (4.11c read the range)"}
+  - {first: 0x004436a0, last: 0x004436a0, milestone: "4.11b", note: "between two genobjs.cpp functions"}
+  - {first: 0x0043f8e0, last: 0x0043f8f5, milestone: "4.11b", note: "genobjs.cpp: the in-model's constructor and the jump to its destructor, which Ghidra did not list (4.11b read the range)"}
+  - {first: 0x00443200, last: 0x00443200, milestone: "4.11b", note: "genobjs.cpp: the jump to the polygon list's free-all (a thunk)"}
+  - {first: 0x00443290, last: 0x004432ce, milestone: "4.11b", note: "genobjs.cpp: the polygon list's count and point count, which Ghidra did not list (4.11b read the range)"}
+  - {first: 0x004437f0, last: 0x00443819, milestone: "4.11b", note: "faceremoval.cpp: the point log, which Ghidra did not list (4.11b read the range)"}
+  - {first: 0x00443fc0, last: 0x00444003, milestone: "4.11b", note: "faceremoval.cpp: the ring log, which Ghidra did not list (4.11b read the range)"}
+  - {first: 0x00443eb0, last: 0x004441c0, milestone: "4.11b", note: "between two faceremoval.cpp functions"}
+  - {first: 0x00444510, last: 0x00445810, milestone: "4.10f2", note: "between editorpieces2.cpp and equipsel.cpp; callers favour 4.10f2"}
+  - {first: 0x00448230, last: 0x00448740, milestone: "4.10f2", note: "between equipsel.cpp and exp.cpp; callers favour 4.10f2"}
+  - {first: 0x00446150, last: 0x00448790, milestone: "4.10f2", note: "equipsel.cpp functions Ghidra did not list (vtable-only methods and one unused check), found by the 4.10f2 walk of the range"}
+  - {first: 0x00448990, last: 0x00448d00, milestone: "4.14c", note: "between exp.cpp and fileio.cpp; callers favour 4.14c"}
+  - {first: 0x004497e0, last: 0x0044a060, milestone: "4.11a", note: "between fileio.cpp and fonttools.cpp: no caller evidence, taken from the left"}
+  - {first: 0x0044b180, last: 0x0044b180, milestone: "4.10i", note: "edge of fonttools.cpp"}
+  - {first: 0x0044b1c0, last: 0x0044b1c0, milestone: "4.13a", note: "edge of ~oos"}
+  - {first: 0x0044b1f0, last: 0x0044b1f0, milestone: "4.10i", note: "edge of ~oos"}
+  - {first: 0x0044b320, last: 0x0044b320, milestone: "4.10i", note: "between two front.cpp functions"}
+  - {first: 0x0048abf0, last: 0x0048abf0, milestone: "4.10i", note: "Panel_BalanceLR: the horizontal balance meter, a function Ghidra lists none for (4.10i2)"}
+  - {first: 0x004ac420, last: 0x004ac420, milestone: "4.10i", note: "a function that returns at once, which Ghidra lists none for (4.10i2)"}
+  - {first: 0x004266a0, last: 0x004266a0, milestone: "4.10i", note: "Credits_AllocZeroed and Credits_Free: two small allocator wrappers Ghidra lists none for (4.10i2)"}
+  - {first: 0x004266d0, last: 0x004266d0, milestone: "4.10i", note: "Credits_Free (4.10i2)"}
+  - {first: 0x0044aa70, last: 0x0044aa70, milestone: "4.10i", note: "Font_StringWidth: a small method Ghidra lists none for (4.10i2)"}
+  - {first: 0x00452e00, last: 0x00452e00, milestone: "4.10i", note: "Front_SetHandicapNames and the jump to it: Ghidra lists none for them (4.10i2)"}
+  - {first: 0x00452e10, last: 0x00452e10, milestone: "4.10i", note: "Front_SetHandicapNames (4.10i2)"}
+  - {first: 0x004badd0, last: 0x004badd0, milestone: "4.10i", note: "TextWin_Last: a method Ghidra lists none for (4.10i2)"}
+  - {first: 0x004badf0, last: 0x004badf0, milestone: "4.10i", note: "TextWin_DrawAll: a method Ghidra lists none for (4.10i2)"}
+  - {first: 0x00452a80, last: 0x00452de0, milestone: "4.10i", note: "between two front.cpp functions"}
+  - {first: 0x00454930, last: 0x00454d10, milestone: "4.10i", note: "between frontend2.cpp and gamefmv.cpp; callers favour 4.10i"}
+  - {first: 0x00454e50, last: 0x00455d20, milestone: "4.13b", note: "between gamefmv.cpp and handicap.cpp: no caller evidence, taken from the left"}
+  - {first: 0x00455e90, last: 0x00456990, milestone: "4.10f3", note: "between handicap.cpp and image.cpp: no caller evidence, taken from the left"}
+  - {first: 0x004581a0, last: 0x004581a0, milestone: "4.15e", note: "between image.cpp and init.cpp; callers favour 4.15e"}
+  - {first: 0x00458840, last: 0x004588f0, milestone: "4.14c", note: "between init.cpp and levelsel.cpp; callers favour 4.14c"}
+  - {first: 0x00458b90, last: 0x0045b080, milestone: "4.10f3", note: "between levelsel.cpp and videowin.cpp; callers favour 4.10f3"}
+  - {first: 0x0045b3a0, last: 0x0045b8a0, milestone: "4.10h", note: "between videowin.cpp and goalwin.cpp; callers favour 4.10h"}
+  - {first: 0x0045bd30, last: 0x0045db40, milestone: "4.10h", note: "between goalwin.cpp and m3d.cpp: no caller evidence, taken from the left"}
+  - {first: 0x00464690, last: 0x00464690, milestone: "4.15e", note: "between two m3dinit.cpp functions"}
+  - {first: 0x00464b90, last: 0x00464b90, milestone: "4.15e", note: "between two m3dinit.cpp functions"}
+  - {first: 0x004657c0, last: 0x00466080, milestone: "4.15e", note: "between two m3dutils.cpp functions"}
+  - {first: 0x00466a00, last: 0x00466a00, milestone: "4.15e", note: "between m3dzone.cpp and main.cpp: no caller evidence, taken from the left"}
+  - {first: 0x0046aee0, last: 0x0046aee0, milestone: "4.10i", note: "between main.cpp and mainmenu.cpp; callers favour 4.10i"}
+  - {first: 0x0046b870, last: 0x0046c460, milestone: "4.10i", note: "between mainmenu.cpp and mech.cpp; callers favour 4.10i"}
+  - {first: 0x0046e3f0, last: 0x0046e470, milestone: "4.15c", note: "between mech.cpp and medals.cpp: no caller evidence, taken from the left"}
+  - {first: 0x00473380, last: 0x004734a0, milestone: "4.10i", note: "between two menu.cpp functions"}
+  - {first: 0x00473be0, last: 0x00473c40, milestone: "4.10i", note: "between mess.cpp and mmu.cpp; callers favour 4.10i"}
+  - {first: 0x0047b9d0, last: 0x0047c290, milestone: "4.14b", note: "between mmu.cpp and multisel.cpp; callers favour 4.14b"}
+  - {first: 0x00481200, last: 0x00482460, milestone: "4.10g", note: "between ob.cpp and options.cpp; callers favour 4.10g"}
+  - {first: 0x00489350, last: 0x00489490, milestone: "4.10g", note: "between options.cpp and pad.cpp: no caller evidence, taken from the left"}
+  - {first: 0x00482950, last: 0x00482a40, milestone: "4.10g", note: "the options window's draw and update: vtable-only methods Ghidra lists no function for (4.10g)"}
+  - {first: 0x00484c10, last: 0x00484c10, milestone: "4.10g", note: "the gap checklist's update: a vtable-only method (4.10g)"}
+  - {first: 0x004850f0, last: 0x004850f0, milestone: "4.10g", note: "the gap checklist's draw: a vtable-only method (4.10g)"}
+  - {first: 0x00485280, last: 0x00485280, milestone: "4.10g", note: "a stub that returns zero (4.10g)"}
+  - {first: 0x00485d80, last: 0x00485f90, milestone: "4.10g", note: "the high scores' update and draw: vtable-only methods (4.10g)"}
+  - {first: 0x004860c0, last: 0x004860c0, milestone: "4.10g", note: "a stub that returns zero (4.10g)"}
+  - {first: 0x004867a0, last: 0x004867a0, milestone: "4.10g", note: "the movie list's draw: a vtable-only method (4.10g)"}
+  - {first: 0x00487130, last: 0x00487130, milestone: "4.10g", note: "the sound levels page's draw: a vtable-only method (4.10g)"}
+  - {first: 0x00487dd0, last: 0x00487dd0, milestone: "4.10g", note: "the controller page's draw: a vtable-only method (4.10g)"}
+  - {first: 0x00488e30, last: 0x00488e40, milestone: "4.10g", note: "the cheats page's update and draw: vtable-only methods (4.10g)"}
+  - {first: 0x0049f250, last: 0x0049f440, milestone: "4.15c", note: "between physics.cpp and platform.cpp; callers favour 4.15c"}
+  - {first: 0x004a1dd0, last: 0x004a2100, milestone: "4.10i", note: "between two player_ui.cpp functions"}
+  - {first: 0x004a6e60, last: 0x004a74c0, milestone: "4.11a", note: "between player_spool.cpp and playsel.cpp; callers favour 4.11a"}
+  - {first: 0x004a7890, last: 0x004a7890, milestone: "4.10i", note: "between two playsel.cpp functions"}
+  - {first: 0x004a9410, last: 0x004a9640, milestone: "4.11a", note: "pre.cpp: the lookup, the dump and four one-liners Ghidra did not list (4.11a2 read the range)"}
+  - {first: 0x004a9650, last: 0x004a9bf0, milestone: "4.15b", note: "the camera quaternion/transform math (Camera_*Q12), moved from 4.11a by 4.11a2"}
+  - {first: 0x004b55a0, last: 0x004b55a0, milestone: "4.11a", note: "spooler.cpp: PlayerSpool_IsIdle (4.11a2 read the range)"}
+  - {first: 0x004b5810, last: 0x004b5830, milestone: "4.11a", note: "spooler.cpp: PlayerSpool_HasResource and PlayerSpool_Acquire (4.11a2 read the range)"}
+  - {first: 0x004b5920, last: 0x004b5920, milestone: "4.11a", note: "spooler.cpp: PlayerSpool_TakeBufferNamed (4.11a2 read the range)"}
+  - {first: 0x004b5b00, last: 0x004b5b00, milestone: "4.11a", note: "spooler.cpp: PlayerSpool_FindEntry (4.11a2 read the range)"}
+  - {first: 0x004493f0, last: 0x004493f0, milestone: "4.11a", note: "fileio.cpp: FileIO_FinishRead (4.11a2 read the range)"}
+  - {first: 0x00449b40, last: 0x00449b40, milestone: "4.11a", note: "fileio.cpp run: FontTest_Loop (4.11a2 read the range)"}
+  - {first: 0x004ac010, last: 0x004ac010, milestone: "4.13b", note: "redbook.cpp: the music track count (4.10i2 read the range)"}
+  - {first: 0x004ac020, last: 0x004ac36f, milestone: "4.14c", note: "reloc.cpp: the relocatable module loader (name hash, load pair, apply relocations, unload, call; 4.10i2 read the range)"}
+  - {first: 0x004ac370, last: 0x004ac370, milestone: "4.10i", note: "rfront.cpp: the pad repeat direction (4.10i2)"}
+  - {first: 0x004ace20, last: 0x004acfe0, milestone: "4.10i", note: "screentools.cpp: the unguarded line packet and a stub (4.10i2)"}
+  - {first: 0x004acff0, last: 0x004ad5e0, milestone: "4.13b", note: "sfx.cpp: the sound-bank open and close functions (VAB; 4.10i2 read the range)"}
+  - {first: 0x004adc30, last: 0x004adc7f, milestone: "4.13b", note: "sfx.cpp: four empty sound hooks (4.13b read the range)"}
+  - {first: 0x004adc80, last: 0x004ae020, milestone: "4.15d", note: "an effect object: the emitter class with the vtable at 0x0051972c (constructor with an SEH frame, destructor, update, tail) and the wind vector words it reads (0x0056c510, 0x0056c520) with their two clears; not sound code (4.13b read the range)"}
+  - {first: 0x004afd40, last: 0x004afd40, milestone: "4.10i", note: "shellutils.cpp: the head of Load8BitBMP2, whose body Ghidra lists at 0x004afd8c (4.10i3 read the range)"}
+  - {first: 0x004affe0, last: 0x004b0320, milestone: "4.10i", note: "shellutils.cpp: the BMP file wrapper and the two 16-bit variants; nothing calls them (4.10i3 read the range)"}
+  - {first: 0x004b035e, last: 0x004b0b20, milestone: "4.10i", note: "edge of shellutils.cpp"}
+  - {first: 0x004b0b50, last: 0x004b0bb0, milestone: "4.15f", note: "edge of ~oos"}
+  - {first: 0x004b1c20, last: 0x004b1c70, milestone: "4.11a", note: "spool.cpp: PSX_SaveRegionImage and PSX_RestoreRegionImage, which nothing calls directly (4.11a read the range)"}
+  - {first: 0x004b3460, last: 0x004b3460, milestone: "4.11a", note: "spool.cpp: Spool_ClearUnusedRegions (4.11a read the range)"}
+  - {first: 0x004b3e20, last: 0x004b3e20, milestone: "4.11a", note: "spool.cpp: PSX_SpoolBusy (4.11a read the range)"}
+  - {first: 0x004b5010, last: 0x004b5010, milestone: "4.11a", note: "between two spool.cpp functions"}
+  - {first: 0x004b5ba0, last: 0x004b6080, milestone: "4.10i", note: "between spooler.cpp and statwin.cpp; callers favour 4.10i"}
+  - {first: 0x004b7320, last: 0x004b7320, milestone: "4.10i", note: "between statwin.cpp and statedit.cpp; callers favour 4.10i"}
+  - {first: 0x004b82b0, last: 0x004b83b0, milestone: "4.15f", note: "between statedit.cpp and tag.cpp; callers favour 4.15f"}
+  - {first: 0x004b84c0, last: 0x004b8ef0, milestone: "4.10h", note: "between two tag.cpp functions"}
+  - {first: 0x0044b7b0, last: 0x0044b7b0, milestone: "4.10i", note: "CMenu::Reset: a method nothing calls and Ghidra lists no function for (4.10i)"}
+  - {first: 0x0044b980, last: 0x0044b980, milestone: "4.10i", note: "CMenu::Enable: a 25-byte method Ghidra lists no function for (4.10i)"}
+  - {first: 0x0044b9c0, last: 0x0044b9c0, milestone: "4.10i", note: "CMenu::IsEntryShown: a 31-byte method Ghidra lists no function for (4.10i)"}
+  - {first: 0x0044b9e0, last: 0x0044b9e0, milestone: "4.10i", note: "CMenu::SetEntryHeight: a 28-byte method Ghidra lists no function for (4.10i)"}
+  - {first: 0x0044ba20, last: 0x0044ba20, milestone: "4.10i", note: "CMenu::PositionOf: a method Ghidra lists no function for (4.10i)"}
+  - {first: 0x0044e4e0, last: 0x0044e4e0, milestone: "4.10i", note: "Front_SwitchOnEndingScreen: a small status change Ghidra lists no function for (4.10i)"}
+  - {first: 0x0044ea70, last: 0x0044ea70, milestone: "4.10i", note: "Front_ReplayRestart: a small status change Ghidra lists no function for (4.10i)"}
+  - {first: 0x0041adf0, last: 0x0041adf0, milestone: "4.10h", note: "the participant array element's destructor: a stub Ghidra lists no function for (4.10h)"}
+  - {first: 0x0041ae10, last: 0x0041ae10, milestone: "4.10h", note: "the judge array element's destructor: a stub Ghidra lists no function for (4.10h)"}
+  - {first: 0x004b8fa0, last: 0x004b8fb0, milestone: "4.10h", note: "the tag game's two flag readers: 16-byte stubs Ghidra lists no function for (4.10h)"}
+  - {first: 0x004b9320, last: 0x004b94e0, milestone: "4.10i", note: "between tapes.cpp and texteffects.cpp; callers favour 4.10i"}
+  - {first: 0x004ba020, last: 0x004bacc0, milestone: "4.10i", note: "between two texteffects.cpp functions"}
+  - {first: 0x004bae70, last: 0x004bae70, milestone: "4.10i", note: "edge of textwin.cpp"}
+  - {first: 0x004bb220, last: 0x004bb220, milestone: "4.13a", note: "edge of ~oos"}
+  - {first: 0x004bf860, last: 0x004bfa90, milestone: "4.15f", note: "between two trickscript.cpp functions"}
+  - {first: 0x004c0120, last: 0x004c13d0, milestone: "4.15f", note: "between two tricksel.cpp functions"}
+  - {first: 0x004c40e0, last: 0x004c40e0, milestone: "4.15f", note: "between two trickwin.cpp functions"}
+  - {first: 0x004c43b0, last: 0x004c43b0, milestone: "4.15f", note: "edge of trickwin.cpp"}
+  - {first: 0x004c43e0, last: 0x004c4400, milestone: "4.15f", note: "edge of ~oos"}
+  - {first: 0x004c87c0, last: 0x004c8f30, milestone: "4.15c", note: "between trig.cpp and utils.cpp: no caller evidence, taken from the left"}
+  - {first: 0x004ca890, last: 0x004cad30, milestone: "4.14c", note: "between two utils.cpp functions"}
+  - {first: 0x004c9c90, last: 0x004c9c90, milestone: "4.14c", note: "a utils.cpp helper found in the gap between two listed functions (4.14c)"}
+  - {first: 0x004c9fb0, last: 0x004c9fb0, milestone: "4.14c", note: "a utils.cpp helper found in the gap between two listed functions (4.14c)"}
+  - {first: 0x004ca620, last: 0x004ca620, milestone: "4.14c", note: "a utils.cpp helper found in the gap between two listed functions (4.14c)"}
+  - {first: 0x004ca650, last: 0x004ca650, milestone: "4.14c", note: "a utils.cpp helper found in the gap between two listed functions (4.14c)"}
+  - {first: 0x004cad80, last: 0x004cb420, milestone: "4.15b", note: "between vector.cpp and video.cpp; callers favour 4.15b"}
+  - {first: 0x004cbfa0, last: 0x004cc020, milestone: "4.15b", note: "video.cpp: Replay_StopStream and Replay_RewindStream (4.15b read the range)"}
+  - {first: 0x004cda90, last: 0x004cda90, milestone: "4.15b", note: "video.cpp: Video_Paused (4.15b read the range)"}
+  - {first: 0x004cde70, last: 0x004cea50, milestone: "4.15b", note: "between video.cpp and vidmenu.cpp: no caller evidence, taken from the left"}
+  - {first: 0x004ed9b0, last: 0x004ed9b0, milestone: "4.13a", note: "edge of ~oos"}
+  - {first: 0x00500e7b, last: 0x00500e7b, milestone: "4.13a", note: "edge of ~oos"}
+  - {first: 0x005013c8, last: 0x005013c8, milestone: "4.13a", note: "edge of ~oos"}
+  - {first: 0x00501fd5, last: 0x00501fd5, milestone: "4.13a", note: "edge of ~oos"}
+  - {first: 0x0050229f, last: 0x00502387, milestone: "4.13a", note: "edge of ~oos"}
+  - {first: 0x0050b7a0, last: 0x0050b7a0, milestone: "4.13a", note: "edge of ~oos"}

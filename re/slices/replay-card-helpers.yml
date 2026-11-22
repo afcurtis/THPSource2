@@ -1,0 +1,45 @@
+version: 1
+id: replay-card-helpers
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x0047b1a0
+  - 0x0047b2d0
+  - 0x0047b400
+  - 0x0047b6e0
+  - 0x0047b7d0
+  - 0x0047b850
+  - 0x0047b8d0
+  - 0x0047b8e0
+  - 0x0047b9d0
+  - 0x0047ba00
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/memory-card-layer.md
+  - re/evidence/fixtures/mmu-calls-mmuD.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/heap_kit.hpp
+  - src/runtime/mmu_kit.hpp
+  - src/runtime/mmu_setup.cpp
+  - re/gdb/probes/mmu_specs.py
+  - re/gdb/probes/mmu_specs_mgr.py
+  - re/gdb/probes/mmu_specs_misc.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/mmu_retail_calls_test.cpp
+  - tests/test_memory_card_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mmu): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (mmu_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 10 of the 10 functions (the replay card helpers (saving the streams of a replay, reading its header fields, reading and checking its streams, copying them out) and the string helpers (the last file names, the type labels, strcpy)) are replayed over 1200 cases with no mismatch (at least 120 cases each; the committed fixtures keep the first 30 of each capture per function, 300 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - a transfer is recorded for its first 0x400 bytes (the replay streams are 0x7fe00 bytes), and the label of an unknown type leaves the caller's buffer untouched.

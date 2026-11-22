@@ -1,0 +1,42 @@
+version: 1
+id: camera-rigs
+subsystem: camera
+status: complete
+scope:
+  functions:
+  - 0x0040f200
+  - 0x0040f270
+  - 0x00410bb0
+  - 0x00410f70
+  - 0x00411a00
+  - 0x00411c00
+  - 0x00411ce0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/camera-rigs.md
+  - re/evidence/fixtures/camera-calls-cmmA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/camera_kit.hpp
+  - src/runtime/camera_rigs.cpp
+  - re/gdb/probes/cam_specs_modes.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/camera_retail_calls_test.cpp
+  - tests/test_camera_video_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cmm): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (camera_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 7 of the 7 functions (the camera rigs'' evaluation (orientation, offset and position into the rig''s outputs, the matrix, the blend of two rigs), the point camera, the competition intro shot, the debug bars and the debug pad) are replayed over 1750 cases with no mismatch (at least 250 cases each; the committed fixtures keep the first 30 of each capture per function, 210 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the level's camera points, the trigger nodes, the competition screens, the text builder and the pad are services.

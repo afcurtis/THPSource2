@@ -1,0 +1,37 @@
+version: 1
+id: world-enviro-messaging
+subsystem: world
+
+status: complete
+
+scope:
+  functions:
+    - 0x004c77f0
+    - 0x004b1ef0
+  types: []
+  globals: []
+
+shared:
+  functions:
+    - 0x004c7a00
+
+artifacts:
+  evidence:
+    - re/evidence/functions/enviro-messaging.md
+    - re/evidence/fixtures/enviro-warehouse.txt
+  native:
+    - src/trg/level_trigger_state.hpp
+    - src/trg/level_trigger_state.cpp
+    - scripts/make_enviro_trace_fixture.py
+  tests:
+    - src/trg/level_trigger_state_test.cpp
+    - tests/test_enviro_messaging.py
+
+open_questions: []
+
+completion:
+  - "SendVisible and the enviro-item branches of the kill message act on the native trigger state and match a retail observation: 40 Warehouse calls touching 543 crate words (show, hide and hit) follow the recovered rules exactly."
+  - "Fixed a model error found by the observation: a zero SendVisible sets the hidden bits 0x41 (it used to leave the word unchanged), and a hit-kill sets bit 0 of the crate word."
+  - "Documented exclusion, not a blocker - light nodes (type 501: visibility byte, kill helper) are not represented in the trigger state."
+  - "Documented exclusion, not a blocker - the two-player hidden mask, power-up targets, kill mode 0 on a crate and the rail kills were not observed in a retail trace; they follow the disassembly."
+  - "Documented exclusion, not a blocker - the explosion of a hit crate (Exp_HitEnvItem effects) is presentation."

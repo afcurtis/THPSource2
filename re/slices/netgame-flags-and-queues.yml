@@ -1,0 +1,53 @@
+version: 1
+id: netgame-flags-and-queues
+subsystem: netgame
+status: complete
+scope:
+  functions:
+  - 0x004de4d0
+  - 0x004de500
+  - 0x004de570
+  - 0x004de5c0
+  - 0x004de5f0
+  - 0x004de7c0
+  - 0x004de9c0
+  - 0x004df030
+  - 0x004df160
+  - 0x004df1d0
+  - 0x004df220
+  - 0x004df250
+  - 0x004df280
+  - 0x004df2c0
+  - 0x004df300
+  - 0x004dfa00
+  - 0x004dfda0
+  - 0x004e00b0
+  - 0x004e0170
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/network-layer.md
+  - re/evidence/fixtures/net-calls-nets2.txt
+  - re/evidence/fixtures/net-calls-nets3.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/net_game.hpp
+  - src/runtime/net_state.cpp
+  - re/gdb/probes/net_specs.py
+  - re/gdb/probes/net_specs_state.py
+  - re/gdb/probes/net_specs_play.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/net_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_net_game.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups nets of net_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`net_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 19 of the 19 functions (the flag words, the state setter, the tag and point handlers, the hit sparks, the input reset, the status banner, the 16-slot rings and the tables of pairs) are replayed over 3900 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 570 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the spark object constructor and the allocator, the font calls, the ring push (0x004df170) and the vector stores are services.

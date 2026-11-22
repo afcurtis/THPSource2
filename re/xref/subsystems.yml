@@ -1,0 +1,65 @@
+version: 1
+
+# Source-file -> subsystem grouping used by `tony xref coverage`. Units are the
+# lower-cased Neversoft file names recovered from retail assert paths (PC) or the
+# PSX demo translation units. The grouping follows docs/DECOMP_PLAN.md's subsystem
+# order; it is an organisational choice, not recovered knowledge, so edit freely.
+
+# First function of the linked-in import stubs / C runtime (DirectDrawCreateEx thunk).
+# Functions at or above this address with no source attribution count as library code.
+library_start: 0x004f88d6
+
+subsystems:
+  - id: core
+    title: Core, memory and utilities
+    units: [main.cpp, init.cpp, mem.cpp, mmu.cpp, utils.cpp, vector.cpp, quat.cpp, strlib.cpp, debug.cpp,
+            mips.cpp, sqrttab.cpp, vlc_bit.cpp, pack.cpp, exp.cpp, db.cpp]
+  - id: fileio
+    title: File I/O, PRE/PKR loading and spooling
+    units: [fileio.cpp, pre.cpp, spool.cpp, spooler.cpp, player_spool.cpp]
+  - id: world
+    title: TRG scripts, level objects and effects
+    units: [trig.cpp, ob.cpp, mech.cpp, baddy.cpp, car.cpp, powerup.cpp, crowd.cpp, platform.cpp, bit.cpp,
+            bit2.cpp, blood.cpp, dust.cpp, shatter.cpp, smoke.cpp, flash.cpp, dynamiclogo.cpp, backgrnd.cpp]
+  - id: frontend
+    title: Frontend, menus and HUD
+    units: [front.cpp, frontend2.cpp, frontpre.cpp, rfront.cpp, commonfe.cpp, menu.cpp, mainmenu.cpp,
+            options.cpp, playsel.cpp, playerselect.cpp, carsel.cpp, equipsel.cpp, levelsel.cpp,
+            levelselect2.cpp, multisel.cpp, multiselect.cpp, handicap.cpp, credits.cpp, goalwin.cpp,
+            statwin.cpp, videowin.cpp, vidmenu.cpp, netmenu.cpp, perwin.cpp, appwin.cpp, panel.cpp, mess.cpp,
+            screentools.cpp, textwin.cpp, texteffects.cpp, font.cpp, fonttools.cpp, displaygoals.cpp,
+            shell.cpp, shellutils.cpp, player_ui.cpp]
+  - id: create
+    title: Create-a-skater
+    units: [create.cpp, create_color.cpp, create_spool.cpp, create_stitch.cpp, create_ui.cpp, create_tex.cpp,
+            cre_tex.cpp, cre_texset.cpp, creedit.cpp, cresave.cpp, cresel.cpp, custmgr.cpp, statedit.cpp]
+  - id: career
+    title: Career, goals, game modes and saves
+    units: [career.cpp, competition.cpp, tapes.cpp, medals.cpp, skatmgr.cpp, tag.cpp, card.cpp]
+  - id: tricks
+    title: Scoring and trick tables
+    units: [trickdb.cpp, trickob.cpp, trickscript.cpp, tricksel.cpp, tricktips.cpp, trickwin.cpp]
+  - id: editor
+    title: Park editor
+    units: [leveleditor.cpp, levelgen.cpp, genobjs.cpp, editorglobal.cpp, editorpieces.cpp, editorpieces2.cpp,
+            faceremoval.cpp]
+  - id: animation
+    title: Skater animation
+    units: [decomp.cpp]
+  - id: camera
+    title: Camera
+    units: [camera.cpp, campt.cpp, camera.h]
+  - id: physics
+    title: Physics and collision
+    units: [physics.cpp, rail.cpp, m3dcolij.cpp]
+  - id: render
+    title: Rendering (M3D, textures, D3D backend)
+    units: [m3d.cpp, m3dinit.cpp, m3dutils.cpp, m3dzone.cpp, m3delips.cpp, image.cpp, pal.cpp, video.cpp,
+            hires.cpp, light.cpp, "pc\\d3dfunc.cpp", "pc\\d3dpoly.cpp", "pc\\d3dsprite.cpp", "pc\\d3dtex.cpp",
+            "pc\\d3dtimer.cpp"]
+  - id: audio
+    title: Audio and movies
+    units: [sfx.cpp, redbook.cpp, gamefmv.cpp, "pc\\soundlib.cpp", "pc\\pcmovie.cpp"]
+  - id: platform
+    title: PC platform, input and networking
+    units: [pad.cpp, "pc\\winmain.cpp", "pc\\pcinput.cpp", "pc\\dxplay.cpp", "pc\\netgame.cpp", "pc\\thstub.cpp"]

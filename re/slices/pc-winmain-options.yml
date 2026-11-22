@@ -1,0 +1,45 @@
+version: 1
+id: pc-winmain-options
+subsystem: platform
+status: complete
+scope:
+  functions:
+  - 0x004f6660
+  - 0x004f6850
+  - 0x004f6920
+  - 0x004f6b90
+  - 0x004f6c60
+  - 0x004f6d00
+  - 0x004f7d80
+  - 0x004f86f0
+  - 0x004f77f0
+  - 0x004cf420
+  - 0x004cf030
+  - 0x004cf300
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/pc-platform.md
+  - re/evidence/fixtures/platform-calls-vopt.txt
+  - re/evidence/fixtures/platform-calls-winm.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/pc_system.hpp
+  - src/runtime/pc_system.cpp
+  - re/gdb/probes/platform_specs.py
+  - re/gdb/probes/platform_specs_sys.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/platform_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_pc_platform.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups winm, vopt of platform_specs*.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`platform_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 12 of the 12 functions (the game side of winmain: the mode check, the screen size, the install paths, loading and saving the options file with its VIDEO section (renderer, resolution, gamma, quality, fog scale), the display mode list, the shutdown order and the device description log) are replayed over 1950 cases with no mismatch (at least 150 cases each; the committed fixtures keep the first 30 of each capture per function, 360 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the options file, fopen / fclose, the net layer's shutdown, the timer, the input, the movie and Direct3D shutdown calls and DirectDraw's mode enumeration are services; the fog scale and its percentage are float math at the 53-bit precision the forced calls run at.

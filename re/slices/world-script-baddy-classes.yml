@@ -1,0 +1,56 @@
+version: 1
+id: world-script-baddy-classes
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x00401000
+  - 0x00401030
+  - 0x00401100
+  - 0x00401120
+  - 0x004011d0
+  - 0x004011e0
+  - 0x00401240
+  - 0x00401250
+  - 0x00401260
+  - 0x00401270
+  - 0x004012d0
+  - 0x004012f0
+  - 0x00401410
+  - 0x00402f80
+  - 0x00402fc0
+  - 0x00403000
+  - 0x004030b0
+  - 0x004030d0
+  - 0x00403400
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/world-script-baddy.md
+  - re/evidence/fixtures/world-calls-wasrA.txt
+  - re/evidence/fixtures/world-calls-wbdA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/world_kit.hpp
+  - src/runtime/world_baddy.cpp
+  - re/gdb/probes/world_specs_baddy.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/world_specs.py
+  tests:
+  - src/runtime/world_retail_calls_test.cpp
+  - tests/test_world_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups wbd, wasr): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (world_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 19 of the 19 functions (the classes at the head of the executable: the script object (flag set / clear by id, destructor), the baddy base class (constructor, destructors, the movers'' per-frame physics step), the type-0xcb baddy, the two player-relative AI wrappers and the assertion routine itself (the formatter and the log line it reaches)) are replayed over 5600 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 570 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the object lists, the voices, the AI query and the script field setter are services; the assertion routine runs in a group of its own (the others report their failed assertions to it).

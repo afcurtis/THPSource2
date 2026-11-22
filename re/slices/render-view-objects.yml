@@ -1,0 +1,50 @@
+version: 1
+id: render-view-objects
+subsystem: renderer
+status: complete
+scope:
+  functions:
+  - 0x0045e8e0
+  - 0x0045ef80
+  - 0x0045f530
+  - 0x004604f0
+  - 0x00460ca0
+  - 0x004610f0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/renderer-view-objects.md
+  - re/evidence/fixtures/render-calls-rbgdB.txt
+  - re/evidence/fixtures/render-calls-rmdlA.txt
+  - re/evidence/fixtures/render-calls-robjB.txt
+  - re/evidence/fixtures/render-calls-robjC.txt
+  - re/evidence/fixtures/render-calls-rssiA.txt
+  - re/evidence/fixtures/render-calls-rviewA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/render_view.cpp
+  - src/runtime/render_scene.cpp
+  - re/gdb/probes/render_specs5.py
+  - re/gdb/probes/render_specs7.py
+  - re/gdb/probes/render_specs8.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/render_retail_calls_test.cpp
+  - tests/test_render_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rview, rbgd, robj, rssi, rmdl): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (render_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 6 of the 6 functions (the start of a view (the projection constants, the frustum planes, the light and colour matrices, the aspect-scaled view matrix, the opening of the ordering table) and the camera set-up, the sky objects, the objects of a frame (the level of detail by distance, the rotation and scale into the matrix the models are drawn with, the lights, the depth offsets), an item of several models with the pose of its bones, and the skater model with its shadow pass) are replayed over 730 cases with no mismatch (at least 40 cases each; the committed fixtures keep the first 30 of each capture per function, 210 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the model state submission, the geometry packet submitter, the texture wibble, the colour pulses and the item renderer are services where the object tests reach them; the GTE is ordinary memory of the replay.

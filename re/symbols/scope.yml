@@ -1,0 +1,238 @@
+# Out-of-scope map for Phase 4 (4.12 Cartography; policy in docs/phases/PHASE_4_SUMMARY.md "Scope and the
+# completion target"). A function listed here is replaced, not reconstructed: it is tagged with a category
+# and the replacement that will stand in for it, never decompiled. `tony xref coverage` reads this file and
+# reports native / in-scope. Tagging changes no `match/` status and no byte of the rebuild.
+#
+# Rules the map follows:
+#   * A function that already has a native reconstruction is in scope by definition (the CRT_* wrappers, the
+#     `d3dfunc` natives); `tony xref coverage` ignores any row for it. `keep` lists in-scope exceptions that
+#     sit inside a range or a hook point.
+#   * HAL hook points and the helpers they own (re/config/hal_boundary.yml, checked by `tony hal check`) are
+#     replaced by the adapters in src/hooks/hal and the services behind them, except retail logic the adapters
+#     call in place (bindings, action masks: re/config/native_hooks.yml `services.hal.symbols`), which stays in
+#     scope. The movie hook points (the pcmovie interface the game calls) stay in scope too; their Bink bodies
+#     are out.
+#   * Library ranges are tagged only with evidence: `scripts/match_library_signatures.py` (byte equality with
+#     VC6 LIBC.LIB/LIBCMT.LIB code, relocations masked) for the C runtime; the library's own strings and its
+#     call structure for zlib; see re/evidence/xref-libraries.md.
+version: 1
+
+categories:
+  crt:
+    title: MSVC 6 C runtime
+    replacement: "the host toolchain's C runtime (behaviour the game observes has a native equivalent: CRT_SplitPath, CRT_StrICmp, ResourceStream_*, the 24-bit x87 control word in render code)"
+  zlib:
+    title: zlib 1.1.2
+    replacement: "upstream zlib (the PKR2_*Zlib wrappers are game code and stay in scope)"
+  platform-hal:
+    title: Platform API backends behind the HAL
+    replacement: "the SDL3 HAL (video=sdl on SDL_GPU or GL, audio=sdl, SDL input, clock and fs services)"
+  bink:
+    title: Bink movie and music player
+    replacement: "a HAL movie and music backend on a modern decoder (FFmpeg decodes Bink video and audio)"
+  compiler-glue:
+    title: Compiler-generated static-object glue
+    replacement: "real C++ static constructors and destructors, run by the host toolchain's start-up code"
+  directplay:
+    title: DirectPlay multiplayer
+    replacement: "nothing; online and LAN multiplayer are dropped from the native build"
+
+ranges:
+  - {first: 0x004f9c80, last: 0x004ffd39, category: zlib,
+     note: "zlib 1.1.2: deflate and inflate, with the library's own error strings ('incorrect header check', 'buffer error', ...) and the '1.1.2' version string; PKR2 calls it"}
+  - {first: 0x004ffd3a, last: 0x005122b1, category: crt,
+     note: "MSVC 6 runtime to the end of .text: 371 of its functions equal LIBC.LIB or LIBCMT.LIB code with relocations masked; the unmatched ones sit between matched ones (a later service pack's variant of the same objects)"}
+  - {first: 0x004ebf90, last: 0x004ed950, category: platform-hal,
+     note: "SDX DirectInput wrapper (SDXInput, SDXMouse, SDXJoystick, force feedback): the input service (`input=sdl`); includes the unreferenced dead methods"}
+  - {first: 0x004edbb0, last: 0x004f27b0, category: platform-hal,
+     note: "SOFTREND software renderer (scanline fills, RGB565 conversion, SOFTREND_Startup at 0x004f2720): the SDL3 video backends do not implement the software path (D3DSoftwareRenderer)"}
+
+# In-scope exceptions inside a range or a hook point.
+keep:
+  - {address: 0x004ec930, reason: "SDXMouse_SetBounds: no platform call; PCInput_Initialize sets the mouse clamp (0, 0, 0x260, 0x1c0) through it and the HAL input adapter calls it in place (native_hooks.yml services.hal.symbols)"}
+
+# Per-function rows: HAL-owned platform bodies (from the generated inventory in re/config/hal_boundary.yml),
+# the DirectPlay transport, and the Bink player.
+functions:
+  - {address: 0x0040b590, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x0040b5e0, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x0040b630, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x004195c0, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x00423b20, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x0044b190, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x0044b1d0, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x004b0b30, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x004baeb0, category: platform-hal, note: "fs service, owned by CD_CheckAudioTOC"}
+  - {address: 0x004baf50, category: platform-hal, note: "fs service, owned by CD_CheckAudioTOC"}
+  - {address: 0x004bb0b0, category: platform-hal, note: "fs service, owned by CD_CheckAudioTOC"}
+  - {address: 0x004bb240, category: platform-hal, note: "fs service, hook point"}
+  - {address: 0x004bb2d0, category: platform-hal, note: "fs service, owned by CD_CheckAudioTOC"}
+  - {address: 0x004c43c0, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x004cf850, category: platform-hal, note: "debug service, hook point"}
+  - {address: 0x004d0a60, category: platform-hal, note: "video service, owned by D3DPoly_StartScene"}
+  - {address: 0x004d0c30, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d0d00, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d0dd0, category: platform-hal, note: "video service, owned by D3DPoly_StartScene"}
+  - {address: 0x004d0ec0, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d0f80, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d3480, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d3510, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d36c0, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d3780, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d3b40, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d41e0, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d42f0, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d45f0, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d49e0, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d4bf0, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d5040, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d5280, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d56c0, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d5960, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d5e40, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d6120, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d6320, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d6560, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d66f0, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d68b0, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d71f0, category: platform-hal, note: "video service, owned by D3D_DrawPolygonList"}
+  - {address: 0x004d7450, category: platform-hal, note: "video service, owned by D3D_Shutdown"}
+  - {address: 0x004d74a0, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d78c0, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d7e10, category: platform-hal, note: "video service, owned by D3DTex_UploadTexture"}
+  - {address: 0x004d83a0, category: platform-hal, note: "video service, owned by D3DSprite_Create"}
+  - {address: 0x004d8990, category: platform-hal, note: "video service, owned by D3DTex_UploadTexture"}
+  - {address: 0x004d8b50, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d9310, category: platform-hal, note: "video service, owned by D3DTex_UploadTexture"}
+  - {address: 0x004d9630, category: platform-hal, note: "video service, owned by D3DTex_UploadTexture"}
+  - {address: 0x004d9950, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004d9f50, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004da260, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004da840, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004dab80, category: platform-hal, note: "clock service, hook point"}
+  - {address: 0x004dabb0, category: platform-hal, note: "clock service, hook point"}
+  - {address: 0x004dad80, category: platform-hal, note: "clock service, owned by D3DTimer_Init"}
+  - {address: 0x004dae60, category: directplay, note: "member of pc\\dxplay.cpp (DirectPlay wrapper)"}
+  - {address: 0x004dae70, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004daee0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004daf10, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db080, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db150, category: directplay, note: "member of pc\\dxplay.cpp (DirectPlay wrapper)"}
+  - {address: 0x004db1a0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db1c0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db200, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db2d0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db310, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db350, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db3e0, category: directplay, note: "member of pc\\dxplay.cpp (DirectPlay wrapper)"}
+  - {address: 0x004db3f0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db520, category: directplay, note: "member of pc\\dxplay.cpp (DirectPlay wrapper)"}
+  - {address: 0x004db550, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db5a0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db690, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004db7e0, category: directplay, note: "member of pc\\dxplay.cpp (DirectPlay wrapper)"}
+  - {address: 0x004db9a0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004dba20, category: directplay, note: "member of pc\\dxplay.cpp (DirectPlay wrapper)"}
+  - {address: 0x004dba40, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004dbb40, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004dbc50, category: directplay, note: "member of pc\\dxplay.cpp (DirectPlay wrapper)"}
+  - {address: 0x004dbcc0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004dbd20, category: directplay, note: "member of pc\\dxplay.cpp (DirectPlay wrapper)"}
+  - {address: 0x004dbf90, category: directplay, note: "NetMouse_HitRect, the pointer-in-rectangle test: the netgame uses it, and so does every pick-by-mouse method of the window graph (reclassified in scope, milestone 8d); it stays a named seam for the Kits that call it by address, and the standalone has a native (NetGame::hit_rect) that tony.native_oracle checks against retail"}
+  - {address: 0x004dc5c0, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004dd780, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004dd980, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004ddbf0, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004ddd60, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004de6d0, category: directplay, note: "netgame internals: the remote skater's frame, called by Skater_Update (0x0046dd60) for a network player only, reads the netgame state (0x006a1000.., 0x006a3a00..); seam net.FUN_004de6d0"}
+  - {address: 0x004de790, category: directplay, note: "netgame internals: the hit message, called by Skater_Update (0x0046dd60), does nothing while 0x006a3b21 is clear; seam net.FUN_004de790"}
+  - {address: 0x004de830, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004dea30, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004dec50, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004deff0, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004df0e0, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004df170, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004df420, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004dfa80, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004dfdf0, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004e00c0, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004e0120, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e0180, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004e0210, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004e0dd0, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004e0e20, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004e0ee0, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004e0f20, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004e12f0, category: directplay, note: "netgame internals: no caller outside the dxplay..netgame range, reads the netgame state (0x006a1000.., 0x006a3a00..); unreachable while 0x006a3b21 is clear"}
+  - {address: 0x004e1490, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e14e0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e1650, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e1850, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e18f0, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e1910, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e1970, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e1a60, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e1a80, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e2040, category: directplay, note: "net: multiplayer function (no hook)"}
+  - {address: 0x004e3d30, category: compiler-glue, note: "constructor or vector-constructor thunk of a static SDX object (called through the initializer table)"}
+  - {address: 0x004e3d40, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x004e3d70, category: compiler-glue, note: "constructor or vector-constructor thunk of a static SDX object (called through the initializer table)"}
+  - {address: 0x004e3d80, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x004e3db0, category: compiler-glue, note: "constructor or vector-constructor thunk of a static SDX object (called through the initializer table)"}
+  - {address: 0x004e3dc0, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x004e3df0, category: compiler-glue, note: "constructor or vector-constructor thunk of a static SDX object (called through the initializer table)"}
+  - {address: 0x004e3e00, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x004e3e30, category: compiler-glue, note: "constructor or vector-constructor thunk of a static SDX object (called through the initializer table)"}
+  - {address: 0x004e3e50, category: compiler-glue, note: "static-object destructor registration: push &dtor; call _atexit; pop ecx; ret"}
+  - {address: 0x004e4690, category: platform-hal, note: "input service, hook point"}
+  - {address: 0x004e4a60, category: platform-hal, note: "input service, hook point"}
+  - {address: 0x004e4a90, category: platform-hal, note: "input service, hook point"}
+  - {address: 0x004e4c10, category: platform-hal, note: "input service, hook point"}
+  - {address: 0x004e4c40, category: platform-hal, note: "input service, hook point"}
+  - {address: 0x004e4cf0, category: platform-hal, note: "input service, hook point"}
+  - {address: 0x004e5720, category: bink, note: "movie service, owned by PCMovie_PlayStartupMedia; called in place by the movie adapter"}
+  - {address: 0x004e5a80, category: bink, note: "movie service, owned by PCMovie_PlayStartupMedia; called in place by the movie adapter"}
+  - {address: 0x004e5e90, category: bink, note: "movie service, owned by PCMovie_PlayStartupMedia"}
+  - {address: 0x004e6020, category: bink, note: "movie service, owned by PCMovie_PlayStartupMedia; called in place by the movie adapter"}
+  - {address: 0x004e6590, category: bink, note: "movie service, owned by PCMovie_PlayStartupMedia; called in place by the movie adapter"}
+  - {address: 0x004e6890, category: bink, note: "movie service, owned by PCMovie_PlayStartupMedia; called in place by the movie adapter"}
+  - {address: 0x004e6da0, category: bink, note: "movie service, owned by PCMovie_PlayStartupMedia; called in place by the movie adapter"}
+  - {address: 0x004e6e50, category: bink, note: "movie service, owned by PCMOVIE_Update"}
+  - {address: 0x004e71d0, category: bink, note: "movie service, owned by PCMOVIE_StartMusic"}
+  - {address: 0x004e73f0, category: platform-hal, note: "fs service, hook point"}
+  - {address: 0x004f27c0, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f28a0, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f2ad0, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f2b40, category: platform-hal, note: "audio service, owned by Audio_LoadSoundBank"}
+  - {address: 0x004f2c70, category: platform-hal, note: "audio service, owned by Audio_LoadSoundBank"}
+  - {address: 0x004f2da0, category: platform-hal, note: "audio service, owned by Audio_FreeSoundBank"}
+  - {address: 0x004f2e20, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f3200, category: platform-hal, note: "audio service, owned by Audio_SetVoiceVolume"}
+  - {address: 0x004f34b0, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f3690, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f3720, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f37c0, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f3870, category: platform-hal, note: "audio service, owned by Audio_PauseLooping"}
+  - {address: 0x004f3900, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f3940, category: platform-hal, note: "audio service, hook point"}
+  - {address: 0x004f6510, category: platform-hal, note: "fs service, hook point"}
+  - {address: 0x004f6550, category: platform-hal, note: "clock service, hook point"}
+  - {address: 0x004f6560, category: platform-hal, note: "fs service, hook point"}
+  - {address: 0x004f6730, category: platform-hal, note: "fs service, owned by PCinit"}
+  - {address: 0x004f6ca0, category: platform-hal, note: "fs service, hook point"}
+  - {address: 0x004f6cd0, category: platform-hal, note: "fs service, hook point"}
+  - {address: 0x004f6d20, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004f6e60, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004f7110, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004f78f0, category: platform-hal, note: "video service, owned by WINMAIN_InitDirect3D"}
+  - {address: 0x004f7980, category: platform-hal, note: "video service, owned by WINMAIN_InitDirect3D"}
+  - {address: 0x004f79e0, category: platform-hal, note: "video service, owned by WINMAIN_EnumDisplayModes"}
+  - {address: 0x004f7a70, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004f7af0, category: platform-hal, note: "window service, owned by Game_Startup"}
+  - {address: 0x004f7ce0, category: platform-hal, note: "window service, hook point"}
+  - {address: 0x004f7e30, category: platform-hal, note: "window service, hook point"}
+  - {address: 0x004f8130, category: platform-hal, note: "video service, hook point"}
+  - {address: 0x004f8630, category: platform-hal, note: "video service, owned by WINMAIN_InitDirectDraw"}
+  - {address: 0x004cf9b0, category: platform-hal, note: "DirectSound error text (4.13a triage): logs the DSERR_ name of an HRESULT with its file and line; the SDL3 audio backend reports its own errors"}
+  - {address: 0x004cfb60, category: platform-hal, note: "DirectDraw / Direct3D error text (4.13a triage): a 2,173-byte switch from an HRESULT to its DDERR_ / D3DERR_ name for the log; no game state"}
+  - {address: 0x004d09d0, category: platform-hal, note: "debug dump of the stack registers and the memory watermarks to the log (4.13a triage); no game state"}

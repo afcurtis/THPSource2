@@ -1,0 +1,37 @@
+version: 1
+id: pc-input-bindings
+subsystem: platform
+status: complete
+scope:
+  functions:
+  - 0x004e3e80
+  - 0x004e3f80
+  - 0x004e4d10
+  - 0x004e5460
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/pc-platform.md
+  - re/evidence/fixtures/platform-calls-pcbind.txt
+  - re/evidence/fixtures/platform-calls-pcin.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/pad_input.hpp
+  - src/runtime/pad_input.cpp
+  - re/gdb/probes/platform_specs.py
+  - re/gdb/probes/platform_specs_sys.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/platform_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_pc_platform.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups pcin, pcbind of platform_specs*.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`platform_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 4 of the 4 functions (the default bindings, the control mode that picks a chord set, and the loading and saving of the bindings in the options file (the JOYPAD and KEYBOARD entries, the duplicate and range checks, the reset on a bad file)) are replayed over 900 cases with no mismatch (at least 150 cases each; the committed fixtures keep the first 30 of each capture per function, 120 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - the options file (GetPrivateProfileString / WritePrivateProfileString) is a service whose text the probe scripts; the C runtime''s sprintf, sscanf and strtok run for real in retail and are reproduced natively (crt:: in pc_platform.hpp).'

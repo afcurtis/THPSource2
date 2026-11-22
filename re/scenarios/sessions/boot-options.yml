@@ -1,0 +1,9 @@
+version: 1
+description: Boot, main menu, Options (left, Enter), back (Esc).
+deliveries: 2400
+keys:
+  - {poll: 500, key: left, hold: 5}
+  - {poll: 560, key: enter, hold: 5}
+  - {poll: 700, key: f9, hold: 2}
+  - {poll: 900, key: esc, hold: 5}
+  - {poll: 1000, key: f9, hold: 2}

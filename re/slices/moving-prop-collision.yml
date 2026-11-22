@@ -1,0 +1,32 @@
+version: 1
+id: moving-prop-collision
+subsystem: world
+status: paused
+
+scope:
+  # Phase 4 close (2026-10-26): paused, handed to Phase 5 (a gameplay capture with a moving-prop query). Phase 5 close (2026-11-13): handed to Phase 6 (open_questions).
+  functions: []
+  types:
+    - RuntimeCollisionObject
+  globals: []
+
+shared:
+  functions:
+    - 0x004628f0
+    - 0x00466090
+
+artifacts:
+  evidence:
+    - re/evidence/functions/collision.md
+  native:
+    - src/collision/psx_scene.hpp
+  tests:
+    - src/collision/psx_scene_test.cpp
+
+open_questions:
+  - "Phase 6 hand-off (the Phase 5 close, 2026-11-13): the writer of linked-node transforms is evidence-backed (platform-script-object, owned by the complete world-object slices; native 4.15c): the type-1 subtype 0x0192 platform object integrates its own position and angles, and cars and power-ups publish no collision nodes. Phase 5 runs the platform update and the collision queries natively on retail memory (10g s13-s16, both careers and the nine Warehouse scenarios match retail), but none of those scenarios has a prop that moves through a query, so the natural capture is still missing; PsxCollisionWorld::trace_segment stands in for the retail query in src/trg/level_runtime.cpp, the Phase 4 model."
+  - Capture a natural, non-injected query that hits a moving linked object and compare it with PsxScene::query_with_linked_objects; capture a live non-identity 0x0200 object through 0x004f5540 if a moving prop supplies one.
+
+completion:
+  - "Paused; handed to Phase 6: no recorded scenario has a moving-prop query. The collision primitive itself is confirmed (natural Hangar linked-object hits, the controlled collision-dynamic-positive5 transform replay)."
+  - "On resume: a natural moving-prop query agrees between retail and native at the collision-query boundary."

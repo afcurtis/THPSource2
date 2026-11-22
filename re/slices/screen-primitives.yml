@@ -1,0 +1,45 @@
+version: 1
+id: screen-primitives
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x004b0580
+    - 0x004b0600
+    - 0x004b0800
+    - 0x004b0950
+    - 0x004b0970
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/bitmap-loader.md
+    - re/evidence/fixtures/front-calls-bmp-load.txt
+    - re/evidence/fixtures/front-calls-bmp-prim.txt
+  native:
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - src/runtime/shell_helpers.hpp
+    - src/runtime/shell_bitmap.cpp
+    - re/gdb/probes/frontend_specs_bmp.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/front_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - tests/test_bitmap_loader.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the prim and bmp groups: a draw list, a renderer with its ordering table and viewport, the screen size and the overlay slot poked per case, the GPU packet writers and the VRAM transfers reported by address (the packet built in a local as a text, its stack leftovers blank)): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`front_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 5 of the 5 functions (the tails are the same code) are replayed over 1900 cases with no mismatch.'
+  - Documented exclusion, not a blocker - the engine's VRAM, GPU packet, file and allocator calls are seams reported by name with the arguments retail passed; the two 16-bit variants index the palette with a signed byte, so the probe keeps their indices below 0x80 (a higher index reads stack leftovers in retail).

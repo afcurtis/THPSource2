@@ -1,0 +1,66 @@
+version: 1
+id: gte-operations
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x004e2070
+  - 0x004e2130
+  - 0x004e22b0
+  - 0x004e22f0
+  - 0x004e24b0
+  - 0x004e2550
+  - 0x004e25f0
+  - 0x004e2690
+  - 0x004e2730
+  - 0x004e27d0
+  - 0x004e2870
+  - 0x004e2930
+  - 0x004e29d0
+  - 0x004e2a90
+  - 0x004e2b30
+  - 0x004e2bf0
+  - 0x004e2cb0
+  - 0x004e2d70
+  - 0x004e2e30
+  - 0x004e2ef0
+  - 0x004e2f20
+  - 0x004e2f80
+  - 0x004e2ff0
+  - 0x004e3070
+  - 0x004e3130
+  - 0x004e31d0
+  - 0x004e3290
+  - 0x004e39a0
+  - 0x004e3a40
+  - 0x004e3b00
+  - 0x004e3ba0
+  - 0x004e3c40
+  - 0x004e3ce0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/math-layer.md
+  - re/evidence/fixtures/math-calls-gte1.txt
+  - re/evidence/fixtures/math-calls-gte2.txt
+  - re/evidence/fixtures/math-calls-gte3.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/math_gte.cpp
+  - re/gdb/probes/math_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/math_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_math_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups gte of math_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`math_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 33 of the 33 functions (the GTE operations of the PC build that multiply a matrix by a vector and clamp (the rotation, light and colour matrices against V0 / V1 / V2 / IR, with and without the translation or background, shifted or not), the two clamps, the outer product, the square, the screen triangle area, the leading-bit count, the Z average and the mvmva dispatcher) are replayed over 9900 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 990 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the registers' meaning beyond what the ops observe (flag registers do not exist in the PC emulation), and the retail code's endless loop on `gte_ldlzc(0)`, which the probe never calls and the port leaves with LZCR cleared.

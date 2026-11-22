@@ -1,0 +1,40 @@
+version: 1
+id: cheat-codes
+subsystem: effects
+status: complete
+scope:
+  functions:
+  - 0x004af660
+  - 0x004af6b0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/cheat-codes.md
+  - re/evidence/fixtures/bit-calls-bchzA.txt
+  - re/evidence/fixtures/bit-calls-bchzB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/bit_kit.hpp
+  - src/runtime/bit_cheat.cpp
+  - re/gdb/probes/bit_specs5.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/bit_specs.py
+  tests:
+  - src/runtime/bit_retail_calls_test.cpp
+  - tests/test_bit_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups bchz): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (bit_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 2 of the 2 functions (the cheat codes: the rolling hash of the held buttons'' seed words and the table of the 35 codes it is compared with) are replayed over 1400 cases with no mismatch (at least 400 cases each; the committed fixtures keep the first 30 of each capture per function, 90 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the career, the skater and the front end the codes reach are services.

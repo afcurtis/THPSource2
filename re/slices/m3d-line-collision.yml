@@ -1,0 +1,39 @@
+version: 1
+id: m3d-line-collision
+subsystem: collision
+status: complete
+scope:
+  functions:
+  - 0x004f43e0
+  - 0x004f4c50
+  - 0x00463e50
+  - 0x00464200
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/m3d-culling-helpers.md
+  - re/evidence/fixtures/m3d-calls-m3hA.txt
+  - re/evidence/fixtures/m3d-calls-m3hB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/m3d_collision.cpp
+  - re/gdb/probes/m3d_specs_hit.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/m3d_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups m3h): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (m3d_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 4 of the 4 functions (the collision of a line with the linked objects: the culling of an object chain against a turned box, the test against the faces of a model and of an object, and the test against object spheres) are replayed over 4200 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 180 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the environment index lookup and the trigger command point are services; the model tables are redirected to the slab; the vertex buffer is a window; a line of length 0 divides by zero in retail and ends the case in an error, which is skipped.

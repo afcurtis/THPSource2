@@ -1,0 +1,40 @@
+version: 1
+id: powerup-lifecycle
+subsystem: world
+status: complete
+
+scope:
+  functions:
+    - 0x004a7c50
+    - 0x004a8e50
+    - 0x004a8ac0
+    - 0x004a8300
+    - 0x004a8620
+    - 0x004a86f0
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/powerup-object.md
+    - re/evidence/functions/items-runtime.md
+    - re/evidence/fixtures/powerup-object-hangar.txt
+  native:
+    - src/trg/powerup_object.cpp
+    - src/trg/object_script.hpp
+    - src/trg/script_world.cpp
+    - scripts/make_powerup_trace_fixture.py
+  tests:
+    - src/trg/powerup_object_test.cpp
+    - src/trg/powerup_object_retail_trace_test.cpp
+    - src/trg/level_world_test.cpp
+    - tests/test_powerup_object.py
+
+open_questions: []
+
+completion:
+  - "2,182 retail Hangar calls replay from their raw entry images: 2,123 updates and 59 pickup attempts match on state, position, angles, velocity, bob, timer, age, shadow and glow, and on every sound, pitch, money, goal and message call in order, with 7 expiries. The constructor matches the first image of all 13 traced power-ups."
+  - "Every shipped type-5 node constructs and runs for 600 frames with no assertion, and ScriptWorld creates, updates, collects and destroys power-ups on their own list inside LevelRuntime."
+  - "Documented exclusion, not a blocker - the fall-and-settle branch and thrown power-ups were not moving in the trace; they follow the disassembly and are unit tested."
+  - "Documented exclusion, not a blocker - the camera-follow branch (+0xf6) and the exact line-to-sphere pickup test are not modelled; the world collects through a service call."
+  - "Documented exclusion, not a blocker - Downhill Jam's 16 nodes of subtypes 0x15..0x17 reach the retail 'Bad powerup type' assertion."

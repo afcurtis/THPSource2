@@ -1,0 +1,38 @@
+version: 1
+id: world-traffic-collision
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x00412ef0
+  - 0x00413000
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/world-traffic-collision.md
+  - re/evidence/fixtures/world-calls-wtcD.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/world_kit.hpp
+  - src/runtime/world_traffic.cpp
+  - re/gdb/probes/world_specs_traffic.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/world_specs.py
+  tests:
+  - src/runtime/world_retail_calls_test.cpp
+  - tests/test_world_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups wtc): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (world_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 2 of the 2 functions (the traffic cars'' collision with the skaters: the car''s largest model box, the skater''s last step swept through the car''s frame with the GTE and tested against the box, and the three outcomes (a stomp from above, a hit from the front or the back) with their sound, vibration, bail and blood) are replayed over 500 cases with no mismatch (at least 250 cases each; the committed fixtures keep the first 30 of each capture per function, 60 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the GTE products run as the port's own math; the sound, the vibration, the bail, the glass bits and the gap bookkeeping are services.

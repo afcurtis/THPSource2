@@ -1,0 +1,36 @@
+version: 1
+id: trick-tips
+subsystem: tricks
+status: complete
+
+scope:
+  functions:
+    - 0x004c4570
+    - 0x004c4620
+    - 0x004c4950
+    - 0x004c48f0
+    - 0x004c4420
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/trick-tips-runtime.md
+    - re/evidence/fixtures/tricktips-warehouse.txt
+  native:
+    - src/runtime/trick_tips.hpp
+    - src/runtime/trick_tips.cpp
+    - src/runtime/trick_tip_table.cpp
+    - scripts/generate_trick_tip_table.py
+    - scripts/make_trick_tips_fixture.py
+  tests:
+    - src/runtime/trick_tips_test.cpp
+    - src/runtime/trick_tips_retail_trace_test.cpp
+    - tests/test_trick_tips.py
+    - tests/test_trick_tip_table.py
+
+open_questions: []
+
+completion:
+  - "Retail Warehouse traces in game mode 1 (a natural run plus three driven ones that poke the inputs the monitor reads): 890 monitor calls (517 in the fixture) replay from the raw 0x114-byte monitor object with identical exit images and tip masks, and 827 display frames reproduce their Mess_* call sequences (8,270 drawing calls) and images; tips 0, 1 (as TIP and as REMEMBER), 2, 3 and 5 are raised and shown, and the 600-frame window, the remembered mask, the level mask, the tips option and the game-mode and level-state gates are all exercised."
+  - "Documented exclusion, not a blocker - the pause/fade check FUN_00419420 and Video_Playing are seams that were always 0; the second mask bank (tips 32..63) does not exist in the 22-tip table; callers other than the monitor that raise tips, and the table words at +4 and +8, are not reconstructed."

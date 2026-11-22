@@ -1,0 +1,37 @@
+version: 1
+id: skater-model-parts
+subsystem: physics
+status: complete
+scope:
+  functions:
+  - 0x0048fbe0
+  - 0x0048fc90
+  - 0x0048fd60
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/skater-model-and-effects.md
+  - re/evidence/fixtures/skater-calls-physE.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/skater_kit.hpp
+  - src/runtime/skater_parts.cpp
+  - re/gdb/probes/phys_specs_parts.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/skater_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups php): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (skater_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 3 of the 3 functions (the model parts of a skater: the position of a part number in the order of parts, the shift of the vertices of three parts and the scaling (fattening) of the parts with its undo) are replayed over 747 cases with no mismatch (at least 247 cases each; the committed fixtures keep the first 30 of each capture per function, 90 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the log line and the assertion routine are services; an undo whose percentage is 0 divides by zero in retail and ends the case in an error, which is skipped; the fattening tables are read-only data.

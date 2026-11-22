@@ -1,0 +1,126 @@
+version: 1
+id: player-select-screen
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x004a1fe0
+    - 0x004a2000
+    - 0x004a2010
+    - 0x004a2030
+    - 0x004a2040
+    - 0x004a2050
+    - 0x004a20e0
+    - 0x004a2100
+    - 0x004a2bc0
+    - 0x004a2cb0
+    - 0x004a2ce0
+    - 0x004a3110
+    - 0x004a3230
+    - 0x004a34b0
+    - 0x004a35e0
+    - 0x004a35f0
+    - 0x004a36e0
+    - 0x004a3830
+    - 0x004a3a40
+    - 0x004a3a60
+    - 0x004a3af0
+    - 0x004a3bd0
+    - 0x004a3e00
+    - 0x004a3e40
+    - 0x004a3e80
+    - 0x004a4360
+    - 0x004a4380
+    - 0x004a44b0
+    - 0x004a44d0
+    - 0x004a44f0
+    - 0x004a4630
+    - 0x004a4890
+    - 0x004a48e0
+    - 0x004a4bc0
+    - 0x004a4e40
+    - 0x004a5080
+    - 0x004a5340
+    - 0x004a5380
+    - 0x004a5390
+    - 0x004a5450
+    - 0x004a54f0
+    - 0x004a5510
+    - 0x004a55c0
+    - 0x004a5690
+    - 0x004a56b0
+    - 0x004a57b0
+    - 0x004a57d0
+    - 0x004a57e0
+    - 0x004a5880
+    - 0x004a5890
+    - 0x004a5ca0
+    - 0x004a5cc0
+    - 0x004a5d70
+    - 0x004a5d80
+    - 0x004a5f50
+    - 0x004a5f60
+    - 0x004a61f0
+    - 0x004a6260
+    - 0x004a6e60
+    - 0x004a6e90
+    - 0x004a6ea0
+    - 0x004a6f50
+    - 0x004a7460
+    - 0x004a7480
+    - 0x004a74c0
+    - 0x004a7590
+    - 0x004a7730
+    - 0x004a77e0
+    - 0x004a7890
+    - 0x004a78b0
+    - 0x004a78d0
+    - 0x004a78f0
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/player-select-screen.md
+    - re/evidence/fixtures/plsel-calls-bio.txt
+    - re/evidence/fixtures/plsel-calls-load.txt
+    - re/evidence/fixtures/plsel-calls-sel.txt
+    - re/evidence/fixtures/plsel-calls-selloop.txt
+    - re/evidence/fixtures/plsel-calls-uiw.txt
+    - re/evidence/fixtures/plsel-calls-view.txt
+  native:
+    - src/runtime/player_select.hpp
+    - src/runtime/player_select_window.cpp
+    - src/runtime/player_select_panels.cpp
+    - src/runtime/player_select_view.cpp
+    - src/runtime/player_select_load.cpp
+    - src/runtime/player_select_dispatch.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - src/runtime/career.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_playsel.py
+    - re/gdb/probes/frontend_specs_playsel_cases.py
+    - re/gdb/probes/frontend_specs_playsel_sel.py
+    - re/gdb/probes/frontend_specs_playsel_bio.py
+    - re/gdb/probes/frontend_specs_playsel_view.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/player_select_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/player_select_test.cpp
+    - tests/test_player_select.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the sel, bio, view, load and selloop groups): the retail function is called on a random legal state built in a scratch slab (windows built by hand with fake pool objects whose virtual methods are reported services, real sprite, text and menu rows where a width or a text is computed, constructors run for real in the arena); the return value, every written byte and the ordered service calls are compared with the native replay (`player_select_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 72 of the 72 functions are replayed over 2837 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the constructors of the screen's big classes (as the select window's initialiser calls them), the spool's per-character functions (player_spool.cpp), the engine's model, render, palette, memory-card and fade calls and the screen loop's window methods are seams reported by name with the arguments retail passed (the methods are replayed on their own).

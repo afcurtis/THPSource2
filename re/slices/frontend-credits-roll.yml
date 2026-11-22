@@ -1,0 +1,76 @@
+version: 1
+id: frontend-credits-roll
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x004266e0
+    - 0x00426b10
+    - 0x00426b50
+    - 0x00426bc0
+    - 0x00426c00
+    - 0x00426c80
+    - 0x00426d90
+    - 0x00426da0
+    - 0x00426db0
+    - 0x00426dc0
+    - 0x00426dd0
+    - 0x00426de0
+    - 0x00426df0
+    - 0x00426e10
+    - 0x00426e20
+    - 0x00426e30
+    - 0x00426e40
+    - 0x00426e60
+    - 0x00426ee0
+    - 0x00426f00
+    - 0x00426f10
+    - 0x00426f50
+    - 0x00426fe0
+    - 0x00427000
+    - 0x00427050
+    - 0x00427080
+    - 0x004270b0
+    - 0x004270d0
+    - 0x004270e0
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/credits-roll.md
+    - re/evidence/fixtures/menu-calls-credits.txt
+    - re/evidence/fixtures/menu-calls-entry.txt
+    - re/evidence/fixtures/menu-calls-items.txt
+    - re/evidence/fixtures/menu-calls-lists.txt
+    - re/evidence/fixtures/menu-calls-main.txt
+    - re/evidence/fixtures/menu-calls-screens.txt
+  native:
+    - src/runtime/credits.hpp
+    - src/runtime/credits.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_common.py
+    - re/gdb/probes/frontend_specs_menu.py
+    - re/gdb/probes/frontend_specs_menu_items.py
+    - re/gdb/probes/frontend_specs_menu_lists.py
+    - re/gdb/probes/frontend_specs_menu_screens.py
+    - re/gdb/probes/frontend_specs_mainmenu.py
+    - re/gdb/probes/frontend_specs_credits.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/menu_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/menu_test.cpp
+    - tests/test_menu_toolkit.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the credits group): the retail function is called on a random legal state built in a scratch slab, its virtual methods and every service outside the file stubbed (fake vtables whose slots are retail functions nothing here reaches, one per method, so each call is a named service carrying the object; some cases use the real vtables so the native dispatch runs the toolkit''s own methods); the return value, every written byte and the ordered service calls are compared with the native replay (`menu_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The credits roll''s manager (text loading and parsing, the timeline and the record updates), its three record classes and the static fonts: 29 of the 29 functions are replayed over 1160 cases with no mismatch.'
+  - Documented exclusion, not a blocker - the roll's loop (Credits_Run, in `frontend-screen-loops`) keeps its manager in its own stack frame.

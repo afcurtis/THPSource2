@@ -1,0 +1,97 @@
+version: 1
+id: career-progress
+subsystem: career
+status: complete
+
+scope:
+  functions:
+    - 0x00414030
+    - 0x004140c0
+    - 0x00414130
+    - 0x004141a0
+    - 0x004141d0
+    - 0x00414280
+    - 0x004142e0
+    - 0x00414540
+    - 0x00414570
+    - 0x004145e0
+    - 0x00414650
+    - 0x00414670
+    - 0x00414770
+    - 0x004147b0
+    - 0x004147e0
+    - 0x00414810
+    - 0x004148f0
+    - 0x004149d0
+    - 0x00414a50
+    - 0x00414a80
+    - 0x00414ab0
+    - 0x00414ae0
+    - 0x00414b10
+    - 0x00414b50
+    - 0x00414b90
+    - 0x00414bb0
+    - 0x00414bc0
+    - 0x00414bd0
+    - 0x00414d90
+    - 0x00414fa0
+    - 0x00415060
+    - 0x00415180
+    - 0x004152f0
+    - 0x00415380
+    - 0x00415560
+    - 0x00415590
+    - 0x004155a0
+    - 0x004156f0
+    - 0x00415820
+    - 0x004158d0
+    - 0x00415910
+    - 0x004159d0
+    - 0x00415a90
+    - 0x00415ae0
+    - 0x00416070
+    - 0x004164b0
+    - 0x00416530
+    - 0x00416740
+    - 0x00416790
+    - 0x00416890
+  types: []
+  globals: []
+
+shared:
+  functions:
+    - 0x00416050
+    - 0x00414c50
+
+artifacts:
+  evidence:
+    - re/evidence/functions/career-runtime.md
+    - re/evidence/fixtures/career-calls-progress.txt
+    - re/evidence/fixtures/career-calls-systems.txt
+  native:
+    - src/runtime/career.cpp
+    - src/runtime/career.hpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/career_tables.cpp
+    - src/runtime/career_tables.hpp
+    - scripts/generate_career_tables.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/career_calls.py
+    - re/gdb/probes/career_state.py
+    - re/gdb/probes/career_specs.py
+    - re/gdb/probes/career_specs_more.py
+    - re/gdb/probes/career_specs_skater.py
+    - re/gdb/probes/career_specs_competition.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/career_retail_calls_test.cpp
+    - src/runtime/career_test.cpp
+    - tests/test_career.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/career_calls.py`): random legal state poked into the career records, skater manager, level, game mode and player; the retail function called with its outside services stubbed; the return value, every written byte and the ordered service calls compared with the native replay, and a changed fixture value makes the replay fail. 50 of the 50 functions (goals, medals, gaps, cash icons, level tally, stat points, level unlocks, records) are replayed over 1046 cases with no mismatch.'
+  - 'Documented exclusion, not a blocker - the states are generated, not a played career: out-of-range arguments, asserts and all three game-mode families are exercised, but a whole natural career (tapes, cash icons and medals earned by skating) was not captured.'
+  - 'Documented exclusion, not a blocker - the outside services are seams: the level-load tally reads a sample of 32 trigger nodes (the capture pokes the node count down to it), the sound, message text display, random numbers and the movie flag are stubbed and only their calls and arguments are compared; Career_LoadingScreen (0x00415b30) is a frontend screen and is not ported.'

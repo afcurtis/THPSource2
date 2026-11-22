@@ -1,0 +1,65 @@
+version: 1
+id: bit-lists-and-base
+subsystem: effects
+status: complete
+scope:
+  functions:
+  - 0x00403680
+  - 0x00403730
+  - 0x00403760
+  - 0x00403bd0
+  - 0x00403c70
+  - 0x00403ca0
+  - 0x00403d30
+  - 0x00403dc0
+  - 0x00403df0
+  - 0x00403e10
+  - 0x00403e40
+  - 0x00403ea0
+  - 0x00403ec0
+  - 0x00403f00
+  - 0x00403f50
+  - 0x00403f70
+  - 0x00403f90
+  - 0x004044d0
+  - 0x004044e0
+  - 0x004057e0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/bit-lists-and-base.md
+  - re/evidence/fixtures/bit-calls-bit1A.txt
+  - re/evidence/fixtures/world-calls-bemA.txt
+  - re/evidence/fixtures/world-calls-bemB.txt
+  - re/evidence/fixtures/world-calls-bemC.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/bit_kit.hpp
+  - src/runtime/bit_core.cpp
+  - src/runtime/world_kit.hpp
+  - src/runtime/world_baddy.cpp
+  - re/gdb/probes/world_specs_tips.py
+  - re/gdb/probes/bit_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/bit_specs.py
+  tests:
+  - src/runtime/bit_retail_calls_test.cpp
+  - src/runtime/world_retail_calls_test.cpp
+  - tests/test_bit_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups bit1): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (bit_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 17 of the 17 functions (the transient-bit lists and their base class: Bit_Init, the deletion of every list (and the assertion that nothing protected is left), the sweep of dead bits, the colour reduction, the class allocator and its delete, the list links, Die, SetPos, the random velocity and the base constructor, deleting destructor, destructor and default Move) are replayed over 3400 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 510 cases, which replay with no mismatch too).'
+- 10g s17 adds the two empty virtual methods the bit classes' vtables share (0x004044d0, 0x004044e0 and 0x004057e0, a lone ret each and the Move slot of the bits that do not move), replayed over 30 forced calls each (group bem, world_retail_calls_test.cpp).
+- Documented exclusion, not a blocker - the allocator, the resource lookups, the random numbers and the virtual deleting destructors of the bits are services; the assertion routine only logs.

@@ -1,0 +1,49 @@
+version: 1
+id: dust-and-logos
+subsystem: effects
+status: complete
+scope:
+  functions:
+  - 0x00431260
+  - 0x00431320
+  - 0x00431650
+  - 0x004317c0
+  - 0x004318a0
+  - 0x00431b80
+  - 0x00431e80
+  - 0x00432180
+  - 0x004321d0
+  - 0x00432250
+  - 0x00432330
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/dust-and-logos.md
+  - re/evidence/fixtures/bit-calls-bdstA.txt
+  - re/evidence/fixtures/bit-calls-bdstB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/bit_kit.hpp
+  - src/runtime/bit_dust.cpp
+  - re/gdb/probes/bit_specs3.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/bit_specs.py
+  tests:
+  - src/runtime/bit_retail_calls_test.cpp
+  - tests/test_bit_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups bdst): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (bit_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 11 of the 11 functions (the skater''s dust (the cloud tables of the three kinds of dust, the update of the clouds, the replacement of the dimmest) and the dynamic logos (the ring of bitmap names and the loader that replaces the level''s placeholder logos)) are replayed over 2117 cases with no mismatch (at least 174 cases each; the committed fixtures keep the first 30 of each capture per function, 330 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the hook position query, the skater manager, the scene material lookup, the sub-directory calls and the bitmap loader are services.

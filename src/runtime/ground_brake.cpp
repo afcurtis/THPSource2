@@ -1,0 +1,99 @@
+#include "ground_brake.hpp"
+
+#include "fixed_math.hpp"
+
+#include <algorithm>
+#include <limits>
+
+namespace opentony::runtime {
+namespace {
+
+[[nodiscard]] std::int32_t saturating_i32(std::int64_t value) noexcept {
+    if (value > std::numeric_limits<std::int32_t>::max()) {
+        return std::numeric_limits<std::int32_t>::max();
+    }
+    if (value < std::numeric_limits<std::int32_t>::min()) {
+        return std::numeric_limits<std::int32_t>::min();
+    }
+    return static_cast<std::int32_t>(value);
+}
+
+[[nodiscard]] std::int32_t arithmetic_shift(
+    std::int64_t value,
+    unsigned shift) noexcept {
+    if (value >= 0) {
+        return saturating_i32(value >> shift);
+    }
+    const std::int64_t magnitude = -value;
+    const std::int64_t rounded =
+        (magnitude + ((std::int64_t{1} << shift) - 1)) >> shift;
+    return saturating_i32(-rounded);
+}
+
+[[nodiscard]] std::int32_t speed_metric(
+    std::int32_t magnitude) noexcept {
+    return saturating_i32(static_cast<std::int64_t>(magnitude) * 0x40);
+}
+
+[[nodiscard]] std::int32_t brake_term(
+    std::int32_t value,
+    std::int32_t vertical_lean) noexcept {
+    if (vertical_lean < 1) {
+        return arithmetic_shift(value, 4);
+    }
+    const std::int32_t factor = arithmetic_shift(
+        static_cast<std::int64_t>(vertical_lean)
+            + (vertical_lean < 0 ? 0xf : 0),
+        4);
+    const std::int64_t product = static_cast<std::int64_t>(value) * factor;
+    // Retail uses (product + (product >> 31 & 0x7f)) >> 7, i.e. the
+    // arithmetic right shift emitted by the original integer expression.
+    const std::int64_t correction = product < 0 ? 0x7f : 0;
+    return arithmetic_shift(product + correction, 7);
+}
+
+} // namespace
+
+GroundBrakeResult GroundBrake::apply(
+    const GroundBrakeInput& input) noexcept {
+    GroundBrakeResult result{};
+    result.response = input.response;
+    result.magnitude_q12 = input.magnitude_q12 >= 0
+        ? input.magnitude_q12
+        : retail_vector_magnitude_q12(result.response);
+    result.speed_metric = speed_metric(result.magnitude_q12);
+
+    // Retail: iVar8 = (-normal_y * 0x1000) >> 12; clamp to 0x300;
+    // threshold = ((0x1000 - iVar8) * 0x1800) / 0xd0; clamp to 0xa000.
+    std::int32_t incline = arithmetic_shift(
+        -static_cast<std::int64_t>(input.slope_normal_y_q12) * 0x1000,
+        12);
+    incline = std::max(incline, 0x300);
+    result.speed_threshold = saturating_i32(
+        (static_cast<std::int64_t>(0x1000 - incline) * 0x1800) / 0xd0);
+    result.speed_threshold = std::max(result.speed_threshold, 0xa000);
+
+    if (!input.brake_requested || input.physics_state != 0) {
+        return result;
+    }
+
+    if (result.speed_threshold < result.speed_metric) {
+        for (std::int32_t& value : result.response) {
+            const std::int32_t term = brake_term(value, input.vertical_lean);
+            value = saturating_i32(
+                static_cast<std::int64_t>(value)
+                - (static_cast<std::int64_t>(term) * input.frame_scale_q8 >> 8));
+        }
+        result.decelerated = true;
+        return result;
+    }
+
+    if (result.speed_threshold < 0xa001) {
+        result.response = FixedPosition{0, 0, 0};
+        result.stopped = true;
+        result.requested_state7 = true;
+    }
+    return result;
+}
+
+} // namespace opentony::runtime

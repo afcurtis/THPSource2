@@ -1,0 +1,23 @@
+# Pinned llvm-mingw for the native Kit DLL (src/hooks/kits, Phase 5).
+#
+# The Kits of src/runtime/ are C++20 with the standard library and exceptions;
+# opentony.dll is built against the VC6 SDK and CRT (no exceptions, no modern
+# STL), so the Kits live in their own 32-bit DLL, opentony_native.dll, built
+# with this toolchain: clang + lld + libc++ for i686-w64-mingw32 (and
+# x86_64-w64-mingw32 later), statically linked, on the UCRT. opentony.dll
+# loads it at startup and installs the hooks it exports.
+#
+# `tony setup llvm-mingw` downloads the release asset, checks its size and the
+# SHA-256 GitHub publishes for it, and extracts it under `install_dir`.
+# llvm-mingw is Apache-2.0 WITH LLVM-exception / ISC / ZPL (mingw-w64 runtime)
+# (see THIRD_PARTY_NOTICES.md).
+version: 1
+llvm_mingw:
+  release: "20261006"
+  url: https://github.com/mstorsjo/llvm-mingw/releases/download/20261006/llvm-mingw-20261006-ucrt-ubuntu-22.04-x86_64.tar.xz
+  path: .tools/media/llvm-mingw/llvm-mingw-20261006-ucrt-ubuntu-22.04-x86_64.tar.xz
+  size: 84003044
+  sha256: 5f9c6ed95b2d4bdb2869a488c5fd5857fbdabcf288a0aa3eb1da43f6a08d8ab4
+  install_dir: .tools/llvm-mingw
+  root: llvm-mingw-20261006-ucrt-ubuntu-22.04-x86_64
+  cxx_i686: bin/i686-w64-mingw32-clang++

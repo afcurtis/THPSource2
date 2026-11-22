@@ -1,0 +1,119 @@
+version: 1
+id: psx-library-stubs
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x004e86f0
+  - 0x004e8700
+  - 0x004e8710
+  - 0x004e8720
+  - 0x004e8730
+  - 0x004e8740
+  - 0x004e8750
+  - 0x004e8760
+  - 0x004e8770
+  - 0x004e8780
+  - 0x004e8790
+  - 0x004e87a0
+  - 0x004e87b0
+  - 0x004e87c0
+  - 0x004e87d0
+  - 0x004e87e0
+  - 0x004e87f0
+  - 0x004e8840
+  - 0x004e8850
+  - 0x004e8860
+  - 0x004e8870
+  - 0x004e8880
+  - 0x004e8890
+  - 0x004e88a0
+  - 0x004e88f0
+  - 0x004e8940
+  - 0x004e8960
+  - 0x004e8970
+  - 0x004e8980
+  - 0x004e8990
+  - 0x004e89a0
+  - 0x004e89b0
+  - 0x004e89c0
+  - 0x004e89d0
+  - 0x004e89e0
+  - 0x004e89f0
+  - 0x004e8a00
+  - 0x004e8a10
+  - 0x004e8a20
+  - 0x004e8a30
+  - 0x004e8a40
+  - 0x004e8a50
+  - 0x004e8a60
+  - 0x004e8a70
+  - 0x004e8a80
+  - 0x004e8a90
+  - 0x004e8aa0
+  - 0x004e8ab0
+  - 0x004e8ac0
+  - 0x004e8ad0
+  - 0x004e8ae0
+  - 0x004e8af0
+  - 0x004e8b00
+  - 0x004e8b10
+  - 0x004e8b20
+  - 0x004e8b30
+  - 0x004e8b40
+  - 0x004e8b50
+  - 0x004e8b60
+  - 0x004e8b70
+  - 0x004e8b80
+  - 0x004e8b90
+  - 0x004e8ba0
+  - 0x004e8bb0
+  - 0x004e8bc0
+  - 0x004e8bd0
+  - 0x004e8be0
+  - 0x004e8bf0
+  - 0x004e8c00
+  - 0x004e8c10
+  - 0x004e8c20
+  - 0x004e8c30
+  - 0x004e8c40
+  - 0x004e8c50
+  - 0x004e8c60
+  - 0x004e8c70
+  - 0x004e8c80
+  - 0x004e8c90
+  - 0x004e8ca0
+  - 0x004e8cb0
+  - 0x004e8cc0
+  - 0x004e8cd0
+  - 0x004e8cf0
+  - 0x004e8d10
+  - 0x004f39e0
+  - 0x004f5fe0
+  - 0x004f6070
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/math-layer.md
+  - re/evidence/fixtures/math-calls-psxS.txt
+  - re/evidence/fixtures/math-calls-psxU.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/math_psx.cpp
+  - re/gdb/probes/math_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/math_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_math_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups psxs of math_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`math_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 87 of the 87 functions (the PlayStation library calls the PC build leaves empty or answers with a constant (return the argument, return zero, nothing), the draw-area primitive and terminator initialisers, the CLUT loads and the three memory card state calls, and the empty utility functions) are replayed over 2740 cases with no mismatch (at least 8 cases each; the committed fixtures keep the first 30 of each capture per function, 850 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the LoadImage stub the CLUT loads call is itself one of the zero-return stubs (the port inlines it).

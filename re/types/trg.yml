@@ -1,0 +1,2579 @@
+version: 1
+types:
+  - name: RuntimeTriggerObjectHeader
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: Common fields observed on objects created by the TRG factory. This is separate from RuntimePsxObjectRecord.
+    fields:
+      - offset: 0x08
+        name: position_x_fixed
+        type: i32
+        confidence: confirmed
+        description: 12-bit fixed-point world position; Warehouse node 17 matches its disk position shifted left by 12.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x0c
+        name: position_y_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x10
+        name: position_z_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x04
+        name: object_flags
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x20
+        name: next_object
+        type: pointer<RuntimeTriggerObjectHeader>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x34
+        name: previous_object
+        type: pointer<RuntimeTriggerObjectHeader>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x64
+        name: activation_argument
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x6a
+        name: trigger_state_flags
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x70
+        name: script_scalar_value
+        type: u32
+        confidence: confirmed
+        description: Value written by base script opcode 0x4280 after virtual-operand resolution; non-state-1 objects receive a 12-bit fixed-point shift.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0xae
+        name: constructor_cleared_word
+        type: u16
+        confidence: confirmed
+        description: Constructor clears this word before later object-family setup.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0xb0
+        name: source_trg_node_index
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x171
+        name: command_state_byte
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x178
+        name: trigger_state
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+
+  - name: RuntimeTriggerLinkRecord
+    kind: fixed_layout
+    size: 0x18
+    confidence: confirmed
+    description: Small link record allocated for crate/command-point style TRG relationships.
+    fields:
+      - offset: 0x00
+        name: command_stream_or_diagnostic_payload
+        type: pointer<void>
+        confidence: confirmed
+        description: Type-6 records point at a trailing u16 command stream; the type-2 path supplies a static diagnostic string pointer instead.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x04
+        name: state_byte_0
+        type: u8
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x05
+        name: state_byte_1
+        type: u8
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x06
+        name: initial_pulse_byte
+        type: u8
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x07
+        name: pulse_count_or_state
+        type: u8
+        confidence: observed
+        description: Incremented by the type-6 pulse path; also compared by command 0x94.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x08
+        name: pulse_limit_or_state_word
+        type: i16
+        confidence: confirmed
+        description: Command 0x0003 gates source-list execution on this word and decrements it unless it is -1; its initial constructor value is zero.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x0a
+        name: source_trg_node_index
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x0c
+        name: target_value
+        type: u32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x10
+        name: next_global_link
+        type: pointer<RuntimeTriggerLinkRecord>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x14
+        name: next_target_bucket
+        type: pointer<RuntimeTriggerLinkRecord>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+
+  - name: RuntimeTriggerScriptObject0xab
+    kind: fixed_layout
+    size: 0xcc
+    confidence: observed
+    description: Runtime record allocated by trigger opcode 0x00ab. The constructor fields are separated from the command's three raw trailing words.
+    fields:
+      - offset: 0x00
+        name: vtable_or_class_dispatch
+        type: pointer<void>
+        confidence: confirmed
+        description: Constructor installs vtable 0x0051836c.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x04
+        name: object_flags
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1a
+        name: resolved_key_value
+        type: u16
+        confidence: confirmed
+        description: Result written after resolving the aligned u32 command key through the PSX model/checksum lookup helper.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x20
+        name: next_object
+        type: pointer<RuntimeTriggerScriptObject0xab>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x34
+        name: previous_object
+        type: pointer<RuntimeTriggerScriptObject0xab>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0xc8
+        name: list_identifier
+        type: u16
+        confidence: observed
+        description: Identifier used by the 0x83/0x84 object-flag command space.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x68
+        name: field_68
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's script-object methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+
+  - name: RuntimeTriggerRailRecord
+    kind: fixed_layout
+    size: 0x28
+    confidence: observed
+    description: >-
+      The CRail runtime record (a CClass_OpNew(0x28) object on an intrusive list headed at 0x0056b860), made by the CRail constructor 0x004aa8c0 from the type-10 rail-point and type-11 rail-definition
+      nodes of one chain: its state and kind come from the first node's trigger word, and its bounding box is the box of the chain's node positions.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        description: 0x005196a4 while live (slot 0 is 0x004aaf10, the destructor); 0x005184b4 once CRail_destroy has run.
+        evidence:
+          - re/evidence/functions/rail-creation.md
+          - re/evidence/functions/rail-nodes.md
+      - offset: 0x04
+        name: rail_state
+        type: u8
+        confidence: confirmed
+        description: Set to one by the pulse path and zero by the kill path; the constructor starts it at 0 when bit 6 of the first node's trigger word is set, else 1.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+          - re/evidence/functions/rail-creation.md
+      - offset: 0x05
+        name: rail_kind
+        type: u8
+        confidence: confirmed
+        description: The low four bits of the first node's trigger word.
+        evidence:
+          - re/evidence/functions/rail-creation.md
+      - offset: 0x06
+        name: source_trg_node_index
+        type: u16
+        confidence: confirmed
+        description: The first node of the chain.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+          - re/evidence/functions/rail-creation.md
+      - offset: 0x08
+        name: bounds_minimum
+        type: RuntimeIntVector3
+        confidence: confirmed
+        description: Bounding box of the chain's node positions, low corner (starts at 0x7fffffff).
+        evidence:
+          - re/evidence/functions/rail-creation.md
+      - offset: 0x14
+        name: bounds_maximum
+        type: RuntimeIntVector3
+        confidence: confirmed
+        description: Bounding box of the chain's node positions, high corner (starts at 0x80000000).
+        evidence:
+          - re/evidence/functions/rail-creation.md
+      - offset: 0x20
+        name: previous_rail_record
+        type: pointer<RuntimeTriggerRailRecord>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/rail-creation.md
+          - re/evidence/functions/rail-nodes.md
+      - offset: 0x24
+        name: next_rail_record
+        type: pointer<RuntimeTriggerRailRecord>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+          - re/evidence/functions/rail-nodes.md
+
+  - name: RuntimeRailLookupEntry
+    kind: fixed_layout
+    size: 0x04
+    confidence: confirmed
+    description: >-
+      An entry of the rail lookup table SetupLookup 0x004aa4b0 builds (2000 entries at the pointer 0x0056b858, freed at the end of Rail_CreateRails; entry 0 is not a rail): the rail node the entry
+      stands for, and the index of the entry whose rail continues at it (0: none).
+    fields:
+      - offset: 0x00
+        name: node
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/rail-nodes.md
+      - offset: 0x02
+        name: leads_from
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/rail-nodes.md
+
+  - name: RuntimeCameraPointRegistry
+    kind: fixed_layout
+    size: 0x90
+    confidence: observed
+    description: "Global type-13 TRG camera-point registry: 70 u16 node indices followed by the active count word."
+    fields:
+      - offset: 0x00
+        name: node_indices
+        type: array<u16,70>
+        confidence: observed
+        description: Registered source TRG node indices; the first-pass camera-point handler appends one index per type-13 node.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x8c
+        name: count
+        type: u32
+        confidence: observed
+        description: Active entry count, bounded below 0x46.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+
+  - name: RuntimeCameraPointPayload
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: Decoded payload immediately following a type-13 camera-point position; the two words are consumed by camera selection with public names still open.
+    fields:
+      - offset: 0x00
+        name: selection_state_word
+        type: u16
+        confidence: observed
+        description: Value one selects the camera state bit 0x400; other values select bit 0x800 in the nearest-point consumer.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x02
+        name: transition_variant
+        type: u16
+        confidence: observed
+        description: Retained by the camera transition path as the selected point's raw variant value.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+
+  - name: RuntimeLevelEventState
+    kind: variable_record
+    confidence: observed
+    description: Scattered level-event globals and their raw mode-8/mode-9 counter words used by TRG command 0x009e; these are not one contiguous retail allocation.
+    fields:
+      - offset: global
+        name: level_event_state_word
+        type: u32
+        confidence: confirmed
+        description: Global at 0x00568610 initialized to 0x40 and cleared when the pending-score branch re-arms the event.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: level_event_latch
+        type: u8
+        confidence: confirmed
+        description: Global at 0x00568658; set on first event dispatch and cleared by the no-pending-score completion path.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: level_event_countdown
+        type: u32
+        confidence: confirmed
+        description: Global at 0x00568818; initialized to 0x50, decremented once per eligible gameplay frame, and re-armed to one for a pending-score retry.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: level_event_flag
+        type: u8
+        confidence: confirmed
+        description: Byte at 0x006a3d49; set after the mode-dependent initialization branch and used to suppress that branch on later dispatches.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: raw_word_0056b798
+        type: i32
+        confidence: observed
+        description: Incremented by the less-specific mode-8 comparison branch and one mode-9 side branch.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: raw_word_0056b79c
+        type: i32
+        confidence: observed
+        description: Incremented by the complementary mode-8 comparison branch and one mode-9 side branch.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: raw_word_0056b7a0
+        type: i32
+        confidence: observed
+        description: Maximum-tracking word updated from the secondary player +0x2cdc comparison value.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: raw_word_0056b7a4
+        type: i32
+        confidence: observed
+        description: Maximum-tracking word updated from the primary player +0x2cdc comparison value.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: raw_word_0056b7b0
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: raw_word_0056b7b4
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: raw_word_0056b7dc
+        type: i32
+        confidence: observed
+        description: Incremented by the complementary mode-8 comparison branch and one mode-9 side branch.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: global
+        name: raw_word_0056b7e0
+        type: i32
+        confidence: observed
+        description: Incremented by the less-specific mode-8 comparison branch and one mode-9 side branch.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+
+  - name: RuntimeTrickObject
+    kind: fixed_layout
+    size: 0x18
+    confidence: confirmed
+    description: 0x18-byte runtime record created from TRG type-12/14 trick-object nodes.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        description: Constructor installs the trick-object vtable.
+        evidence:
+          - re/evidence/functions/trick-object-runtime.md
+      - offset: 0x04
+        name: model_name_checksum
+        type: u32
+        confidence: confirmed
+        description: Aligned payload checksum matched to SKWARE.PSX model-name entries for multiple Warehouse type-12 nodes.
+        evidence:
+          - re/evidence/functions/trick-object-runtime.md
+      - offset: 0x08
+        name: source_trg_node_index
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trick-object-runtime.md
+      - offset: 0x0a
+        name: activated
+        type: u8
+        confidence: confirmed
+        description: Cleared by construction and set by activation paths.
+        evidence:
+          - re/evidence/functions/trick-object-runtime.md
+      - offset: 0x0b
+        name: player_number
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trick-object-runtime.md
+      - offset: 0x0c
+        name: delay_or_score_threshold
+        type: u16
+        confidence: observed
+        description: Read and updated by activation/update logic; gameplay semantics are not yet assigned.
+        evidence:
+          - re/evidence/functions/trick-object-runtime.md
+      - offset: 0x10
+        name: next_trick_object
+        type: pointer<RuntimeTrickObject>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trick-object-runtime.md
+      - offset: 0x14
+        name: resolved_runtime_object
+        type: pointer<void>
+        confidence: confirmed
+        description: Runtime object/context pointer retained after checksum/event activation.
+        evidence:
+          - re/evidence/functions/trick-object-runtime.md
+
+  - name: RuntimePowerupObject
+    kind: fixed_layout
+    size: 0x100
+    confidence: observed
+    description: 0x100-byte type-5 TRG item/medal object constructed after the named ITEMS or SKMEDALS PSX region is loaded.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        description: Powerup vtable installed by the constructor.
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x08
+        name: position_x_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/items-runtime.md
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x0c
+        name: position_y_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/items-runtime.md
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x10
+        name: position_z_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/items-runtime.md
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1a
+        name: psx_model_index
+        type: u16
+        confidence: confirmed
+        description: Model index returned by the region model-name checksum lookup.
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x1f
+        name: psx_region_slot
+        type: u8
+        confidence: observed
+        description: Named PSX slot used when an item branch selects an alternate region.
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x20
+        name: next_object
+        type: pointer<RuntimePowerupObject>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x34
+        name: previous_object
+        type: pointer<RuntimePowerupObject>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x3c
+        name: item_subtype
+        type: u16
+        confidence: confirmed
+        description: TRG item/medal subtype used by the constructor's model-selection switch.
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x6a
+        name: object_flags
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xb0
+        name: source_trg_node_index
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/items-runtime.md
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0xc8
+        name: glow_runtime_object
+        type: pointer<void>
+        confidence: observed
+        description: Lazily-created glow/sprite object populated by the powerup update path.
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xd1
+        name: visual_active
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xd2
+        name: motion_state
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x50
+        name: field_50
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x5c
+        name: field_5c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x6c
+        name: field_6c
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x6d
+        name: field_6d
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x6e
+        name: field_6e
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x72
+        name: field_72
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x90
+        name: field_90
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x94
+        name: field_94
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0x98
+        name: field_98
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xa8
+        name: field_a8
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xaa
+        name: field_aa
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xac
+        name: field_ac
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xae
+        name: field_ae
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xb8
+        name: field_b8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xcc
+        name: field_cc
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xce
+        name: field_ce
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xd0
+        name: field_d0
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xd3
+        name: field_d3
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xd4
+        name: field_d4
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xd6
+        name: field_d6
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xd8
+        name: field_d8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xdc
+        name: field_dc
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xe0
+        name: field_e0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xe4
+        name: field_e4
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xe8
+        name: field_e8
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xea
+        name: field_ea
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xec
+        name: field_ec
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xee
+        name: field_ee
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xf0
+        name: field_f0
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xf2
+        name: field_f2
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xf4
+        name: field_f4
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xf6
+        name: field_f6
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+      - offset: 0xfc
+        name: field_fc
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's power-up methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/items-runtime.md
+
+  - name: RuntimeTriggerSubtype0x00cb
+    kind: fixed_layout
+    size: 0x1f4
+    confidence: observed
+    description: Type-1 TRG object allocation selected by subtype 0x00cb. The layout is limited to constructor/header fields independently supported by the factory and constructor.
+    fields:
+      - offset: 0x00
+        name: vtable_or_class_dispatch
+        type: pointer<void>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x04
+        name: object_flags
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x3c
+        name: object_subtype
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x6a
+        name: trigger_state_flags
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0xb0
+        name: source_trg_node_index
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x16c
+        name: constructor_active_byte
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x16f
+        name: script_state_byte_0
+        type: u8
+        confidence: confirmed
+        description: Script-variable byte exposed by the trigger virtual interface.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x170
+        name: script_state_byte_1
+        type: u8
+        confidence: confirmed
+        description: Script-variable byte exposed by the trigger virtual interface.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x178
+        name: script_state_flags
+        type: u32
+        confidence: confirmed
+        description: Script state word; command 0x4700 toggles bit 0x100.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x180
+        name: script_label_targets
+        type: array<pointer<void>,8>
+        confidence: confirmed
+        description: Eight script label cursors populated by 0x4104/0x4105 and selected by 0x4101/0x4102.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1b0
+        name: script_registers
+        type: array<u16,6>
+        confidence: confirmed
+        description: Six u16 script register values selected by a byte read from the script cursor.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x108
+        name: script_scalar_word
+        type: i32
+        confidence: confirmed
+        description: Sign-extended u16 payload written by script word 0x2121.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1a0
+        name: script_attributes
+        type: array<u16,6>
+        confidence: confirmed
+        description: Six u16 attribute slots selected by script word 0x2125.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1ac
+        name: script_value_word
+        type: u16
+        confidence: confirmed
+        description: u16 payload written by script word 0x2122.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1a
+        name: script_name_token
+        type: u16
+        confidence: confirmed
+        description: Name/token result written after the aligned u32 payload of script word 0x212f.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0xb4
+        name: script_word_2100_value
+        type: u16
+        confidence: confirmed
+        description: u16 payload written by script word 0x2100.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1bc
+        name: script_word_2114_value
+        type: u16
+        confidence: confirmed
+        description: u16 payload written by script word 0x2114.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1be
+        name: script_word_2115_value
+        type: u16
+        confidence: confirmed
+        description: u16 payload written by script word 0x2115.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1d8
+        name: runtime_context
+        type: pointer<void>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1e8
+        name: positional_sound_handle
+        type: i32
+        confidence: confirmed
+        description: Sound handle created or stopped by script commands 0x4507..0x4509.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1ec
+        name: constructor_sentinel
+        type: i32
+        confidence: confirmed
+        description: Sound command operand/state word; initialized to -1 by the constructor and replaced by command 0x4508.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1f0
+        name: positional_sound_context
+        type: pointer<void>
+        confidence: confirmed
+        description: Sound context copied from the global audio state when a positional sound command is applied.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x08
+        name: position_x_fixed
+        type: i32
+        confidence: confirmed
+        description: Three post-preamble u32 values are shifted left by 12 by the constructor helper.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x0c
+        name: position_y_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x10
+        name: position_z_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x14
+        name: constructor_parameter_0
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x16
+        name: constructor_parameter_1
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x18
+        name: constructor_parameter_2
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x17c
+        name: script_stream_cursor
+        type: pointer<void>
+        confidence: confirmed
+        description: Cursor returned by the shared position/parameter helper and consumed by the virtual trigger script interface.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x20
+        name: list_next
+        type: pointer<void>
+        confidence: confirmed
+        description: Next object on the intrusive object list (ObjectList_PushHead/Remove).
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x34
+        name: list_prev
+        type: pointer<void>
+        confidence: confirmed
+        description: Previous object on the intrusive object list.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x4c
+        name: script_velocity
+        type: array<i32,3>
+        confidence: observed
+        description: Cleared by script command 0x4226.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x64
+        name: suspend_owner_list
+        type: pointer<void>
+        confidence: confirmed
+        description: List head the object rejoins when unsuspended (Object_SuspendToList / CBody__UnSuspend).
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x68
+        name: script_event_word
+        type: u16
+        confidence: confirmed
+        description: Bit 0 is set by SendSignalToNode and latched then cleared by the frame update.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0xae
+        name: script_field_ae
+        type: u16
+        confidence: confirmed
+        description: Written by script word 0x2101.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0xb8
+        name: nearest_player_distance
+        type: u32
+        confidence: confirmed
+        description: Utils_CrapDist result stored by Ob_AI before the update.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x171
+        name: death_pulse_sent
+        type: u8
+        confidence: confirmed
+        description: Set once by CBaddy__SendDeathPulse.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x172
+        name: script_byte_172
+        type: u8
+        confidence: confirmed
+        description: Set by script command 0x4227.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x173
+        name: script_byte_173
+        type: u8
+        confidence: confirmed
+        description: Cleared by script command 0x4227.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x174
+        name: script_signal_latch
+        type: u16
+        confidence: confirmed
+        description: Copy of the event word taken at the start of each frame update; tested by 0x4281.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x1ae
+        name: script_height_word
+        type: u16
+        confidence: observed
+        description: Scaled by -0x1000 and added to Y for the line-of-sight variable 0x2133.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x1c0
+        name: script_wait_remaining
+        type: u32
+        confidence: confirmed
+        description: Wait set by 0x4280 (operand << 12) and counted down by the frame update.
+        evidence:
+          - re/evidence/functions/object-script-vm.md
+      - offset: 0x1dc
+        name: field_1dc
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's type-0xcb methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+      - offset: 0x1e0
+        name: field_1e0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's type-0xcb methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+      - offset: 0x1e4
+        name: field_1e4
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's type-0xcb methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+
+  - name: RuntimeTriggerSubtype0x0192
+    kind: fixed_layout
+    size: 0x218
+    confidence: observed
+    description: Type-1 TRG object allocation selected by subtype 0x0192. Only constructor/header fields are named.
+    fields:
+      - offset: 0x00
+        name: vtable_or_class_dispatch
+        type: pointer<void>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x04
+        name: object_flags
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0xb0
+        name: source_trg_node_index
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x08
+        name: position_x_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x0c
+        name: position_y_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x10
+        name: position_z_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x16c
+        name: constructor_active_byte
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1a0
+        name: constructor_mode_word
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1fc
+        name: constructor_zero_word_1
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x200
+        name: constructor_zero_word_2
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x20c
+        name: constructor_zero_word_3
+        type: u32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x210
+        name: constructor_zero_word_4
+        type: u32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x214
+        name: constructor_zero_word_5
+        type: u32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1d8
+        name: runtime_context
+        type: pointer<void>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1f2
+        name: object_subtype
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x208
+        name: constructor_sentinel
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x14
+        name: constructor_parameter_0
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x16
+        name: constructor_parameter_1
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x18
+        name: constructor_parameter_2
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x17c
+        name: script_stream_cursor
+        type: pointer<void>
+        confidence: confirmed
+        description: Cursor returned by the shared position/parameter helper and consumed by the virtual trigger script interface.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1fe
+        name: field_1fe
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's type-0x192 constructor; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+
+  - name: RuntimeTriggerTrafficObject
+    kind: fixed_layout
+    size: 0x1e8
+    confidence: observed
+    description: Type-1 TRG traffic/car object selected for subtypes 0xd5..0xdc. Constructor, update, and interaction fields are included only where their offsets are independently supported.
+    fields:
+      - offset: 0x00
+        name: vtable_or_class_dispatch
+        type: pointer<void>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x08
+        name: position_x_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x0c
+        name: position_y_fixed_after_constructor_offset
+        type: i32
+        confidence: observed
+        description: Shared fixed-point Y position after the traffic constructor subtracts 0x6e000.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x10
+        name: position_z_fixed
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x14
+        name: constructor_parameter_0
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x16
+        name: constructor_parameter_1
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x18
+        name: constructor_parameter_2
+        type: u16
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x20
+        name: next_object
+        type: pointer<RuntimeTriggerTrafficObject>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x34
+        name: previous_object
+        type: pointer<RuntimeTriggerTrafficObject>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x3c
+        name: object_subtype
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x4c
+        name: motion_response_x_fixed
+        type: i32
+        confidence: observed
+        description: Fixed-point response component initialized and integrated by the traffic update; exact gameplay axis semantics remain open.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x50
+        name: motion_response_y_fixed
+        type: i32
+        confidence: observed
+        description: Fixed-point response component initialized and integrated by the traffic update; exact gameplay axis semantics remain open.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x54
+        name: motion_response_z_fixed
+        type: i32
+        confidence: observed
+        description: Fixed-point response component initialized and integrated by the traffic update; exact gameplay axis semantics remain open.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0xb4
+        name: constructor_field_b4
+        type: u16
+        confidence: observed
+        description: Constructor initializes this field to 0x3c; later semantic use is not assigned.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1a
+        name: psx_model_index
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1f
+        name: psx_region_slot
+        type: u8
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x64
+        name: activation_argument
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0xb0
+        name: source_trg_node_index
+        type: u16
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x108
+        name: constructor_fixed_scale
+        type: u32
+        confidence: observed
+        description: Constructor initializes this word to 0x10000.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1d0
+        name: positional_sound_handle
+        type: pointer<void>
+        confidence: observed
+        description: Result of the subtype-specific positional sound call; internal sound-handle layout remains open.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1d4
+        name: resource_active_flag
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1dc
+        name: node_derived_word
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1e0
+        name: traffic_sequence
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+      - offset: 0x1e4
+        name: traffic_interaction_latch
+        type: u32
+        confidence: observed
+        description: Traffic interaction/proximity consumer writes this to 1 on a matching object and clears it when no match remains.
+        evidence:
+          - re/evidence/functions/trg-runtime.md
+
+  - name: RuntimePlatformObject
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The moving platform (vtable 0x005194f8): a baddy-derived world object whose do-physics, update, bounce, bouncy-AI and script methods are ported in world_extra.cpp and world_script.cpp. Only the words those methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x18
+        name: field_18
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1a
+        name: model_index
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1f
+        name: region
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x4c
+        name: field_4c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x50
+        name: field_50
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x54
+        name: field_54
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x58
+        name: field_58
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x5c
+        name: field_5c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x60
+        name: field_60
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x68
+        name: field_68
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x74
+        name: field_74
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x7a
+        name: field_7a
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x80
+        name: field_80
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x82
+        name: field_82
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x84
+        name: field_84
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xb4
+        name: field_b4
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x16c
+        name: field_16c
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x16e
+        name: field_16e
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x16f
+        name: field_16f
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x170
+        name: field_170
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x174
+        name: field_174
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x17c
+        name: field_17c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1a0
+        name: field_1a0
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1a2
+        name: field_1a2
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1a4
+        name: field_1a4
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1c0
+        name: field_1c0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1dc
+        name: field_1dc
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1e0
+        name: field_1e0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1f0
+        name: field_1f0
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1f2
+        name: field_1f2
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1f4
+        name: field_1f4
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1f6
+        name: field_1f6
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1f8
+        name: field_1f8
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1fa
+        name: field_1fa
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1fc
+        name: field_1fc
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1fe
+        name: field_1fe
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x200
+        name: field_200
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x204
+        name: field_204
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x208
+        name: field_208
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x20c
+        name: field_20c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x210
+        name: field_210
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x214
+        name: field_214
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's platform methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/platform-object.md
+          - re/evidence/functions/world-object-base.md
+
+  - name: RuntimeBaddyObject
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The baddy base class (CBaddy, vtable slot 2 is CBaddy__Die): the words its constructor, death pulse, physics step and script methods read or write, named by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1a
+        name: model_index
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1f
+        name: region
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x6a
+        name: state
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x80
+        name: field_80
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x84
+        name: field_84
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xae
+        name: field_ae
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xb0
+        name: field_b0
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xb2
+        name: field_b2
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xb4
+        name: field_b4
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x108
+        name: field_108
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x16c
+        name: field_16c
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x16f
+        name: field_16f
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x170
+        name: field_170
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x171
+        name: field_171
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x172
+        name: field_172
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x173
+        name: field_173
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x174
+        name: field_174
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x178
+        name: field_178
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x17c
+        name: field_17c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1ac
+        name: field_1ac
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1ae
+        name: field_1ae
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1bc
+        name: field_1bc
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1be
+        name: field_1be
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1c0
+        name: field_1c0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1c4
+        name: field_1c4
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1c8
+        name: field_1c8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1cc
+        name: field_1cc
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1d0
+        name: field_1d0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1d4
+        name: field_1d4
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1d8
+        name: field_1d8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1dc
+        name: field_1dc
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1e0
+        name: field_1e0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's baddy methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-script-baddy.md
+          - re/evidence/functions/world-object-base.md
+
+  - name: RuntimeAnimatedObject
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The animated world object (the base class plus the pose state the animation methods advance): the words world_object.cpp's animation methods read or write, named by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x4
+        name: visibility_flags
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x1f
+        name: region
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xd8
+        name: field_d8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xf4
+        name: field_f4
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xf6
+        name: field_f6
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xf8
+        name: field_f8
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xfa
+        name: field_fa
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xfc
+        name: field_fc
+        type: i16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0xfe
+        name: field_fe
+        type: i16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x100
+        name: field_100
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x101
+        name: field_101
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x102
+        name: field_102
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x104
+        name: field_104
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x106
+        name: field_106
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x107
+        name: field_107
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x108
+        name: field_108
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x10c
+        name: field_10c
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x10e
+        name: field_10e
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x110
+        name: field_110
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x112
+        name: field_112
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x114
+        name: field_114
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+      - offset: 0x163
+        name: field_163
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's animation methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-object-base.md
+
+  - name: RuntimeEditorCommandBase
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The base of the trigger-file writer's command objects (world_cmd.cpp): the vtable and the words every command shares."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x4
+        name: field_4
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+
+  - name: RuntimeEditorNodeCommand
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The writer's node command: the words node_construct and node_write read or write, named by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x14
+        name: field_14
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x18
+        name: field_18
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x20
+        name: field_20
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x24
+        name: field_24
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+
+  - name: RuntimeEditorLinkCommand
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The writer's link command: the words link_construct, link_set_ends and link_write read or write, named by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x10
+        name: field_10
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x11
+        name: field_11
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x14
+        name: field_14
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x18
+        name: field_18
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x1c
+        name: field_1c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+
+  - name: RuntimeEditorEndCommand
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The writer's end command: the words end_construct and end_write read or write, named by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+
+  - name: RuntimeEditorCommandC
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The writer's command C: named by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+
+  - name: RuntimeEditorCommandE
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The writer's command E: named by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x14
+        name: field_14
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+
+  - name: RuntimeEditorCommandF
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The writer's command F: named by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x14
+        name: field_14
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+
+  - name: RuntimeEditorCommandG
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The writer's command G: named by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's command writers; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-trigger-writers.md

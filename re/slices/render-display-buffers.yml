@@ -1,0 +1,50 @@
+version: 1
+id: render-display-buffers
+subsystem: renderer
+status: complete
+scope:
+  functions:
+  - 0x0042fc60
+  - 0x0042fc70
+  - 0x0042fcd0
+  - 0x0042fd20
+  - 0x0042fed0
+  - 0x0042ffc0
+  - 0x004301a0
+  - 0x004301b0
+  - 0x004301f0
+  - 0x004302c0
+  - 0x004304b0
+  - 0x00430510
+  - 0x004305b0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/renderer-display-buffers.md
+  - re/evidence/fixtures/render-calls-rdbA.txt
+  - re/evidence/fixtures/render-calls-rdbB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/render_display.cpp
+  - re/gdb/probes/render_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/render_retail_calls_test.cpp
+  - tests/test_render_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rdb): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (render_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 13 of the 13 functions (the display buffers of the renderer (the Db_ functions): the ordering-table size, the sky colour, the vertical-blank callback and its hand-off of buffers to the GPU, the wait for the drawn buffer, the end of a frame, the installation of the callback, the initialisation and reset of the tables and the primitive area, the hi-res set-up, the buffer flips and the immediate display the loading screens use) are replayed over 552 cases with no mismatch (at least 40 cases each; the committed fixtures keep the first 30 of each capture per function, 422 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the PSX library calls (the display and draw environments, the GPU start, the draw sync, the video-memory clear), the allocator and the game clock are services; the timer callback is held still so that the clock does not tick during a case.

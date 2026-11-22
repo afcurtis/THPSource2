@@ -1,0 +1,871 @@
+version: 1
+types:
+  - name: RuntimeEquipRackBase
+    kind: fixed_layout
+    size: 0x14
+    confidence: observed
+    description: "The slide every rack of the equipment-select screen shares (RackBase, 0x004468e0..0x00446990): five words and two flag bytes."
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: observed
+        description: "Vtable 0x005189b4 (RackBase), 0x005189c4 (DeckRack) or 0x005189d8 (TruckRack)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x04
+        name: single
+        type: u8
+        confidence: observed
+        description: "1 when the rack has one set (or is the truck rack): up and down are refused."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x06
+        name: active
+        type: u8
+        confidence: observed
+        description: "Non-zero while the rack is the page shown."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x08
+        name: state
+        type: i32
+        confidence: observed
+        description: "Slide state: 0 sliding in, 1 shown, 2 sliding out, 3 hidden."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x0c
+        name: offset
+        type: i32
+        confidence: observed
+        description: "Horizontal slide offset (600 off screen, 0 shown, -600 sliding out)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x10
+        name: target
+        type: i32
+        confidence: observed
+        description: "The offset the slide moves towards."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipDeckRack
+    kind: fixed_layout
+    size: 0x6e0
+    confidence: observed
+    description: "The deck rack (DeckRack, 0x004469f0..0x00447a90): the RackBase slide, three marker sprites, five object records, the sets of decks and the spool queue."
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: observed
+        description: "Vtable 0x005189b4 (RackBase), 0x005189c4 (DeckRack) or 0x005189d8 (TruckRack)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x04
+        name: single
+        type: u8
+        confidence: observed
+        description: "1 when the rack has one set (or is the truck rack): up and down are refused."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x06
+        name: active
+        type: u8
+        confidence: observed
+        description: "Non-zero while the rack is the page shown."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x08
+        name: state
+        type: i32
+        confidence: observed
+        description: "Slide state: 0 sliding in, 1 shown, 2 sliding out, 3 hidden."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x0c
+        name: offset
+        type: i32
+        confidence: observed
+        description: "Horizontal slide offset (600 off screen, 0 shown, -600 sliding out)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x10
+        name: target
+        type: i32
+        confidence: observed
+        description: "The offset the slide moves towards."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x14
+        name: first_update
+        type: u8
+        confidence: observed
+        description: "1 until the first update has turned the rack to the character's own deck."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x18
+        name: markers
+        type: array<pointer<void>,3>
+        confidence: observed
+        description: "Sprite objects: locked, affordable, too dear."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x24
+        name: picture
+        type: pointer<void>
+        confidence: observed
+        description: "The placeholder picture's buffer (the file 0x0052b7ac)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x28
+        name: slot
+        type: i32
+        confidence: observed
+        description: "The target slot of the turn, 0..4."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x2c
+        name: front
+        type: i32
+        confidence: observed
+        description: "The slot at the front, 0..4."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x30
+        name: target_angle
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x34
+        name: angle
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x38
+        name: step
+        type: i32
+        confidence: observed
+        description: "The angle between two slots (0x333)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x3c
+        name: region
+        type: u32
+        confidence: observed
+        description: "The spool region of the deck model; the records carry its low byte."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x40
+        name: records
+        type: array<RuntimePsxObjectRecord,5>
+        confidence: observed
+        description: "The five deck objects (vector constructor 0x0047fdb0)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x1bc
+        name: sets
+        type: array<RuntimeEquipDeckSet,14>
+        confidence: observed
+        description: "One set per character sharing the character's deck logo (at most 14: a custom skater has its own and 13 more)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x6c4
+        name: set_count
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x6c8
+        name: set_shown
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x6cc
+        name: set_now
+        type: i32
+        confidence: observed
+        description: "The set whose band the height is in."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x6d0
+        name: target_y
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x6d4
+        name: y
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x6d8
+        name: spool
+        type: pointer<RuntimeEquipSpoolQueue>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x6dc
+        name: at_front
+        type: i32
+        confidence: observed
+        description: "The deck at the front of the current set."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipDeckSet
+    kind: fixed_layout
+    size: 0x5c
+    confidence: observed
+    description: "One set of decks: the owner (a character index), the number of decks, the deck at the front when the set was left, and up to 20 deck items."
+    fields:
+      - offset: 0x00
+        name: owner
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x04
+        name: deck_count
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x08
+        name: saved_front
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x0c
+        name: items
+        type: array<pointer<RuntimeEquipDeckItem>,20>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipDeckItem
+    kind: fixed_layout
+    size: 0x28
+    confidence: observed
+    description: "A deck's picture (DeckItem, 0x00447ae0..0x00447cf0): the spooled data, the file name, the load and swap flags, the texture set it replaces."
+    fields:
+      - offset: 0x00
+        name: near_priority
+        type: i8
+        confidence: observed
+        description: "Distance from the front in decks (the smaller of the two ways round); the spool orders by this plus twice the next byte."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x01
+        name: set_priority
+        type: i8
+        confidence: observed
+        description: "Distance from the shown set in sets."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x04
+        name: data
+        type: pointer<void>
+        confidence: observed
+        description: "The spooled-in picture data (0 when not loaded)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x08
+        name: file_name
+        type: array<char,16>
+        confidence: observed
+        description: "The deck's picture file name."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x18
+        name: data_held
+        type: u8
+        confidence: observed
+        description: "1 while the loaded data is in memory."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x19
+        name: held_back
+        type: u8
+        confidence: observed
+        description: "1 for a deck the character does not own: its picture is never swapped in."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x1a
+        name: wanted
+        type: u8
+        confidence: observed
+        description: "Set by the scroll for the five decks round the front."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x1b
+        name: not_wanted
+        type: u8
+        confidence: observed
+        description: "The reverse of wanted, set by the same call."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x1c
+        name: settled
+        type: u8
+        confidence: observed
+        description: "Set once an update has acted on wanted."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x1d
+        name: picture_shown
+        type: u8
+        confidence: observed
+        description: "1 while the loaded picture, not the placeholder, is in the texture set."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x20
+        name: placeholder_set
+        type: pointer<void>
+        confidence: observed
+        description: "The texture set the placeholder picture came with."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x24
+        name: texture_set
+        type: u32
+        confidence: observed
+        description: "The texture set entry the picture replaces (0x00457e10)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipSpoolQueue
+    kind: fixed_layout
+    size: 0x18
+    confidence: observed
+    description: "The deck picture spool (0x00447d30..0x004481c0): a priority-ordered list of nodes, the one being loaded, the read buffer and a state (0 idle, 1 loading, 2 restart)."
+    fields:
+      - offset: 0x00
+        name: kept
+        type: i32
+        confidence: observed
+        description: "The number of pictures kept in memory (0x18)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x04
+        name: head
+        type: pointer<RuntimeEquipSpoolNode>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x08
+        name: current
+        type: pointer<RuntimeEquipSpoolNode>
+        confidence: observed
+        description: "The node being loaded."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x0c
+        name: first_dropped
+        type: pointer<RuntimeEquipSpoolNode>
+        confidence: observed
+        description: "The first node past the kept pictures."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x10
+        name: buffer
+        type: pointer<void>
+        confidence: observed
+        description: "The read buffer of the file being loaded."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x14
+        name: state
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipSpoolNode
+    kind: fixed_layout
+    size: 0x8
+    confidence: observed
+    description: "A queue node: the deck item and the next node."
+    fields:
+      - offset: 0x00
+        name: item
+        type: pointer<RuntimeEquipDeckItem>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x04
+        name: next
+        type: pointer<RuntimeEquipSpoolNode>
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipTruckRack
+    kind: fixed_layout
+    size: 0x2f8
+    confidence: observed
+    description: "The truck rack (TruckRack, 0x00448230..0x00448790): the RackBase slide, the caption font, the style and the spin / rise / turn / sink state machine, two (of five constructed) object records."
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: observed
+        description: "Vtable 0x005189b4 (RackBase), 0x005189c4 (DeckRack) or 0x005189d8 (TruckRack)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x04
+        name: single
+        type: u8
+        confidence: observed
+        description: "1 when the rack has one set (or is the truck rack): up and down are refused."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x06
+        name: active
+        type: u8
+        confidence: observed
+        description: "Non-zero while the rack is the page shown."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x08
+        name: state
+        type: i32
+        confidence: observed
+        description: "Slide state: 0 sliding in, 1 shown, 2 sliding out, 3 hidden."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x0c
+        name: offset
+        type: i32
+        confidence: observed
+        description: "Horizontal slide offset (600 off screen, 0 shown, -600 sliding out)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x10
+        name: target
+        type: i32
+        confidence: observed
+        description: "The offset the slide moves towards."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x14
+        name: font
+        type: RuntimeFont
+        confidence: observed
+        description: "The caption font (constructed in place)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x160
+        name: style
+        type: i32
+        confidence: observed
+        description: "The truck style, 0..2."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x164
+        name: previous_style
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x168
+        name: motion
+        type: i32
+        confidence: observed
+        description: "0 spin up, 1 slow the spin, 2 rise, 3 turn to the new style, 4 sink back."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x16c
+        name: height
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x170
+        name: spin
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x174
+        name: turn
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x178
+        name: region
+        type: u32
+        confidence: observed
+        description: "The spool region of the truck model; the records carry its low byte."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x17c
+        name: records
+        type: array<RuntimePsxObjectRecord,5>
+        confidence: observed
+        description: "Constructed as five; the update places two."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipWindow
+    kind: fixed_layout
+    size: 0x3f4
+    confidence: observed
+    description: "The equipment-select screen window (EquipWindow, 0x00444980..0x00445550): a window (0xac bytes, its first 0x28 the ScreenElement) with two Font objects, the background sprite, the six prompts, the stat dots' siblings and a logo per character."
+    fields:
+      - offset: 0x00
+        name: element
+        type: RuntimeFrontElement
+        confidence: observed
+        description: "The ScreenElement base (vtable 0x005196a8, then the EquipWindow vtable); the window base goes on to 0xac."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xac
+        name: page
+        type: i32
+        confidence: observed
+        description: "0 the decks, 1 the trucks."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xb0
+        name: view
+        type: pointer<RuntimeEquipView>
+        confidence: observed
+        description: "The racks' view element."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xb4
+        name: name
+        type: pointer<RuntimeEquipNameWindow>
+        confidence: observed
+        description: "The name window."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xb8
+        name: cash
+        type: pointer<RuntimeEquipCashWindow>
+        confidence: observed
+        description: "The cash window."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xbc
+        name: dialog_open
+        type: u32
+        confidence: observed
+        description: "1 while the buy dialog is up."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xc0
+        name: done
+        type: u8
+        confidence: observed
+        description: "1 once the screen has its answer."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xc4
+        name: dialog
+        type: pointer<void>
+        confidence: observed
+        description: "The buy dialog's window (0 when none)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xc8
+        name: font_a
+        type: RuntimeFont
+        confidence: observed
+        description: "s2font2: the prompts' font."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x214
+        name: font_b
+        type: RuntimeFont
+        confidence: observed
+        description: "s2font1: the dialog's font."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x360
+        name: background
+        type: pointer<void>
+        confidence: observed
+        description: "The background sprite object."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x364
+        name: prompts
+        type: array<pointer<RuntimeFrontElement>,6>
+        confidence: observed
+        description: "The six prompt windows (the first five slide in from the foot of the screen)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x37c
+        name: logos
+        type: array<pointer<RuntimeFrontElement>,20>
+        confidence: observed
+        description: "A logo sprite per character (0 for a row with either of the flags 0x22)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipStatDots
+    kind: fixed_layout
+    size: 0x48
+    confidence: observed
+    description: "The stat dots (StatDots, 0x004455c0..0x00445810): four rows of dots drawn from one picture."
+    fields:
+      - offset: 0x00
+        name: element
+        type: RuntimeFrontElement
+        confidence: observed
+        description: "The ScreenElement base (vtable 0x005196a8, then the StatDots vtable)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x28
+        name: rows
+        type: array<pointer<void>,4>
+        confidence: observed
+        description: "The four dot rows (DotsRow objects of 0x18 bytes)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x38
+        name: sprite
+        type: pointer<void>
+        confidence: observed
+        description: "The dots picture (a 0x5c-byte sprite object)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x3c
+        name: field_3c
+        type: i32
+        confidence: observed
+        description: "Set to -1 by the constructor; nothing in the Kit reads it."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x40
+        name: field_40
+        type: i32
+        confidence: observed
+        description: "Set to -1 by the constructor; nothing in the Kit reads it."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x44
+        name: field_44
+        type: i32
+        confidence: observed
+        description: "Set to -1 by the constructor; nothing in the Kit reads it."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipCashWindow
+    kind: fixed_layout
+    size: 0x36c
+    confidence: observed
+    description: "The cash window (CashWindow, 0x00445920..0x00445ea0): the cash and cost captions, their two counters and the frame."
+    fields:
+      - offset: 0x00
+        name: element
+        type: RuntimeFrontElement
+        confidence: observed
+        description: "The ScreenElement base (vtable 0x005196a8, then the CashWindow vtable); the window base goes on to 0xac."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xac
+        name: font_a
+        type: RuntimeFont
+        confidence: observed
+        description: "s2menu1: the captions' font."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x1f8
+        name: font_b
+        type: RuntimeFont
+        confidence: observed
+        description: "s2font2: the counters' font."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x344
+        name: set
+        type: i32
+        confidence: observed
+        description: "The set the counters last showed (-1 before the first update)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x348
+        name: index
+        type: i32
+        confidence: observed
+        description: "The deck index the counters last showed."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x34c
+        name: amount
+        type: i32
+        confidence: observed
+        description: "The character's cash the counters last showed."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x350
+        name: x
+        type: i32
+        confidence: observed
+        description: "The x the window slides to when shown (the constructor's x)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x354
+        name: shown
+        type: u8
+        confidence: observed
+        description: "Non-zero while the window is shown."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x358
+        name: captions
+        type: array<pointer<void>,2>
+        confidence: observed
+        description: "The cash and cost text elements."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x360
+        name: counters
+        type: array<pointer<void>,2>
+        confidence: observed
+        description: "The cash and cost counters."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x368
+        name: frame
+        type: pointer<void>
+        confidence: observed
+        description: "The frame sprite element."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipView
+    kind: fixed_layout
+    size: 0x50
+    confidence: observed
+    description: "The racks' view (EquipView, 0x00445ea0..0x00446490): the deck rack and the truck rack, four arrows and the box the camera draws them in."
+    fields:
+      - offset: 0x00
+        name: element
+        type: RuntimeFrontElement
+        confidence: observed
+        description: "The ScreenElement base (vtable 0x005196a8, then the EquipView vtable)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x28
+        name: page
+        type: u32
+        confidence: observed
+        description: "0 the deck rack, 1 the truck rack."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x2c
+        name: racks
+        type: array<pointer<RuntimeEquipRackBase>,2>
+        confidence: observed
+        description: "The deck rack and the truck rack."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x34
+        name: width
+        type: i32
+        confidence: observed
+        description: "The box's width (0xfa)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x38
+        name: height
+        type: i32
+        confidence: observed
+        description: "The box's height (0xb4)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x3c
+        name: arrows
+        type: array<pointer<void>,4>
+        confidence: observed
+        description: "Sprite objects: left, right, up, down."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x4c
+        name: blink
+        type: i32
+        confidence: observed
+        description: "The arrows' blink counter, counting down from 0x28."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+
+  - name: RuntimeEquipNameWindow
+    kind: fixed_layout
+    size: 0x21c
+    confidence: observed
+    description: "The name window (NameWindow, 0x00446490..0x004468a0): one text element that slides out and back when the highlighted deck changes."
+    fields:
+      - offset: 0x00
+        name: element
+        type: RuntimeFrontElement
+        confidence: observed
+        description: "The ScreenElement base (vtable 0x005196a8, then the NameWindow vtable); the window base goes on to 0xac."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xac
+        name: text
+        type: pointer<RuntimeFrontElement>
+        confidence: observed
+        description: "The flagged text element."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0xb0
+        name: font
+        type: RuntimeFont
+        confidence: observed
+        description: "s2font1: the name's font."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x1fc
+        name: x
+        type: i32
+        confidence: observed
+        description: "The x the window slides to (the constructor's target)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x204
+        name: shown_set
+        type: u32
+        confidence: observed
+        description: "The set whose name is shown."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x208
+        name: shown_index
+        type: u32
+        confidence: observed
+        description: "The deck index whose name is shown."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x20c
+        name: wanted_set
+        type: u32
+        confidence: observed
+        description: "The set the name is changing to (-1 before the first update)."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x210
+        name: wanted_index
+        type: u32
+        confidence: observed
+        description: "The deck index the name is changing to."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md
+      - offset: 0x214
+        name: state
+        type: u32
+        confidence: observed
+        description: "0 idle, 1 shown, 3 sliding out."
+        evidence:
+          - re/evidence/functions/equipment-select-screen.md

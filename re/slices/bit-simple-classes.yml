@@ -1,0 +1,68 @@
+version: 1
+id: bit-simple-classes
+subsystem: effects
+status: complete
+scope:
+  functions:
+  - 0x00403fc0
+  - 0x00403fe0
+  - 0x00404000
+  - 0x00404020
+  - 0x00404040
+  - 0x00404060
+  - 0x00404080
+  - 0x004040b0
+  - 0x004040d0
+  - 0x00404150
+  - 0x00404170
+  - 0x004041c0
+  - 0x00404210
+  - 0x00404220
+  - 0x00404250
+  - 0x004042d0
+  - 0x00404390
+  - 0x004043d0
+  - 0x00404460
+  - 0x00404490
+  - 0x004044f0
+  - 0x00404590
+  - 0x004045e0
+  - 0x00404600
+  - 0x00404620
+  - 0x004046f0
+  - 0x00404810
+  - 0x00404840
+  - 0x00404860
+  - 0x004048c0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/bit-simple-classes.md
+  - re/evidence/fixtures/bit-calls-bit1A.txt
+  - re/evidence/fixtures/bit-calls-bit2A.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/bit_kit.hpp
+  - src/runtime/bit_core.cpp
+  - re/gdb/probes/bit_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/bit_specs.py
+  tests:
+  - src/runtime/bit_retail_calls_test.cpp
+  - tests/test_bit_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups bit1, bit2): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (bit_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 30 of the 30 functions (the special-display, non-rendered, textured-quad (CFT4Bit: scale, tint, animation lookups, frame stepping, shrink and fade) and quad (CQuadBit: textures, flags, transparency, orientation in the plane of a normal) classes) are replayed over 5994 cases with no mismatch (at least 194 cases each; the committed fixtures keep the first 30 of each capture per function, 900 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the resource lookup and the allocator are services; a zero-length axis in the orientation divides by zero in retail and ends the case in an error, which is skipped.

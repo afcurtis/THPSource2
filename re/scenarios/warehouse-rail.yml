@@ -1,0 +1,35 @@
+version: 1
+level: warehouse
+frames: 254
+
+input:
+  - frame: 20
+    action: up
+    state: press
+  - frame: 114
+    action: right
+    state: press
+  - frame: 131
+    action: triangle
+    state: press
+  - frame: 134
+    action: right
+    state: release
+  - frame: 135
+    action: cross
+    state: press
+  - frame: 143
+    action: cross
+    state: release
+  - frame: 214
+    action: triangle
+    state: release
+  - frame: 224
+    action: up
+    state: release
+
+forensics:
+  - all
+
+expect:
+  retail: match

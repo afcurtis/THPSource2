@@ -1,0 +1,43 @@
+version: 1
+id: gap-members
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004410b0
+  - 0x004410d0
+  - 0x004410e0
+  - 0x00441240
+  - 0x00441270
+  - 0x00441400
+  - 0x00441630
+  - 0x00441640
+  - 0x00441670
+  - 0x00441680
+  - 0x00441690
+  - 0x004416b0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/generator-objects.md
+  - re/evidence/fixtures/gen-calls-ggap.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/gen_objs.hpp
+  - src/runtime/gen_objs_gap.cpp
+  - re/gdb/probes/gen_specs.py
+  - re/gdb/probes/gen_specs_poly.py
+  - re/gdb/probes/gen_specs_model.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/gen_objs_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_generator_objects.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of gen_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`gen_objs_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 12 of the 12 functions (gap member records and their primitive lists) are replayed over 960 cases with no mismatch (at least 80 cases each).'
+- Documented exclusion, not a blocker - none beyond the made-up gap member record and target item.

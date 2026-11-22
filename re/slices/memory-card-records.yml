@@ -1,0 +1,58 @@
+version: 1
+id: memory-card-records
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x00473d20
+  - 0x00473e50
+  - 0x00473ee0
+  - 0x00473f10
+  - 0x00473f30
+  - 0x00474010
+  - 0x00474100
+  - 0x004741d0
+  - 0x004741f0
+  - 0x00474250
+  - 0x004742e0
+  - 0x00474380
+  - 0x004744a0
+  - 0x004745d0
+  - 0x004746d0
+  - 0x004747d0
+  - 0x00474950
+  - 0x00474a50
+  - 0x00474ae0
+  - 0x00474d50
+  - 0x00475620
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/memory-card-layer.md
+  - re/evidence/fixtures/mmu-calls-mmuA2.txt
+  - re/evidence/fixtures/mmu-calls-mmuA3.txt
+  - re/evidence/fixtures/mmu-calls-mmuA_part.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/heap_kit.hpp
+  - src/runtime/mmu_kit.hpp
+  - src/runtime/mmu_manager.cpp
+  - re/gdb/probes/mmu_specs.py
+  - re/gdb/probes/mmu_specs_mgr.py
+  - re/gdb/probes/mmu_specs_misc.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/mmu_retail_calls_test.cpp
+  - tests/test_memory_card_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mmu): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (mmu_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 21 of the 21 functions (the card manager''s bookkeeping: the accepted save types, the constructor and destructors of its sub-object, the record table (count, records, types, display names, name and file lookups), the file name counter and the new file names, the type description and the card state getter) are replayed over 4720 cases with no mismatch (at least 120 cases each; the committed fixtures keep the first 30 of each capture per function, 660 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - the stack garbage `Mmu_FileCode` reads when a file name is shorter than 12 characters (the probe never makes one: real names start with a 14-character prefix).'

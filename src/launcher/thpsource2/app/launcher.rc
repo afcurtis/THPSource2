@@ -1,0 +1,3 @@
+// The launcher's icon (scripts/make_launcher_icon.py builds both from icon.png): the file's icon in Explorer and the window's and taskbar's, and the header's picture.
+1 ICON "thpsource2.ico"
+2 RCDATA "header.png"

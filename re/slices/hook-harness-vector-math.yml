@@ -1,0 +1,52 @@
+version: 1
+id: hook-harness-vector-math
+subsystem: core
+status: complete
+
+scope:
+  functions:
+    - 0x004ca9f0
+    - 0x004caa20
+    - 0x004caa50
+    - 0x004caa80
+    - 0x004caab0
+    - 0x004caae0
+    - 0x004cab10
+    - 0x004cab50
+    - 0x004cab80
+    - 0x004cad60
+    - 0x004cad80
+    - 0x004cae10
+    - 0x004cae30
+    - 0x004caef0
+    - 0x004caf40
+    - 0x004caf70
+    - 0x004cb040
+    - 0x004cb090
+  types: []
+  globals: []
+
+shared:
+  functions: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/vector-math.md
+    - re/evidence/functions/hook-harness.md
+  native:
+    - src/runtime/retail_vector3.hpp
+    - src/hooks/native/vector_math.cpp
+    - src/hooks/selftest.cpp
+    - re/config/native_hooks.yml
+  tests:
+    - src/runtime/retail_vector3_test.cpp
+    - tests/test_hooks.py
+
+open_questions: []
+
+completion:
+  - Each hooked function has a wrap/shift/aliasing-exact portable implementation with native unit tests.
+  - The in-process differential self-test covers every hooked ABI shape (thiscall Vec3/Vec3s operand, scalar, divisor, byte-count and compare forms; fastcall self-only Vec3s; value-returning cdecl Vec3s) and passes for both supported executables, including the negative controls.
+  - Retail scenario replays match with the harness loaded, with every hook native, with every hook routed back to retail, and while the master switch flips at runtime; a fault variant diverges.
+  - Hooks that ran natively in those replays are trace-validated and default native; the six that recorded no native calls stay tested and default retail.
+  - The remaining value-returning Vec3s operators and the int32 out-of-place operators are an explicit seam (hook-harness.md, Decisions); the GDB retail replay stall moved to the simulation-time-callback slice.

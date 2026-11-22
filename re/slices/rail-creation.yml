@@ -1,0 +1,38 @@
+version: 1
+id: rail-creation
+subsystem: physics
+status: complete
+scope:
+  functions:
+  - 0x004aa5d0
+  - 0x004aa8c0
+  - 0x004629f0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/rail-creation.md
+  - re/evidence/fixtures/rail-calls-rlcA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/rail_kit.hpp
+  - src/runtime/rail_create.cpp
+  - src/runtime/collision_cache.cpp
+  - re/gdb/probes/rail_specs_build.py
+  - re/gdb/probes/rail_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/rail_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rlc): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (rail_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 3 of the 3 functions (the rail set-up: Rail_CreateRails (every rail node made a type-10 node, the lookup table, the search for the head of each chain, one record per chain), the CRail constructor (the list link, the kind and the initial state, the bounding box of the chain, and the checks of each segment against the world that end a rail) and the collision cache flush it starts with) are replayed over 446 cases with no mismatch (at least 146 cases each; the committed fixtures keep the first 30 of each capture per function, 90 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the node decoder, the link reader, the object operator new, Mem_Delete and the two collision queries are services (scripted per case); `Math_NormalizeFixed12`, the vector operators and the accessors run as the real retail code in the capture; a rail node whose trigger word is the none value 0xffff would be written through a null pointer when a chain ends, so the probe never makes one; rails are paths with forward links and isolated rings (anything else can run for ever in retail).

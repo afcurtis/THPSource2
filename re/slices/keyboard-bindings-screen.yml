@@ -1,0 +1,52 @@
+version: 1
+id: keyboard-bindings-screen
+subsystem: frontend
+status: complete
+scope:
+  functions:
+  - 0x0041c2d0
+  - 0x0041c490
+  - 0x0041c4a0
+  - 0x0041c4b0
+  - 0x0041cda0
+  - 0x0041cdc0
+  - 0x0041ceb0
+  - 0x0041d060
+  - 0x0041d0f0
+  - 0x0041d4f0
+  - 0x0041d580
+  - 0x0041d6f0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/createobj-screens.md
+  - re/evidence/fixtures/createobj-calls-cscr21.txt
+  - re/evidence/fixtures/createobj-calls-kcsA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/createobj_kit.hpp
+  - src/runtime/create_parts.hpp
+  - src/runtime/create_spool.hpp
+  - src/runtime/create_stitch.hpp
+  - src/runtime/createobj_screen.cpp
+  - re/gdb/probes/cobj_specs5.py
+  - re/gdb/probes/cobj_world.py
+  - re/gdb/probes/cobj_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/createobj_retail_calls_test.cpp
+  - tests/test_createobj_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cscr): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (createobj_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 11 of the 11 functions (the keyboard and pad bindings screen: its game state (the loop), constructor, destructors, the text of a row, its frame, the assignment of a key or a pad button to a row, and the poll of the pad) are replayed over 880 cases with no mismatch (at least 80 cases each; the committed fixtures keep the first 30 of each capture per function, 330 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the window, font, list, row and sprite classes are services; the virtual calls on them are reported with their object.

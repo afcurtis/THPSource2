@@ -1,0 +1,46 @@
+version: 1
+id: video-options-menu
+subsystem: frontend
+status: complete
+scope:
+  functions:
+  - 0x004cdf60
+  - 0x004cdf70
+  - 0x004cdfa0
+  - 0x004cdfb0
+  - 0x004ce020
+  - 0x004ce030
+  - 0x004ce260
+  - 0x004ce280
+  - 0x004ce290
+  - 0x004ce2a0
+  - 0x004cea50
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/video-options-menu.md
+  - re/evidence/fixtures/opt-calls-vmnA.txt
+  - re/evidence/fixtures/opt-calls-vmnrunA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/screen_kit.hpp
+  - src/runtime/options.hpp
+  - src/runtime/video_menu.cpp
+  - re/gdb/probes/video_specs_menu.py
+  - re/gdb/probes/frontend_specs_opt.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/options_retail_calls_test.cpp
+  - tests/test_options_screen.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups vmn, vmnrun): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (options_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 11 of the 11 functions (the video options screen: the start-up tables of its option list (and their jump thunks), the loop that runs it (the pad poll, the update, the draw, the clock wait and the renderer switch), the gamma call, the window''s constructor (the background, four sprite halves, two arrows, two fonts, three prompt windows and the four-row list), the done test and the deleting destructor) are replayed over 2750 cases with no mismatch (at least 250 cases each; the committed fixtures keep the first 30 of each capture per function, 330 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - the window base, the list, row and properties constructors run natively; the sprite elements, the arrows, the font loader, the prompt windows, the mode names, the option setter, the pad poll and the window''s own virtual calls are services (the loop''s update writes the done flag and the pad poll stores the direction: both scripted per call).'

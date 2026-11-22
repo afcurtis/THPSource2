@@ -1,0 +1,19 @@
+# Pinned upstream zlib for the standalone (Phase 5.3c, milestone 8c).
+#
+# The retail executable carries zlib 1.1.2 at 0x004f9c80..0x004ffd39 (re/symbols/scope.yml, category zlib). A program with no retail image links upstream zlib in its
+# place: `compress` and `uncompress` answer the same status codes for the same input (the PKR2 wrappers in src/runtime/core_pkr.cpp are game code and stay in scope),
+# and any zlib stream the game's tools wrote, 1.1.2 or later, inflates. `tony hooks build` fetches the release source, checks its size and SHA-256 and compiles the
+# library into opentony_standalone.dll as static C; nothing else is downloaded.
+#
+# Licence: zlib licence (a permissive licence; the notice is in THIRD_PARTY_NOTICES.md).
+version: 1
+zlib:
+  release: "1.3.1"
+  url: https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz
+  path: .tools/media/zlib/zlib-1.3.1.tar.gz
+  size: 1512791
+  sha256: 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+  source_dir: .tools/zlib/src
+  root: zlib-1.3.1
+  # the translation units of the library (zlib's own makefile list: the gz* file API is left out, the game only compresses and inflates memory)
+  sources: [adler32.c, compress.c, crc32.c, deflate.c, inflate.c, infback.c, inffast.c, inftrees.c, trees.c, uncompr.c, zutil.c]

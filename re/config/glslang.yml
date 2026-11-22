@@ -1,0 +1,23 @@
+# Pinned glslang for compiling the SDL_GPU video backend's shaders
+# (src/hal/sdl/shaders/*) to SPIR-V.
+#
+# `tony setup glslang` downloads the official Khronos release tarball, checks
+# its size and SHA-256 (the digest GitHub publishes for the release asset),
+# and extracts it under `install_dir`. `tony hal shaders` runs its `glslang`
+# binary to compile the GLSL 450 shaders into a committed header
+# (src/hal/sdl/sdl_video_gpu_shaders.h) so neither `tony hooks build` nor a
+# Windows MSVC `-A Win32` build of src/hooks ever needs glslang itself; it is
+# a build-time tool only, never redistributed (see THIRD_PARTY_NOTICES.md).
+#
+# SDL_shadercross was considered instead but has no tags or releases and its
+# submodules track a floating `main`, so it cannot be pinned.
+version: 1
+glslang:
+  release: "16.6.0"
+  url: https://github.com/KhronosGroup/glslang/releases/download/16.6.0/glslang-16.6.0-linux-x86_64-release.tar.gz
+  path: .tools/media/glslang/glslang-16.6.0-linux-x86_64-release.tar.gz
+  size: 7923164
+  sha256: 2c34071f56ecf39d16233294d3739cf43f981fd39080f2fd9dccb782101191ce
+  install_dir: .tools/glslang
+  binary: bin/glslang
+  license: none (no LICENSE file in the release archive; see THIRD_PARTY_NOTICES.md)

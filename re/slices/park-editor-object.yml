@@ -1,0 +1,38 @@
+version: 1
+id: park-editor-object
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004334d0
+  - 0x004338e0
+  - 0x00434710
+  - 0x00435f20
+  - 0x00435f60
+  - 0x00435fa0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-editor.md
+  - re/evidence/fixtures/leveleditor-calls-eoc.txt
+  - re/evidence/fixtures/leveleditor-calls-eom.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/level_editor.hpp
+  - src/runtime/level_editor_object.cpp
+  - re/gdb/probes/editor_specs_obj.py
+  - re/gdb/probes/editor_specs.py
+  - re/gdb/probes/editor_specs_view.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_editor_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_editor.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of editor_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_editor_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 6 of the 6 functions (the editor object: its constructor and destructor, the interface''s constructor, the pieces the memory can still hold and the budget flag) are replayed over 900 cases with no mismatch (at least 100 cases each; the committed fixtures keep the first 30 of each capture per function, 180 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the fonts, bitmaps and windows the constructors make, the camera, cursor, interface and park objects (4.11b to 4.11d) and the engine's memory query are services with scripted results; the starting view is worked out from the screen size.

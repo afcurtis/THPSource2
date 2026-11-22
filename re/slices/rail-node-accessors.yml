@@ -1,0 +1,47 @@
+version: 1
+id: rail-node-accessors
+subsystem: physics
+status: complete
+scope:
+  functions:
+  - 0x004a9f70
+  - 0x004a9fd0
+  - 0x004a9ff0
+  - 0x004aa040
+  - 0x004aa090
+  - 0x004aa1c0
+  - 0x004aa220
+  - 0x004aa290
+  - 0x004aa330
+  - 0x004aa3c0
+  - 0x004aa410
+  - 0x004aa420
+  - 0x004aa430
+  - 0x004aa4b0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/rail-nodes.md
+  - re/evidence/fixtures/rail-calls-rlnA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/rail_kit.hpp
+  - src/runtime/rail_nodes.cpp
+  - re/gdb/probes/rail_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/rail_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rln): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (rail_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 14 of the 14 functions (the accessors of the rail nodes of the level''s node table: the trigger word and its address, the rail kind, the rail-node test (type 10/11 and the player-count mask), the links of a node, the next and previous node of a rail (the walk that skips nodes marked done), the state of the record that holds a node, and the lookup table that numbers the rail nodes) are replayed over 4200 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 420 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the node decoder (`TRG_DecodeNodePosition`) and the link table reader (`TRG_GetNodeLinks`) belong to the trigger-file sub-milestone and are services here (the probe scripts the position, the address after it and the link table address); a walk through a graph with a cycle that does not include its start never ends in retail, so the probe builds only forward links and rings that include the start.

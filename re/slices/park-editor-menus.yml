@@ -1,0 +1,34 @@
+version: 1
+id: park-editor-menus
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x00434750
+  - 0x00435830
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-editor.md
+  - re/evidence/fixtures/leveleditor-calls-eom.txt
+  - re/evidence/fixtures/leveleditor-calls-eom2.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/level_editor.hpp
+  - src/runtime/level_editor_states.cpp
+  - re/gdb/probes/editor_specs_obj.py
+  - re/gdb/probes/editor_specs.py
+  - re/gdb/probes/editor_specs_view.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_editor_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_editor.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of editor_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_editor_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 2 of the 2 functions (the editor''s menus (main, save and load, saved parks, theme, size, confirm, scores, save and load a park, quit, the gap menus) and the modes the editor moves between) are replayed over 1800 cases with no mismatch (at least 400 cases each; the committed fixtures keep the first 30 of each capture per function, 90 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the menu toolkit's wrappers and lists, the park menu, the name entry, the memory card and the park generator's buffer routines are services; the menus' texts are compared by the strings the pointer arrays name.

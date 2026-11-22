@@ -1,0 +1,76 @@
+version: 1
+id: front-menu-class
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x0044b640
+    - 0x0044b6f0
+    - 0x0044b710
+    - 0x0044b720
+    - 0x0044b770
+    - 0x0044b7b0
+    - 0x0044b800
+    - 0x0044b890
+    - 0x0044b920
+    - 0x0044b940
+    - 0x0044b960
+    - 0x0044b980
+    - 0x0044b9a0
+    - 0x0044b9c0
+    - 0x0044b9e0
+    - 0x0044ba00
+    - 0x0044ba20
+    - 0x0044ba90
+    - 0x0044bbc0
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/front-screens.md
+    - re/evidence/fixtures/front-calls-display.txt
+    - re/evidence/fixtures/front-calls-load.txt
+    - re/evidence/fixtures/front-calls-load2.txt
+    - re/evidence/fixtures/front-calls-menu.txt
+    - re/evidence/fixtures/front-calls-screens.txt
+    - re/evidence/fixtures/front-calls-states.txt
+    - re/evidence/fixtures/front-calls-update.txt
+    - re/evidence/fixtures/front-calls-update2.txt
+  native:
+    - src/runtime/front.hpp
+    - src/runtime/front_menu.cpp
+    - src/runtime/front_display.cpp
+    - src/runtime/front_screens.cpp
+    - src/runtime/front_states.cpp
+    - src/runtime/front_update.cpp
+    - src/runtime/front_update_late.cpp
+    - src/runtime/front_update_screens.cpp
+    - src/runtime/front_load.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - re/gdb/probes/frontend_specs_front.py
+    - re/gdb/probes/frontend_specs_front_cases.py
+    - re/gdb/probes/frontend_specs_front_cases2.py
+    - re/gdb/probes/frontend_specs_front_upd.py
+    - re/gdb/probes/frontend_specs_front_ld.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/front_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - tests/test_front_screens.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the fmenu group: real CMenu objects built in the scratch slab, the Mess_* text calls and the sound seams reported by address, the clock and the pad bytes poked per case): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`front_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 19 of the 19 functions are replayed over 1520 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's text, sprite, sound, pad, card, spooler, model and script calls and the competition and replay layers other files own are seams reported by name with the arguments retail passed; a handful of branches that need an unreachable state (a hung menu, an assertion that ends the game) are covered by the unit tests only.
