@@ -1,0 +1,55 @@
+version: 1
+id: render-m3d-submit
+subsystem: renderer
+status: complete
+scope:
+  functions:
+  - 0x00461a50
+  - 0x00461a90
+  - 0x00461ad0
+  - 0x00461b10
+  - 0x00461b50
+  - 0x00461b70
+  - 0x00461bb0
+  - 0x00461bf0
+  - 0x00461c90
+  - 0x00461cc0
+  - 0x00461cf0
+  - 0x00462170
+  - 0x004645f0
+  - 0x00464690
+  - 0x00464710
+  - 0x00464a80
+  - 0x004657c0
+  - 0x00466030
+  - 0x00466080
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/renderer-m3d-submit.md
+  - re/evidence/fixtures/render-calls-rm3dX.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/render_m3d.cpp
+  - re/gdb/probes/render_specs5.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/render_retail_calls_test.cpp
+  - tests/test_render_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rm3d): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (render_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 19 of the 19 functions (the scene renderer''s small functions: the thin submitters of a model with the state flags the frame keeps, the geometry-state calls, the model transform builder, the texture wibble (the u and v offsets, their application and preparation), the colour pulses, the start-up tables, the window ratio, the fog range, the angles of a rotation matrix and the clearing of the blockmap grids) are replayed over 760 cases with no mismatch (at least 40 cases each; the committed fixtures keep the first 30 of each capture per function, 570 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the model state submission, the PSX library and the window size are services.

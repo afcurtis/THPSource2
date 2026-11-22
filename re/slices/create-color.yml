@@ -1,0 +1,60 @@
+version: 1
+id: create-color
+subsystem: create
+status: complete
+
+scope:
+  functions:
+    - 0x00423c90
+    - 0x00423cb0
+    - 0x00423cd0
+    - 0x00423ea0
+    - 0x0041f0c0
+    - 0x00424280
+    - 0x00424330
+    - 0x004241a0
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/create-color-runtime.md
+    - re/evidence/fixtures/create-calls-color.txt
+    - re/evidence/fixtures/create-calls-cretex.txt
+    - re/evidence/fixtures/create-calls-palette.txt
+    - re/evidence/fixtures/create-calls-parts.txt
+    - re/evidence/fixtures/create-calls-records.txt
+    - re/evidence/fixtures/create-calls-stitch1.txt
+    - re/evidence/fixtures/create-calls-stitch2.txt
+    - re/evidence/fixtures/create-calls-stitch3.txt
+    - re/evidence/fixtures/create-calls-textures.txt
+  native:
+    - src/runtime/create_color.cpp
+    - src/runtime/create_color.hpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/create_services.hpp
+    - src/runtime/create_tables.cpp
+    - src/runtime/create_tables.hpp
+    - scripts/generate_create_tables.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/create_calls.py
+    - re/gdb/probes/create_specs.py
+    - re/gdb/probes/create_specs_color.py
+    - re/gdb/probes/create_specs_textures.py
+    - re/gdb/probes/create_specs_records.py
+    - re/gdb/probes/create_specs_parts.py
+    - re/gdb/probes/create_specs_spool.py
+    - re/gdb/probes/create_specs_palette.py
+    - re/gdb/probes/create_specs_stitch.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/create_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/create_test.cpp
+    - tests/test_create.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/create_calls.py`): the retail function is called on random legal state laid out in a scratch slab and at its retail addresses, its outside services stubbed; the return value, every written byte and the ordered service calls are compared with the native replay (`create_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The colour math and palette routines of create_color.cpp: 8 of the 8 functions are replayed over 480 cases with no mismatch, assertion paths included.'

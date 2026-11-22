@@ -1,0 +1,35 @@
+# Out-of-scope functions that data tables hold and no code calls (milestone 8c, Phase 5.3c). re/symbols/seams.yml lists the out-of-scope functions that native code *calls*
+# (tests/test_oos_seams.py counts calls only); a standalone program also meets the ones a table points at, because a virtual call, a configuration table or an unwind map
+# reaches them without a call instruction naming them. Found by reading every 32-bit word of the retail executable's .data and .rdata and keeping the values that are an
+# out-of-scope function (scope.yml) which is neither a seam nor a native: 18 functions on the executable of builds.canonical. (The 5.4a census counted 24 by also counting
+# the functions whose address is only pushed as an immediate; those are handed to the OS by code the standalone replaces, e.g. the display-mode callback 0x004f79e0 that
+# WINMAIN_EnumDisplayModes makes unnecessary and the unhandled-exception filter 0x0050a808.)
+#
+# disposition:
+#   answered  the standalone has an implementation (src/hooks/kits/standalone_host.cpp, `kHostSeams`) a program that reaches the function gets
+#   replaced  an internal of code the host replaces whole (upstream zlib, the toolchain's exception runtime): nothing reaches it but the code it belongs to; the host table
+#             lists it so that a call stops with a reason instead of an unnamed address
+#
+# The notes are read from each function's first instructions (objdump), not from a full reconstruction: they say what kind of function it is, which is all the disposition needs.
+#
+# tests/test_standalone_seams.py: every row is in the host table; with the retail executable present, the rows are exactly the scan above.
+version: 1
+
+table_seams:
+  - {address: 0x004ec4c0, category: platform-hal, disposition: answered, note: "SDX input class scalar deleting destructor (vtable slot): no DirectInput object exists, the answer is `this`"}
+  - {address: 0x004ec720, category: platform-hal, disposition: answered, note: "SDX input class scalar deleting destructor (vtable slot)"}
+  - {address: 0x004ecca0, category: platform-hal, disposition: answered, note: "SDX input class vtable slot"}
+  - {address: 0x004ed490, category: platform-hal, disposition: answered, note: "SDX input class vtable slot"}
+  - {address: 0x004fa990, category: zlib, disposition: replaced, note: "zlib 1.1.2 deflate_stored, in deflate's configuration table"}
+  - {address: 0x004fac60, category: zlib, disposition: replaced, note: "zlib 1.1.2 deflate_fast, in deflate's configuration table"}
+  - {address: 0x00500182, category: crt, disposition: replaced, note: "C runtime floating-point start-up (_fpmath), in the initializer table"}
+  - {address: 0x00500199, category: crt, disposition: replaced, note: "C runtime empty initializer (a lone ret), in the initializer table"}
+  - {address: 0x00500374, category: crt, disposition: replaced, note: "unwind funclet of the vector destructor iterator (FUN_0050030c), in its exception map"}
+  - {address: 0x0050046a, category: crt, disposition: replaced, note: "unwind funclet of the vector constructor iterator (FUN_00500400), in its exception map"}
+  - {address: 0x0050144a, category: crt, disposition: replaced, note: "C runtime _exit(code), in the termination table"}
+  - {address: 0x00502d0e, category: crt, disposition: replaced, note: "C runtime start-up time value (the system time as a 64-bit count), in the initializer table"}
+  - {address: 0x00503b54, category: crt, disposition: replaced, note: "C++ exception runtime: calls the installed terminate handler inside an SEH frame, in an unwind map"}
+  - {address: 0x00506162, category: crt, disposition: replaced, note: "C runtime one-time multibyte code page initialiser"}
+  - {address: 0x0050a808, category: crt, disposition: replaced, note: "C runtime unhandled-exception filter (SetUnhandledExceptionFilter's argument)"}
+  - {address: 0x0050b5a4, category: crt, disposition: replaced, note: "C runtime `_amsg_exit(2)` wrapper"}
+  - {address: 0x0050e02e, category: crt, disposition: replaced, note: "C runtime locale / ctype table builder"}

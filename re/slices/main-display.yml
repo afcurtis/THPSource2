@@ -1,0 +1,38 @@
+version: 1
+id: main-display
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x00467c90
+  - 0x00468520
+  - 0x0046a0f0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/core-main-loop.md
+  - re/evidence/fixtures/core-calls-mnA.txt
+  - re/evidence/fixtures/core-calls-mnB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/core_display.cpp
+  - re/gdb/probes/core_specs_main.py
+  - re/gdb/probes/core_specs_main_cases.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/core_retail_calls_test.cpp
+  - tests/test_core_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mn): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (core_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 3 of the 3 functions (a frame''s drawing: Display (the message line, the camera update, the close-camera toggle, the five viewport layouts, the panel, the front end, the balance meters and the fade), M3D_RenderStage (the world objects, the skaters, the player drawn in front through the GTE, the versus pointer, the cleanup) and Game_Display) are replayed over 1157 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 150 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - `Display` sets the viewport layout to 0 before it reads it: the other four layouts are reached by the mouse-cursor service changing the word, which the probe scripts; the 14 bytes of stack garbage the 32-byte matrix copy of the front-drawn player carries are skipped (two bytes of padding).'

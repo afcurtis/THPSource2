@@ -1,0 +1,57 @@
+version: 1
+subsystem: player-physics
+focus:
+  id: position-write-path
+  function: Skater_PositionWritePath
+  start_va: 0x00496060
+  end_va: 0x00496276
+  module: text_00496060
+  status: asm
+abi:
+  convention: thiscall
+  this_register: ECX
+  this_role: skater/player object
+  stack_arguments:
+    - {name: proposed_x, offset: 0x04, width: 4}
+    - {name: proposed_y, offset: 0x08, width: 4}
+    - {name: proposed_z, offset: 0x0c, width: 4}
+  callee_stack_cleanup: 0x0c
+object_fields:
+  - {offset: 0x08, role: position_x, access: read-write, confidence: observed}
+  - {offset: 0x0c, role: position_y, access: read-write, confidence: observed}
+  - {offset: 0x10, role: position_z, access: read-write, confidence: observed}
+  - {offset: 0x3200, role: position_commit_bypass_gate, access: read, confidence: observed}
+globals:
+  - {address: 0x00567c7c, role: collision_query_guard, access: save-set-restore, confidence: inferred}
+paths:
+  fast:
+    condition: player[0x3200] != 0
+    effect: commit proposed XYZ directly to player position
+    reconstructed: true
+  collision_resolution:
+    condition: player[0x3200] == 0
+    effect: test proposed/current coordinate combinations and commit an accepted candidate
+    accepted_result: collision_query returns no hit record
+    reconstructed: true
+calls:
+  - {address: 0x004624d0, role: initialize collision query from segment endpoints, confidence: observed, status: asm}
+  - {address: 0x00466090, role: collision-query forwarding wrapper, confidence: observed, status: asm}
+  - {address: 0x004660b0, role: partitioned collision-query implementation, confidence: observed, status: asm}
+candidate_order:
+  - proposed_xyz
+  - current_x_proposed_yz
+  - proposed_xy_current_z
+  - proposed_x_current_y_proposed_z
+  - proposed_x_current_yz
+  - current_xy_proposed_z
+  - current_x_proposed_y_current_z
+fallback: current_xyz
+evidence:
+  - re/evidence/functions/position-write-path.md
+  - re/evidence/functions/collision-query.md
+  - re/evidence/functions/physics.md
+  - re/evidence/functions/player-frame-integration.md
+  - re/evidence/fixtures/player-frame-integration.json
+next_tests:
+  - locate the writer for player[0x3200] and trace its nonzero direct-commit path
+  - extend candidate-success observations to additional grounded and airborne surfaces

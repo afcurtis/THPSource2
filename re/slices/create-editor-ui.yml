@@ -1,0 +1,107 @@
+version: 1
+id: create-editor-ui
+subsystem: create
+status: complete
+
+scope:
+  functions:
+    - 0x00425a40
+    - 0x00425b40
+    - 0x00425b60
+    - 0x00425b70
+    - 0x00425fa0
+    - 0x004261f0
+    - 0x00426210
+    - 0x004262a0
+    - 0x004262c0
+    - 0x00426300
+    - 0x00426310
+    - 0x004271a0
+    - 0x004271c0
+    - 0x004277e0
+    - 0x00427800
+    - 0x00427920
+    - 0x00427be0
+    - 0x00427dc0
+    - 0x00427e40
+    - 0x004280d0
+    - 0x004281e0
+    - 0x004282d0
+    - 0x004283f0
+    - 0x00428420
+    - 0x004288a0
+    - 0x00428c80
+    - 0x00428ca0
+    - 0x004292d0
+    - 0x0042b4c0
+    - 0x0042be40
+    - 0x0042be60
+    - 0x0042be70
+    - 0x0042be80
+    - 0x0042c6f0
+    - 0x0042c710
+    - 0x0042c860
+    - 0x0042c910
+    - 0x0042c940
+    - 0x0042cb50
+    - 0x0042cb60
+    - 0x0042cb70
+    - 0x0042cb80
+    - 0x004b5ba0
+    - 0x004b5bb0
+    - 0x004b6060
+    - 0x004b6080
+    - 0x004b7430
+    - 0x004b77b0
+    - 0x004b77d0
+    - 0x004b7960
+    - 0x004b7b50
+    - 0x004b7f40
+    - 0x004b8020
+    - 0x004b8080
+    - 0x004b8090
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/create-editor-ui.md
+    - re/evidence/fixtures/crscreen-calls-credit.txt
+    - re/evidence/fixtures/crscreen-calls-crloop.txt
+    - re/evidence/fixtures/crscreen-calls-crsave.txt
+    - re/evidence/fixtures/crscreen-calls-crstat.txt
+    - re/evidence/fixtures/crscreen-calls-crui.txt
+  native:
+    - src/runtime/create_screens.hpp
+    - src/runtime/create_screens_ui.cpp
+    - src/runtime/create_screens_stat.cpp
+    - src/runtime/create_screens_save.cpp
+    - src/runtime/create_screens_editor.cpp
+    - src/runtime/create_spool.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/create_spool.hpp
+    - src/runtime/skater_manager.hpp
+    - src/runtime/skater_window_helpers.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_menu.py
+    - re/gdb/probes/frontend_specs_skwin.py
+    - re/gdb/probes/frontend_specs_skstat.py
+    - re/gdb/probes/frontend_specs_screens.py
+    - re/gdb/probes/frontend_specs_screens_cases.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/create_screens_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/create_screens_test.cpp
+    - tests/test_create_screens.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the crui, crsave, crstat, credit and crloop groups): the retail function is called on a random legal state built in a scratch slab, its virtual methods and every service outside the file stubbed (fake vtables whose slots are retail functions nothing here reaches, one per method, so each call is a named service carrying the object); the return value, every written byte and the ordered service calls are compared with the native replay (`create_screens_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 55 of the 55 functions are replayed over 2072 cases with no mismatch, assertion paths included where retail survives them.'
+  - Documented exclusion, not a blocker - the pages of 4.10d (personal, appearance and stat pages' polls, loads and updates), the trick-list window, the memory-card screen and the engine's model, spool, sprite and render calls are seams reported by name with the arguments retail passed; the three screen loops are replayed with their window's step, update, draw and deleting destructor as seams (those methods are replayed on their own), because the window base reports a child's virtual calls as services where a window built by retail holds real children.

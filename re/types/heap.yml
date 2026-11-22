@@ -1,0 +1,106 @@
+version: 1
+types:
+  - name: RuntimeHeapBlockHeader
+    kind: fixed_layout
+    size: 0x08
+    confidence: confirmed
+    description: "The 8-byte header of a block of the game's heap (mem.cpp, 0x0046e7f0..0x0046f52f). The payload follows at +8. An allocated block keeps the zone in the tag nibble; a free block keeps whatever junk nibble the memory had when it was cut, and the merge in AddToFreeList adds those nibbles into the size, so the word is read and written whole."
+    fields:
+      - offset: 0x00
+        name: size_and_tag
+        type: u32
+        confidence: confirmed
+        description: "payload size in bytes << 4 (28 bits), tag nibble in the low four bits (the zone, 0 or 1, of an allocated block)"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+      - offset: 0x04
+        name: next_free
+        type: pointer<RuntimeHeapBlockHeader>
+        confidence: confirmed
+        description: "free blocks only: the next free block of the zone, ordered by address (0 ends the list); in an allocated block this is payload"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+
+  - name: RuntimeHeapZoneBounds
+    kind: fixed_layout
+    size: 0x08
+    confidence: confirmed
+    description: "The first and the end address of one zone of the game's heap, as Mem_Init reads them (the zone table at 0x0056a97c holds two)."
+    fields:
+      - offset: 0x00
+        name: begin
+        type: u32
+        confidence: confirmed
+        description: "address of the zone's first block"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+      - offset: 0x04
+        name: end
+        type: u32
+        confidence: confirmed
+        description: "address one past the zone's last byte"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+
+  - name: RuntimeHeapGlobals
+    kind: fixed_layout
+    size: 0x38
+    confidence: confirmed
+    description: "The allocator's globals, 0x0056a964..0x0056a99b: the window the forced-call probe pokes and compares. Mem_GetFree reads past the two-zone tables for a zone outside 0..1, which is why the unused words are fields."
+    fields:
+      - offset: 0x00
+        name: free_head
+        type: array<pointer<RuntimeHeapBlockHeader>,2>
+        confidence: confirmed
+        description: "per zone, the first block of its free list (0: none)"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+      - offset: 0x08
+        name: used_bytes
+        type: array<u32,2>
+        confidence: confirmed
+        description: "per zone, the bytes handed out (payload plus 8 per block)"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+      - offset: 0x10
+        name: unused_10
+        type: array<u32,2>
+        confidence: observed
+        description: "the words (0x0056a974, 0x0056a978) nothing writes; Mem_GetFree reads them for a zone of 2 or 3"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+      - offset: 0x18
+        name: zones
+        type: array<RuntimeHeapZoneBounds,2>
+        confidence: confirmed
+        description: "per zone, the first and the end address (set by the startup code before Mem_Init)"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+      - offset: 0x28
+        name: low_memory
+        type: u32
+        confidence: confirmed
+        description: "1 when zone 1's use has reached the limit"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+      - offset: 0x2c
+        name: limit
+        type: u32
+        confidence: confirmed
+        description: "98 % of zone 1 (Mem_Init)"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+      - offset: 0x30
+        name: allocation_counter
+        type: u32
+        confidence: confirmed
+        description: "allocations so far, 31 bits (Mem_NewX and Mem_NewTop increment it)"
+        evidence:
+          - re/evidence/functions/heap-allocator.md
+      - offset: 0x34
+        name: unused_34
+        type: u32
+        confidence: observed
+        description: "the word (0x0056a998) nothing writes; the last of the window"
+        evidence:
+          - re/evidence/functions/heap-allocator.md

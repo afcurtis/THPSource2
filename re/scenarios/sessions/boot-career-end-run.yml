@@ -1,0 +1,20 @@
+version: 1
+description: The career Hangar session, then pause (Esc), End Run (Down x3, Enter), and Enter through the statistics screen; the run restarts.
+deliveries: 7000
+keys:
+  - {poll: 500, key: enter, hold: 5}
+  - {poll: 600, key: enter, hold: 5}
+  - {poll: 700, key: enter, hold: 5}
+  - {poll: 800, key: enter, hold: 5}
+  - {poll: 900, key: enter, hold: 5}
+  - {poll: 1000, key: enter, hold: 5}
+  - {poll: 1100, key: enter, hold: 5}
+  - {poll: 2000, key: esc, hold: 5}
+  - {poll: 2100, key: down, hold: 5}
+  - {poll: 2150, key: down, hold: 5}
+  - {poll: 2200, key: down, hold: 5}
+  - {poll: 2300, key: enter, hold: 5}
+  - {poll: 2450, key: enter, hold: 5}
+  - {poll: 2600, key: enter, hold: 5}
+  - {poll: 2750, key: enter, hold: 5}
+  - {poll: 2900, key: f9, hold: 2}

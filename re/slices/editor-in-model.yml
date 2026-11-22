@@ -1,0 +1,41 @@
+version: 1
+id: editor-in-model
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x0043f730
+  - 0x0043f7b0
+  - 0x0043f820
+  - 0x0043f8e0
+  - 0x0043f8f0
+  - 0x0043f900
+  - 0x0043f930
+  - 0x0043fda0
+  - 0x004436a0
+  - 0x004436d0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/generator-objects.md
+  - re/evidence/fixtures/gen-calls-gpool.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/gen_objs.hpp
+  - src/runtime/gen_objs_pool.cpp
+  - re/gdb/probes/gen_specs.py
+  - re/gdb/probes/gen_specs_poly.py
+  - re/gdb/probes/gen_specs_model.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/gen_objs_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_generator_objects.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of gen_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`gen_objs_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 10 of the 10 functions (the model-info pool and the in-model, with the allocator wrappers they use) are replayed over 791 cases with no mismatch (at least 72 cases each).'
+- Documented exclusion, not a blocker - the allocator and Mem_Delete are services; the fifth point of a three-point element is a stack leftover in retail and is not compared; a pool whose index runs past 100 is generated only for the single block the assertion lets through.

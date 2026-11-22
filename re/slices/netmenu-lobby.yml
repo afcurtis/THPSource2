@@ -1,0 +1,62 @@
+version: 1
+id: netmenu-lobby
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x0047cbb0
+    - 0x0047cda0
+    - 0x0047cdb0
+    - 0x0047cdc0
+    - 0x0047e210
+    - 0x0047e3c0
+    - 0x0047e3e0
+    - 0x0047e4e0
+    - 0x0047e770
+    - 0x0047f1e0
+    - 0x0047f240
+    - 0x0047f820
+    - 0x0047f830
+    - 0x0047fac0
+    - 0x0047fad0
+    - 0x0047fc70
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/shell-and-lobby.md
+    - re/evidence/fixtures/front-calls-net1.txt
+    - re/evidence/fixtures/front-calls-net2.txt
+    - re/evidence/fixtures/front-calls-net4.txt
+  native:
+    - src/runtime/netmenu.hpp
+    - src/runtime/netmenu.cpp
+    - src/runtime/netmenu_update.cpp
+    - src/runtime/netmenu_state.cpp
+    - src/runtime/netmenu_summary.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - re/gdb/probes/frontend_specs_net.py
+    - re/gdb/probes/frontend_specs_menu.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/front_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/shell_test.cpp
+    - tests/test_front_shell.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the net1, net2 and net4 groups: the window as a fake object with fake lists and items, the network layer''s statics poked and its answers scripted, the pads'' edge bytes poked; the CRT''s sprintf runs for real): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`front_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 16 of the 16 functions are replayed over 1375 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's text, sprite, sound, pad, card, spooler, model and script calls and the competition and replay layers other files own are seams reported by name with the arguments retail passed; a handful of branches that need an unreachable state (a hung menu, an assertion that ends the game) are covered by the unit tests only.

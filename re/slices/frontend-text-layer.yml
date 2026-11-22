@@ -1,0 +1,122 @@
+version: 1
+id: frontend-text-layer
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x0044a070
+    - 0x0044a4d0
+    - 0x0044a540
+    - 0x0044a570
+    - 0x0044a5c0
+    - 0x0044a620
+    - 0x0044a860
+    - 0x0044a8e0
+    - 0x0044aaa0
+    - 0x0044ab70
+    - 0x0044ab90
+    - 0x0044aba0
+    - 0x0044abb0
+    - 0x0044abe0
+    - 0x0044ad30
+    - 0x0044ad80
+    - 0x0044af90
+    - 0x004734b0
+    - 0x004734f0
+    - 0x00473500
+    - 0x00473510
+    - 0x00473580
+    - 0x004735b0
+    - 0x004735d0
+    - 0x00473650
+    - 0x00473690
+    - 0x004736c0
+    - 0x004736f0
+    - 0x00473730
+    - 0x00473760
+    - 0x004737c0
+    - 0x004739d0
+    - 0x004739e0
+    - 0x00473a00
+    - 0x00473b80
+    - 0x00473be0
+    - 0x00473bf0
+    - 0x004b94a0
+    - 0x004b94c0
+    - 0x004b94e0
+    - 0x004b94f0
+    - 0x004b95a0
+    - 0x004b9610
+    - 0x004b9690
+    - 0x004b9710
+    - 0x004b9720
+    - 0x004b9730
+    - 0x004b9750
+    - 0x004b9770
+    - 0x004b9780
+    - 0x004b9790
+    - 0x004b9820
+    - 0x004b9860
+    - 0x004b9ac0
+    - 0x004b9ae0
+    - 0x004b9b30
+    - 0x004b9c80
+    - 0x004b9d50
+    - 0x004b9d60
+    - 0x004b9de0
+    - 0x004b9e00
+    - 0x004b9ef0
+    - 0x004b9fb0
+    - 0x004ba020
+    - 0x004ba040
+    - 0x004ba060
+    - 0x004ba070
+    - 0x004ba430
+    - 0x004ba450
+    - 0x004ba480
+    - 0x004ba760
+    - 0x004ba780
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/frontend-text-layer.md
+    - re/evidence/fixtures/frontend-calls-effects.txt
+    - re/evidence/fixtures/frontend-calls-font.txt
+    - re/evidence/fixtures/frontend-calls-mess.txt
+    - re/evidence/fixtures/frontend-calls-trace-careerselect.txt
+    - re/evidence/fixtures/frontend-calls-trace-mainmenu.txt
+    - re/evidence/fixtures/frontend-calls-window-elements.txt
+    - re/evidence/fixtures/frontend-calls-window.txt
+  native:
+    - src/runtime/frontend_effects.cpp
+    - src/runtime/frontend_effects.hpp
+    - src/runtime/frontend_mess.cpp
+    - src/runtime/frontend_mess.hpp
+    - src/runtime/frontend_text.cpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_text.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_common.py
+    - re/gdb/probes/frontend_specs_font.py
+    - re/gdb/probes/frontend_specs_mess.py
+    - re/gdb/probes/frontend_specs_window.py
+    - re/gdb/probes/frontend_specs_effects.py
+    - re/gdb/probes/frontend_trace.py
+    - scripts/make_career_calls_fixture.py
+    - scripts/make_frontend_trace_fixture.py
+  tests:
+    - src/runtime/frontend_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/frontend_test.cpp
+    - tests/test_frontend_text.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/frontend_calls.py`): the retail function is called on random legal state laid out in a scratch slab and at its retail addresses, its virtual methods and outside services stubbed; the return value, every written byte and the ordered service calls are compared with the native replay (`frontend_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The font code (fonttools.cpp), the message layer (mess.cpp) and the text effects (texteffects.cpp): 72 of the 72 functions are replayed over 2328 cases with no mismatch, assertion paths included.'

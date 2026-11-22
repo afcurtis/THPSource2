@@ -1,0 +1,2062 @@
+version: 1
+types:
+  - name: RuntimeGameplaySkater
+    kind: fixed_layout
+    size: 0x3538
+    confidence: confirmed
+    description: Gameplay skater object allocated by the player-object creator; this is the object published at the two global player slots, not the contained camera object.
+    fields:
+      - offset: 0x1f
+        name: psx_region_slot
+        type: u8
+        confidence: observed
+        description: Region/object slot byte consumed by the shared PSX model/appearance path.
+        evidence:
+          - re/evidence/functions/player-runtime.md
+          - re/evidence/functions/renderer.md
+          - re/evidence/functions/animation-runtime.md
+      - offset: 0x1a
+        name: model_index
+        type: u16
+        confidence: observed
+        description: Model-table index paired with psx_region_slot by the shared renderer path.
+        evidence:
+          - re/evidence/functions/player-runtime.md
+          - re/evidence/functions/renderer.md
+      - offset: 0x29b0
+        name: camera
+        type: pointer<CCamera>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/player-runtime.md
+      - offset: 0x29bc
+        name: peer_skater
+        type: pointer<RuntimeGameplaySkater>
+        confidence: confirmed
+        description: Bidirectional peer link established for two-player mode.
+        evidence:
+          - re/evidence/functions/player-runtime.md
+      - offset: 0x2cc0
+        name: skater_resource
+        type: pointer<void>
+        confidence: confirmed
+        description: Selected skater-manager resource pointer.
+        evidence:
+          - re/evidence/functions/player-runtime.md
+          - re/evidence/functions/skater-asset-runtime.md
+      - offset: 0x2cc4
+        name: player_index
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/player-runtime.md
+      - offset: 0x2ccc
+        name: action_record_bank
+        type: pointer<void>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/player-runtime.md
+          - re/evidence/functions/physics.md
+      - offset: 0x2cd0
+        name: appearance_resource_10
+        type: pointer<void>
+        confidence: observed
+        description: Appearance resource handle returned by the manager lookup for resource id 0x10.
+        evidence:
+          - re/evidence/functions/player-runtime.md
+      - offset: 0x2cd4
+        name: appearance_resource_11
+        type: pointer<void>
+        confidence: observed
+        description: Appearance resource handle returned by the manager lookup for resource id 0x11.
+        evidence:
+          - re/evidence/functions/player-runtime.md
+      - offset: 0x2cd8
+        name: appearance_resource_12
+        type: pointer<void>
+        confidence: observed
+        description: Appearance resource handle returned by the manager lookup for resource id 0x12.
+        evidence:
+          - re/evidence/functions/player-runtime.md
+      - offset: 0x2cdc
+        name: field_2cdc
+        type: i32
+        confidence: observed
+        description: Value compared between the primary and secondary skaters by LevelEvent_InitializeAndDispatch.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: 0x2dd4
+        name: field_2dd4
+        type: i32
+        confidence: observed
+        description: Eligibility word tested by the level-event per-frame update alongside physics_state.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: 0xf6
+        name: field_f6
+        type: u16
+        confidence: observed
+        description: Animation identifier read by the level-event state-7 idle/step-off branch.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: 0x107
+        name: field_107
+        type: u8
+        confidence: observed
+        description: Byte tested by the level-event state-selected animation branch.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: 0x30b8
+        name: physics_state
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/player-runtime.md
+          - re/evidence/functions/physics.md
+      - offset: 0x3144
+        name: turn_accumulator
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/player-runtime.md
+          - re/evidence/functions/physics.md
+      - offset: 0x3148
+        name: turn_accumulator_mirror
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/player-runtime.md
+          - re/evidence/functions/physics.md
+      - offset: 0x176
+        name: best_trick_stack_count
+        type: u16
+        confidence: observed
+        description: Count snapshot written by the landed-score commit when a new best trick score is set.
+        evidence:
+          - re/evidence/functions/bin-runtime.md
+      - offset: 0x178
+        name: best_landed_trick_score
+        type: i32
+        confidence: confirmed
+        description: Best landed-trick value compared and replaced by the score-state commit.
+        evidence:
+          - re/evidence/functions/bin-runtime.md
+      - offset: 0x16c
+        name: event_committed_score_total
+        type: i32
+        confidence: observed
+        description: Destination receiving landed-total score +0x2a8 when the level-event countdown finalizes a pending score.
+        evidence:
+          - re/evidence/functions/level-event-runtime.md
+      - offset: 0x2858
+        name: active_trick_stack_count
+        type: i32
+        confidence: confirmed
+        description: Active trick-stack count consumed by scoring and panel paths.
+        evidence:
+          - re/evidence/functions/bin-runtime.md
+      - offset: 0x2a8
+        name: landed_total_score
+        type: i32
+        confidence: confirmed
+        description: Landed-score accumulator read by the panel and updated at stack commit.
+        evidence:
+          - re/evidence/functions/bin-runtime.md
+      - offset: 0x2ac
+        name: current_landed_trick_score
+        type: i32
+        confidence: confirmed
+        description: Current score value produced when the active trick stack is committed.
+        evidence:
+          - re/evidence/functions/bin-runtime.md
+      - offset: 0x2f74
+        name: active_gap_checksum_slots
+        type: array<i32,20>
+        confidence: confirmed
+        description: Twenty checksum slots scanned and cleared by the TRG 0xc9 gap-command path; the adjacent index array at +0x2fc4 selects the matching executable gap definition.
+        evidence:
+          - re/evidence/functions/gap-runtime.md
+      - offset: 0x2fc4
+        name: active_gap_definition_indices
+        type: array<i32,20>
+        confidence: confirmed
+        description: Twenty definition-table indices paired with the checksum slots at +0x2f74.
+        evidence:
+          - re/evidence/functions/gap-runtime.md
+      - offset: 0x3014
+        name: deferred_gap_definition_state4
+        type: pointer<RuntimeGapDefinition>
+        confidence: observed
+        description: Definition pointer retained for the state-4 deferred gap branch when the table flags include bit 0x08; its source command-point node is at +0x301c.
+        evidence:
+          - re/evidence/functions/gap-runtime.md
+      - offset: 0x3018
+        name: deferred_gap_definition_ground
+        type: pointer<RuntimeGapDefinition>
+        confidence: observed
+        description: Definition pointer retained for the ordinary-ground deferred gap branch when the table flags include bit 0x40; its source command-point node is at +0x3020.
+        evidence:
+          - re/evidence/functions/gap-runtime.md
+      - offset: 0x301c
+        name: deferred_gap_source_state4
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/gap-runtime.md
+      - offset: 0x3020
+        name: deferred_gap_source_ground
+        type: i32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/gap-runtime.md
+      - offset: 0x3024
+        name: pending_gap_trick
+        type: pointer<void>
+        confidence: observed
+        description: Pending gap-trick object consumed and cleared by the landed-score path.
+        evidence:
+          - re/evidence/functions/bin-runtime.md
+      - offset: 0x3028
+        name: pending_gap_trick_secondary
+        type: pointer<void>
+        confidence: observed
+        description: Secondary pending gap-trick pointer consumed and cleared by the landed-score path.
+        evidence:
+          - re/evidence/functions/bin-runtime.md
+      - offset: 0x08
+        name: position
+        type: RuntimeIntVector3
+        confidence: observed
+        description: Q12 world position (the head every list object shares); Display compares +0xc with the water level and the draw-in-front pass swaps all three with the vector at +0x90.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x4c
+        name: velocity
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "The velocity (the ground physics moves the position by it, scaled by the time, and the air physics rebuilds it from the basis); Game_Init sets each word to 20 times the matching word of the vector at +0x30f4 for the ten warm-up camera updates, then clears them."
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+          - re/evidence/functions/physics.md
+      - offset: 0x90
+        name: saved_position
+        type: RuntimeIntVector3
+        confidence: observed
+        description: The position the draw-in-front pass draws the model at.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x9c
+        name: field_9c
+        type: i16
+        confidence: observed
+        description: Read with +0x9e and +0xa0 by the draw-in-front pass (lean = -(+0x9c << 12) / +0x9e).
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x9e
+        name: field_9e
+        type: i16
+        confidence: observed
+        description: The divisor of the draw-in-front lean and roll; raised from 0 to 1 first.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0xa0
+        name: field_a0
+        type: i16
+        confidence: observed
+        description: The numerator of the draw-in-front roll.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0xd8
+        name: field_d8
+        type: u32
+        confidence: observed
+        description: Bit 1 is set when the skater manager says the character is selectable.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0xdc
+        name: draw_in_front
+        type: u8
+        confidence: observed
+        description: The draw-in-front flag M3D_RenderStage clears around the player pass and restores.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x163
+        name: selectable
+        type: u8
+        confidence: observed
+        description: The skater manager's selectable byte, stored by SkaterObjects_Create.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x2cc8
+        name: field_2cc8
+        type: u32
+        confidence: observed
+        description: Stored by the replay set-up (simulation time + 0x34bde); the versus clock adds the animation accumulator's difference to it.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x2e30
+        name: field_2e30
+        type: u32
+        confidence: observed
+        description: Game_LevelLoop stores the animation accumulator + 1.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x2e58
+        name: model_matrix
+        type: RuntimeMatrixTransform
+        confidence: observed
+        description: The skater's rotation matrix; the draw-in-front pass rebuilds it through the GTE and copies all 32 bytes back.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x2f14
+        name: field_2f14
+        type: u32
+        confidence: observed
+        description: The word Display hands to the balance-meter draw.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x2f64
+        name: field_2f64
+        type: u32
+        confidence: observed
+        description: M3D_RenderStage sets the 16-bit global at 0x0056436a to 0 instead of 0x80 when this word is nonzero (while +0x30b8 is nonzero).
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x308c
+        name: voice_308c
+        type: u32
+        confidence: observed
+        description: A sound handle stopped when the level-start countdown ends (-1 is free).
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x3090
+        name: voice_3090
+        type: u32
+        confidence: observed
+        description: A sound handle stopped when the level-start countdown ends (-1 is free).
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x3094
+        name: voice_3094
+        type: u32
+        confidence: observed
+        description: A sound handle stopped when the level-start countdown ends (-1 is free).
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x30f4
+        name: vector_30f4
+        type: RuntimeIntVector3
+        confidence: observed
+        description: The three words Game_Init multiplies by 20 into +0x4c.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x317c
+        name: depth_scale_source
+        type: i32
+        confidence: observed
+        description: The draw-in-front pass submits the model with depth scale 1 - clamp(+0x317c / 255, 0, 1).
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x31f0
+        name: field_31f0
+        type: u32
+        confidence: observed
+        description: The second argument of the per-player object draw.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x3210
+        name: field_3210
+        type: u32
+        confidence: observed
+        description: Display draws the balance meter for a player whose +0x2dd4 and +0x3210 are both nonzero.
+        evidence:
+          - re/evidence/functions/core-main-loop.md
+      - offset: 0x58
+        name: acceleration
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "The acceleration: half of it, scaled by the time step, moves the position each frame; the floor step adds to it and the sideways damping takes from it."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x80
+        name: orientation_angles
+        type: RuntimeShortVector3
+        confidence: observed
+        description: "Three shorts: the normal of the ground hit (the ground physics stores the hit normal here when it differs from what is kept) and the orientation the surface step reads."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0xbc
+        name: previous_position
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "The position at the start of the frame: the ground physics casts its move line from here to the new position at +0x8."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0xf4
+        name: field_f4
+        type: u16
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x100
+        name: field_100
+        type: u8
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x101
+        name: field_101
+        type: u8
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29c8
+        name: field_29c8
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29d0
+        name: field_29d0
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29e0
+        name: field_29e0
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29f0
+        name: field_29f0
+        type: u16
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29f2
+        name: field_29f2
+        type: u16
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c08
+        name: field_2c08
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c60
+        name: field_2c60
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c68
+        name: field_2c68
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c6c
+        name: field_2c6c
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c70
+        name: field_2c70
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c74
+        name: field_2c74
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c80
+        name: field_2c80
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c84
+        name: field_2c84
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c88
+        name: field_2c88
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c8c
+        name: field_2c8c
+        type: i32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c90
+        name: field_2c90
+        type: i32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2d88
+        name: field_2d88
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2d8c
+        name: field_2d8c
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2d90
+        name: field_2d90
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2d94
+        name: field_2d94
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2d98
+        name: field_2d98
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2d9c
+        name: field_2d9c
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2da4
+        name: field_2da4
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2da8
+        name: vector_2da8
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "Three words the floor step reads into its scratch vector and adds to the acceleration at +0x58."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2db4
+        name: field_2db4
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2dd0
+        name: field_2dd0
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2dd8
+        name: field_2dd8
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ddc
+        name: field_2ddc
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2de8
+        name: field_2de8
+        type: i32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2dfc
+        name: field_2dfc
+        type: i32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e00
+        name: vector_2e00
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "Three words the air-collision recovery subtracts from the frame-start position at +0xbc."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e0c
+        name: vector_2e0c
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "Three words the grounded bounce probe reads as the position it tests."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e18
+        name: vector_2e18
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "Copy of the position (+0x8) the ground physics takes at the start of the frame."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e24
+        name: field_2e24
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e28
+        name: field_2e28
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e2c
+        name: field_2e2c
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e34
+        name: field_2e34
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e80
+        name: field_2e80
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e90
+        name: field_2e90
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e94
+        name: field_2e94
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ec0
+        name: field_2ec0
+        type: i32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ec4
+        name: field_2ec4
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f00
+        name: field_2f00
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f10
+        name: field_2f10
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f18
+        name: field_2f18
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f20
+        name: field_2f20
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f24
+        name: field_2f24
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f38
+        name: field_2f38
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f3c
+        name: field_2f3c
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f40
+        name: field_2f40
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3030
+        name: field_3030
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3034
+        name: field_3034
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3064
+        name: field_3064
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3068
+        name: field_3068
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x306c
+        name: field_306c
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3074
+        name: field_3074
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3078
+        name: field_3078
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x307c
+        name: field_307c
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x30b0
+        name: field_30b0
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x30c4
+        name: field_30c4
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3100
+        name: vector_3100
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "Q12 basis vector (the second after +0x30f4): the sideways speed is taken off along it; the basis rebuild stores the right vector here."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x310c
+        name: vector_310c
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "Q12 basis vector, the up vector: the floor line runs from 70 above to 186 below the skater along it."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3118
+        name: vector_3118
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "Three words the floor step copies from its scratch vector."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3124
+        name: field_3124
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3128
+        name: field_3128
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x312c
+        name: field_312c
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3130
+        name: field_3130
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3134
+        name: vector_3134
+        type: RuntimeIntVector3
+        confidence: observed
+        description: "Three words the basis rebuild stores from the up vector's source words; the ground recovery reads them back."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x31a2
+        name: field_31a2
+        type: u8
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3200
+        name: field_3200
+        type: u32
+        confidence: observed
+        description: "Read or written by the ground physics (skater_ground_physics.cpp, Skater_DoGroundPhysics 0x00496550 and its helpers); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x24
+        name: field_24
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x28
+        name: field_28
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2a
+        name: field_2a
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2c
+        name: field_2c
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x40
+        name: field_40
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x6a
+        name: field_6a
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x7c
+        name: field_7c
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x7d
+        name: field_7d
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x7e
+        name: field_7e
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x88
+        name: field_88
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x8c
+        name: field_8c
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x8e
+        name: field_8e
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0xb2
+        name: field_b2
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0xb4
+        name: field_b4
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0xe0
+        name: field_e0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0xe4
+        name: field_e4
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x108
+        name: field_108
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x148
+        name: field_148
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x29f4
+        name: field_29f4
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2c54
+        name: field_2c54
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2c58
+        name: field_2c58
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2c5c
+        name: field_2c5c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2c78
+        name: field_2c78
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2c7c
+        name: field_2c7c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2dc8
+        name: field_2dc8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2ec8
+        name: field_2ec8
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x2edc
+        name: field_2edc
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x305c
+        name: field_305c
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3080
+        name: field_3080
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3174
+        name: field_3174
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3175
+        name: field_3175
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3176
+        name: field_3176
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3177
+        name: field_3177
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3178
+        name: field_3178
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3179
+        name: field_3179
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x317a
+        name: field_317a
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x317b
+        name: field_317b
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3180
+        name: field_3180
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3184
+        name: field_3184
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3188
+        name: field_3188
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x318c
+        name: field_318c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3190
+        name: field_3190
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x31a1
+        name: field_31a1
+        type: u8
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x31e0
+        name: field_31e0
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x31ec
+        name: field_31ec
+        type: u16
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3208
+        name: field_3208
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x320c
+        name: field_320c
+        type: u32
+        confidence: observed
+        description: "Read or written by the world Kit's skater methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/world-skater-methods.md
+      - offset: 0x3058
+        name: field_3058
+        type: u32
+        confidence: observed
+        description: "Read or written by the camera Kit's camera methods (the followed skater, `tripod`); the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/camera-system.md
+      - offset: 0xf8
+        name: field_f8
+        type: u8
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0xfa
+        name: field_fa
+        type: u16
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0xfc
+        name: field_fc
+        type: u16
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0xfe
+        name: field_fe
+        type: u16
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x102
+        name: field_102
+        type: u8
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x104
+        name: field_104
+        type: u16
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x106
+        name: field_106
+        type: u8
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x114
+        name: field_114
+        type: u16
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x14c
+        name: field_14c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29b4
+        name: field_29b4
+        type: u8
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29b5
+        name: field_29b5
+        type: u8
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29b6
+        name: field_29b6
+        type: u8
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29b7
+        name: field_29b7
+        type: u8
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29b8
+        name: field_29b8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29c0
+        name: field_29c0
+        type: u16
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29c4
+        name: field_29c4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29cc
+        name: field_29cc
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29d4
+        name: field_29d4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29d8
+        name: field_29d8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29dc
+        name: field_29dc
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29e4
+        name: field_29e4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x29e8
+        name: field_29e8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2a02
+        name: field_2a02
+        type: u16
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2a0c
+        name: field_2a0c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2a10
+        name: field_2a10
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2b14
+        name: field_2b14
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2bd8
+        name: field_2bd8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2bdc
+        name: field_2bdc
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2be0
+        name: field_2be0
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2be4
+        name: field_2be4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2be8
+        name: field_2be8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2bec
+        name: field_2bec
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2bf0
+        name: field_2bf0
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2bf4
+        name: field_2bf4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2bf8
+        name: field_2bf8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2bfc
+        name: field_2bfc
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c00
+        name: field_2c00
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c04
+        name: field_2c04
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c0c
+        name: field_2c0c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c10
+        name: field_2c10
+        type: i32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2c64
+        name: field_2c64
+        type: u16
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ca0
+        name: field_2ca0
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ca4
+        name: field_2ca4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ca8
+        name: field_2ca8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2cb0
+        name: field_2cb0
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2cbc
+        name: field_2cbc
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2da0
+        name: field_2da0
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2dcc
+        name: field_2dcc
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2de0
+        name: field_2de0
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2de4
+        name: field_2de4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2df8
+        name: field_2df8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e78
+        name: field_2e78
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e7c
+        name: field_2e7c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e88
+        name: field_2e88
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e8c
+        name: field_2e8c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2e98
+        name: field_2e98
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ea8
+        name: field_2ea8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ed8
+        name: field_2ed8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2eec
+        name: field_2eec
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2ef4
+        name: field_2ef4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2efc
+        name: field_2efc
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f2c
+        name: field_2f2c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f34
+        name: field_2f34
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f44
+        name: field_2f44
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f48
+        name: field_2f48
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f4c
+        name: field_2f4c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f50
+        name: field_2f50
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f54
+        name: field_2f54
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f58
+        name: field_2f58
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f60
+        name: field_2f60
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f68
+        name: field_2f68
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x2f70
+        name: field_2f70
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x302c
+        name: field_302c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3044
+        name: field_3044
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x304c
+        name: field_304c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3060
+        name: field_3060
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3070
+        name: field_3070
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3084
+        name: field_3084
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3088
+        name: field_3088
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3098
+        name: field_3098
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x309c
+        name: field_309c
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x30a0
+        name: field_30a0
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x30a4
+        name: field_30a4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x30a8
+        name: field_30a8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x30ac
+        name: field_30ac
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x30b4
+        name: field_30b4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x30c0
+        name: field_30c0
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x31f4
+        name: field_31f4
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x31f8
+        name: field_31f8
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x31fc
+        name: field_31fc
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+      - offset: 0x3204
+        name: field_3204
+        type: u32
+        confidence: observed
+        description: "Read or written by the skater Kit's physics, rail, pose, trick and event methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/physics.md
+          - re/evidence/functions/player-physics-collision-recovery.md
+
+  - name: RuntimeSkaterCameraObject
+    kind: alias
+    target: CCamera
+    confidence: confirmed
+    description: >-
+      Compatibility alias (11a, docs/PORT64_AUDIT.md D9). The camera object a RuntimeGameplaySkater owns is a CCamera (1652 bytes). The skater-side names were
+      owner_skater = tripod_link (+0x3a4), active = camera_mode (+0x504), point_transition_flag = anchor_update_flag (+0x3ac), point_transition_active =
+      tripod_anchor_flag (+0x3bc), selected_point_x/y/z_fixed = anchor_target_q16 (+0x3c0), transition_owner_skater = secondary_target_link (+0x3dc),
+      transition_selected = secondary_target_valid (+0x3e0), update_accumulator = field_5b4 (+0x5b4).

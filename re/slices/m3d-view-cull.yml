@@ -1,0 +1,35 @@
+version: 1
+id: m3d-view-cull
+subsystem: collision
+status: complete
+scope:
+  functions:
+  - 0x004f39f0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/m3d-culling-helpers.md
+  - re/evidence/fixtures/m3d-calls-m3hD.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/m3d_collision.cpp
+  - re/gdb/probes/m3d_specs_hit.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/m3d_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups m3h): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (m3d_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 1 of the 1 functions (the view-volume cull of a chain of objects: the position against two limits, the bounding sphere against six planes and the eight corners of the model box) are replayed over 1500 cases with no mismatch (at least 1500 cases each; the committed fixtures keep the first 30 of each capture per function, 30 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - nothing is a service; the render window runs the x87 at 24 bits, a forced call at 53, and the port rounds at the precision of its math kit (53 here), so the 24-bit case is not replayed.

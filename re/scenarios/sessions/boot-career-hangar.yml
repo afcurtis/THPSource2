@@ -1,0 +1,12 @@
+version: 1
+description: Boot, main menu, Career, skater and level select, load the Hangar and skate about 1,400 polls.
+deliveries: 6000
+keys:
+  - {poll: 500, key: enter, hold: 5}
+  - {poll: 600, key: enter, hold: 5}
+  - {poll: 700, key: enter, hold: 5}
+  - {poll: 800, key: enter, hold: 5}
+  - {poll: 900, key: enter, hold: 5}
+  - {poll: 1000, key: enter, hold: 5}
+  - {poll: 1100, key: enter, hold: 5}
+  - {poll: 2900, key: f9, hold: 2}

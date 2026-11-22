@@ -1,0 +1,46 @@
+version: 1
+id: frontend-bitmap-load
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x004afd40
+    - 0x004afd8c
+    - 0x004affe0
+    - 0x004b0060
+    - 0x004b0320
+    - 0x004b035e
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/bitmap-loader.md
+    - re/evidence/fixtures/front-calls-bmp-load.txt
+    - re/evidence/fixtures/front-calls-bmp-variants.txt
+  native:
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - src/runtime/shell_helpers.hpp
+    - src/runtime/shell_bitmap.cpp
+    - re/gdb/probes/frontend_specs_bmp.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/front_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - tests/test_bitmap_loader.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the bmp and bmpv groups: pictures of random size, colour count and palette poked into a scratch slab, the allocator, the file opener and reader, the VRAM transfer calls and GetFree256Slot reported by address (the palette upload as a text: the rectangle then its 512 bytes)): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`front_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 4 of the 4 functions (the tails are the same code) are replayed over 1200 cases with no mismatch.'
+  - Documented exclusion, not a blocker - the engine's VRAM, GPU packet, file and allocator calls are seams reported by name with the arguments retail passed; the two 16-bit variants index the palette with a signed byte, so the probe keeps their indices below 0x80 (a higher index reads stack leftovers in retail).

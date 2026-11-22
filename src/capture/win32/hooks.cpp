@@ -1,0 +1,1419 @@
+#include "hooks.h"
+#include "hook_engine.h"
+#include "../../hal/input.h"
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+#include <string.h>
+
+/* These globals are deliberately absolute for the one verified image.  The
+ * build check rejects rebased/unknown images before this code can run. */
+#define OTCAP_PLAYER_TABLE_ADDRESS 0x0056a858u
+#define OTCAP_ACTION_MASK_ADDRESS 0x006a3f1cu
+#define OTCAP_AIR_CONTROL_ADDRESS 0x0056b7f0u
+#define OTCAP_ANIMATION_CLOCK_ADDRESS 0x005685f4u
+#define OTCAP_ANIMATION_SCALE_ADDRESS 0x0056865cu
+#define OTCAP_ANIMATION_SCALE_SQUARE_ADDRESS 0x00568804u
+#define OTCAP_ANIMATION_CLOCK_ACCUMULATOR_ADDRESS 0x00568810u
+#define OTCAP_SIMULATION_TIME_ADDRESS 0x0056e320u
+#define OTCAP_TIMING_DELTA_ADDRESS 0x0056a93cu
+#define OTCAP_TIMER_STATE_ADDRESS 0x006a05a0u
+#define OTCAP_TIMER_PUBLIC_ACCUMULATOR_ADDRESS 0x006a0590u
+#define OTCAP_TIMER_SIMULATION_ACCUMULATOR_ADDRESS 0x006a0598u
+#define OTCAP_TIMER_PUBLIC_TICK_ADDRESS 0x0056e31cu
+#define OTCAP_TIMER_SIMULATION_TIME_ADDRESS 0x0056e320u
+#define OTCAP_TIMER_PAUSE_GATE_A_ADDRESS 0x00561c04u
+#define OTCAP_TIMER_PAUSE_GATE_B_ADDRESS 0x0056a8e0u
+#define OTCAP_KEYBOARD_STATE_ADDRESS 0x006a43e4u
+#define OTCAP_SIMULATION_TIME_PLAYER_OFFSET 0x2f44u
+#define OTCAP_FRONTEND_LEVEL_RESULT_ADDRESS 0x0045359bu
+#define OTCAP_FRONTEND_SELECTION_CALL_RETURN 0x0046af9fu
+#define OTCAP_FRONTEND_CONFIRM_SCAN_CODE 0x10u
+
+static CaptureBuffer *g_capture_buffer = 0;
+static LONG g_physics_frame_active = 0;
+static uint32_t g_physics_frame_index = 0;
+static uint32_t g_physics_player = 0;
+static uint32_t g_physics_input_mask = 0;
+static uint32_t g_physics_input_flags = 0;
+static CaptureCausalEvent g_frame_causal_events[OTCAP_MAX_CAUSAL_EVENTS];
+static uint32_t g_frame_causal_count = 0;
+static volatile uint32_t g_simulation_time_store_seen = 0;
+static volatile uint32_t g_simulation_time_store_value = 0;
+static uint8_t g_physics_before[OTCAP_PLAYER_BLOB_SIZE];
+static CaptureTimingSnapshot g_physics_timing_before;
+static void *g_physics_target = 0;
+static void *g_physics_trampoline = 0;
+static uint8_t g_physics_original[16];
+static uint32_t g_physics_overwrite_size = 0;
+static int g_physics_installed = 0;
+static void *g_input_target = 0;
+static void *g_input_trampoline = 0;
+static uint8_t g_input_original[16];
+static uint32_t g_input_overwrite_size = 0;
+static volatile uint32_t g_input_injected_frame = 0xffffffffu;
+static volatile uint32_t g_gameplay_ready = 0;
+static volatile uint32_t g_bootstrap_retired = 0;
+static int g_input_installed = 0;
+static CaptureTimerSample g_pending_timer_samples[OTCAP_MAX_TIMER_SAMPLES];
+static uint32_t g_pending_timer_count = 0;
+static uint32_t g_pending_timer_frame = 0xffffffffu;
+static CaptureTimerSample g_frame_timer_samples[OTCAP_MAX_TIMER_SAMPLES];
+static uint32_t g_frame_timer_count = 0;
+static int g_initial_timer_captured = 0;
+static void *g_timer_target = 0;
+static void *g_timer_trampoline = 0;
+static uint8_t g_timer_original[16];
+static uint32_t g_timer_overwrite_size = 0;
+static int g_timer_installed = 0;
+static void *g_clock_read_target = 0;
+static void *g_clock_read_trampoline = 0;
+static uint8_t g_clock_read_original[16];
+static uint32_t g_clock_read_overwrite_size = 0;
+static int g_clock_read_installed = 0;
+static void *g_simulation_time_store_target = 0;
+static void *g_simulation_time_store_trampoline = 0;
+static uint8_t g_simulation_time_store_original[16];
+static uint32_t g_simulation_time_store_overwrite_size = 0;
+static int g_simulation_time_store_installed = 0;
+static void *g_shared_random_target = 0;
+static void *g_shared_random_trampoline = 0;
+static uint8_t g_shared_random_original[16];
+static uint32_t g_shared_random_overwrite_size = 0;
+static int g_shared_random_installed = 0;
+static void *g_frontend_play_target = 0;
+static void *g_frontend_play_trampoline = 0;
+static uint8_t g_frontend_play_original[16];
+static uint32_t g_frontend_play_overwrite_size = 0;
+static int g_frontend_play_installed = 0;
+static void *g_frontend_level_target = 0;
+static void *g_frontend_level_trampoline = 0;
+static uint8_t g_frontend_level_original[16];
+static uint32_t g_frontend_level_overwrite_size = 0;
+static int g_frontend_level_installed = 0;
+static volatile uint32_t g_frontend_level_override = 0;
+static volatile uint32_t g_frontend_level_override_valid = 0;
+static void *g_launch_level_target = 0;
+static void *g_launch_level_trampoline = 0;
+static uint8_t g_launch_level_original[16];
+static uint32_t g_launch_level_overwrite_size = 0;
+static int g_launch_level_installed = 0;
+static void *g_movie_primary_target = 0;
+static uint8_t g_movie_primary_original[16];
+static uint32_t g_movie_primary_overwrite_size = 0;
+static int g_movie_primary_installed = 0;
+static void *g_movie_secondary_target = 0;
+static uint8_t g_movie_secondary_original[16];
+static uint32_t g_movie_secondary_overwrite_size = 0;
+static int g_movie_secondary_installed = 0;
+static void *g_frontend_key_target = 0;
+static void *g_frontend_key_trampoline = 0;
+static uint8_t g_frontend_key_original[16];
+static uint32_t g_frontend_key_overwrite_size = 0;
+static int g_frontend_key_installed = 0;
+static void *g_frontend_summary_target = 0;
+static void *g_frontend_summary_trampoline = 0;
+static uint8_t g_frontend_summary_original[16];
+static uint32_t g_frontend_summary_overwrite_size = 0;
+static int g_frontend_summary_installed = 0;
+/* These hooks mirror the GDB bootstrap commands, whose breakpoints are
+ * one-shot.  Keeping the detours installed but disarming their side effects
+ * after the first matching boundary avoids rewriting frontend locals during
+ * the ordinary gameplay loop. */
+static volatile uint32_t g_frontend_play_armed = 1;
+static volatile uint32_t g_frontend_level_armed = 1;
+static volatile uint32_t g_launch_level_armed = 1;
+static volatile uint32_t g_frontend_confirm_armed = 1;
+static volatile uint32_t g_frontend_summary_armed = 1;
+static volatile uint32_t g_frontend_summary_active = 0;
+static volatile uint32_t g_frontend_summary_key_ticks = 0;
+
+static void retire_bootstrap_hooks(void);
+
+static void disarm_frontend_hook(
+    void *target,
+    uint32_t overwrite_size,
+    const uint8_t *original,
+    int *installed) {
+    if (target != 0 && overwrite_size != 0 && original != 0 &&
+        installed != 0 && *installed != 0) {
+        if (ot_capture_restore_target(
+                (unsigned char *)target, overwrite_size, original)) {
+            *installed = 0;
+        }
+    }
+}
+
+typedef struct CaptureSha256 {
+    uint32_t state[8];
+    uint64_t bits;
+    uint8_t block[64];
+    uint32_t block_size;
+} CaptureSha256;
+
+static const uint32_t k_sha256_constants[64] = {
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b,
+    0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01,
+    0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7,
+    0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+    0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152,
+    0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
+    0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc,
+    0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819,
+    0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08,
+    0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f,
+    0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+};
+
+static uint32_t sha_rotr(uint32_t value, uint32_t count) {
+    return (value >> count) | (value << (32u - count));
+}
+
+static uint32_t sha_load32(const uint8_t *bytes) {
+    return ((uint32_t)bytes[0] << 24) | ((uint32_t)bytes[1] << 16) |
+        ((uint32_t)bytes[2] << 8) | (uint32_t)bytes[3];
+}
+
+static void sha_store32(uint8_t *bytes, uint32_t value) {
+    bytes[0] = (uint8_t)(value >> 24);
+    bytes[1] = (uint8_t)(value >> 16);
+    bytes[2] = (uint8_t)(value >> 8);
+    bytes[3] = (uint8_t)value;
+}
+
+static void sha_transform(CaptureSha256 *sha, const uint8_t *block) {
+    uint32_t words[64];
+    uint32_t a, b, c, d, e, f, g, h;
+    uint32_t index;
+    for (index = 0; index < 16; ++index) {
+        words[index] = sha_load32(block + index * 4);
+    }
+    for (index = 16; index < 64; ++index) {
+        uint32_t s0 = sha_rotr(words[index - 15], 7) ^ sha_rotr(words[index - 15], 18) ^ (words[index - 15] >> 3);
+        uint32_t s1 = sha_rotr(words[index - 2], 17) ^ sha_rotr(words[index - 2], 19) ^ (words[index - 2] >> 10);
+        words[index] = words[index - 16] + s0 + words[index - 7] + s1;
+    }
+    a = sha->state[0]; b = sha->state[1]; c = sha->state[2]; d = sha->state[3];
+    e = sha->state[4]; f = sha->state[5]; g = sha->state[6]; h = sha->state[7];
+    for (index = 0; index < 64; ++index) {
+        uint32_t s1 = sha_rotr(e, 6) ^ sha_rotr(e, 11) ^ sha_rotr(e, 25);
+        uint32_t ch = (e & f) ^ ((~e) & g);
+        uint32_t temp1 = h + s1 + ch + k_sha256_constants[index] + words[index];
+        uint32_t s0 = sha_rotr(a, 2) ^ sha_rotr(a, 13) ^ sha_rotr(a, 22);
+        uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+        uint32_t temp2 = s0 + maj;
+        h = g; g = f; f = e; e = d + temp1;
+        d = c; c = b; b = a; a = temp1 + temp2;
+    }
+    sha->state[0] += a; sha->state[1] += b; sha->state[2] += c; sha->state[3] += d;
+    sha->state[4] += e; sha->state[5] += f; sha->state[6] += g; sha->state[7] += h;
+}
+
+static void sha_init(CaptureSha256 *sha) {
+    sha->state[0] = 0x6a09e667; sha->state[1] = 0xbb67ae85;
+    sha->state[2] = 0x3c6ef372; sha->state[3] = 0xa54ff53a;
+    sha->state[4] = 0x510e527f; sha->state[5] = 0x9b05688c;
+    sha->state[6] = 0x1f83d9ab; sha->state[7] = 0x5be0cd19;
+    sha->bits = 0;
+    sha->block_size = 0;
+}
+
+static void sha_update(CaptureSha256 *sha, const uint8_t *bytes, uint32_t size) {
+    uint32_t count;
+    sha->bits += (uint64_t)size * 8u;
+    while (size != 0) {
+        count = 64u - sha->block_size;
+        if (count > size) count = size;
+        memcpy(sha->block + sha->block_size, bytes, count);
+        sha->block_size += count;
+        bytes += count;
+        size -= count;
+        if (sha->block_size == 64u) {
+            sha_transform(sha, sha->block);
+            sha->block_size = 0;
+        }
+    }
+}
+
+static void sha_final(CaptureSha256 *sha, uint8_t output[32]) {
+    uint32_t index;
+    uint64_t bits = sha->bits;
+    sha->block[sha->block_size++] = 0x80;
+    while (sha->block_size != 56u) {
+        if (sha->block_size == 64u) {
+            sha_transform(sha, sha->block);
+            sha->block_size = 0;
+        }
+        sha->block[sha->block_size++] = 0;
+    }
+    for (index = 0; index < 8; ++index) {
+        sha->block[56u + index] = (uint8_t)(bits >> (56u - index * 8u));
+    }
+    sha_transform(sha, sha->block);
+    for (index = 0; index < 8; ++index) {
+        sha_store32(output + index * 4, sha->state[index]);
+    }
+}
+
+static int sha_file(const char *path, uint8_t output[32]) {
+    HANDLE file;
+    DWORD read;
+    uint8_t buffer[4096];
+    CaptureSha256 sha;
+    file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+        0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    if (file == INVALID_HANDLE_VALUE) return 0;
+    sha_init(&sha);
+    for (;;) {
+        if (!ReadFile(file, buffer, sizeof(buffer), &read, 0)) {
+            CloseHandle(file);
+            return 0;
+        }
+        if (read == 0) break;
+        sha_update(&sha, buffer, read);
+    }
+    CloseHandle(file);
+    sha_final(&sha, output);
+    return 1;
+}
+
+static void debug_sha256(const char *label, const uint8_t digest[32]) {
+    static const char hex[] = "0123456789abcdef";
+    char text[128];
+    uint32_t index;
+    uint32_t offset = 0;
+    while (label[offset] != 0 && offset < sizeof(text) - 1u) {
+        text[offset] = label[offset];
+        ++offset;
+    }
+    if (offset < sizeof(text) - 1u) text[offset++] = ':';
+    for (index = 0; index < 32u && offset + 2u < sizeof(text); ++index) {
+        text[offset++] = hex[digest[index] >> 4];
+        text[offset++] = hex[digest[index] & 0x0f];
+    }
+    text[offset] = 0;
+    OutputDebugStringA(text);
+    OutputDebugStringA("\n");
+}
+
+#if defined(OTCAP_CAPTURE_GENERATED_INCLUDE)
+#include <capture_hooks_generated.h>
+#else
+#include "capture_hooks_generated.h"
+#endif
+
+const CaptureHookSpec *ot_capture_hook_manifest(uint32_t *count) {
+    if (count != 0) {
+        *count = (uint32_t)(sizeof(k_hooks) / sizeof(k_hooks[0]));
+    }
+    return k_hooks;
+}
+
+int ot_capture_verify_build(void *module_base, const uint8_t expected_sha256[32]) {
+    /*
+     * The no-CD copy has a different file hash, but preserves this PE identity
+     * and all recorder seams.  The source hash is still carried in the output
+     * and checked by the host before launch.
+     */
+    IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER *)module_base;
+    IMAGE_NT_HEADERS *nt;
+    uint8_t actual_sha[32];
+    char module_path[MAX_PATH];
+    DWORD module_path_size;
+    static const uint8_t supported_sha[32] = {
+        0xf2, 0xc7, 0xca, 0x7c, 0xbc, 0x31, 0xab, 0xd8,
+        0xf7, 0x48, 0xbd, 0x4a, 0xfd, 0xc1, 0xe3, 0x0a,
+        0xa1, 0xa6, 0x70, 0x0c, 0xe9, 0x18, 0x93, 0xb6,
+        0x18, 0x45, 0x0f, 0xd1, 0x61, 0x72, 0x66, 0x9c,
+    };
+    static const uint8_t supported_nocd_sha[32] = {
+        0x03, 0xd5, 0xba, 0x74, 0xdb, 0xc9, 0x09, 0xe3,
+        0xa4, 0x17, 0xf1, 0xf5, 0xb8, 0x54, 0xa8, 0x36,
+        0xc8, 0xc9, 0xe8, 0xbd, 0x31, 0xe9, 0xd1, 0xc3,
+        0x31, 0xf0, 0x1a, 0xb6, 0x13, 0xa9, 0x47, 0x78,
+    };
+    if (module_base == 0 || expected_sha256 == 0 || dos->e_magic != IMAGE_DOS_SIGNATURE) {
+        OutputDebugStringA("OpenTony capture: invalid module or DOS header\n");
+        return 0;
+    }
+    if (memcmp(expected_sha256, supported_sha, sizeof(supported_sha)) != 0) {
+        OutputDebugStringA("OpenTony capture: requested build hash is unsupported\n");
+        return 0;
+    }
+    nt = (IMAGE_NT_HEADERS *)((unsigned char *)module_base + dos->e_lfanew);
+    if (nt->Signature != IMAGE_NT_SIGNATURE ||
+        nt->FileHeader.Machine != IMAGE_FILE_MACHINE_I386 ||
+        nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC ||
+        nt->OptionalHeader.ImageBase != 0x00400000u ||
+        nt->FileHeader.TimeDateStamp != 978633206u) {
+        OutputDebugStringA("OpenTony capture: PE identity mismatch\n");
+        return 0;
+    }
+    module_path[0] = 0;
+    module_path_size = GetModuleFileNameA((HMODULE)module_base, module_path, sizeof(module_path));
+    if (module_path_size == 0 || module_path_size >= sizeof(module_path) ||
+        !sha_file(module_path, actual_sha) ||
+        (memcmp(actual_sha, supported_sha, sizeof(supported_sha)) != 0 &&
+         memcmp(actual_sha, supported_nocd_sha, sizeof(supported_nocd_sha)) != 0)) {
+        OutputDebugStringA("OpenTony capture: executable file hash mismatch\n");
+        debug_sha256("OpenTony capture actual hash", actual_sha);
+        debug_sha256("OpenTony capture expected hash", expected_sha256);
+        return 0;
+    }
+    return 1;
+}
+
+int ot_capture_verify_hooks(void *module_base, uint32_t *failed_index) {
+    uint32_t count = 0;
+    uint32_t index;
+    const CaptureHookSpec *hooks = ot_capture_hook_manifest(&count);
+    if (module_base == 0) {
+        if (failed_index != 0) {
+            *failed_index = 0;
+        }
+        return 0;
+    }
+    for (index = 0; index < count; ++index) {
+        const unsigned char *address =
+            (const unsigned char *)module_base + hooks[index].rva;
+        if (memcmp(address, hooks[index].expected, hooks[index].expected_size) != 0) {
+            if (failed_index != 0) {
+                *failed_index = index;
+            }
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static const CaptureHookSpec *find_hook(const char *name) {
+    uint32_t count = 0;
+    uint32_t index;
+    const CaptureHookSpec *hooks = ot_capture_hook_manifest(&count);
+    for (index = 0; index < count; ++index) {
+        if (strcmp(hooks[index].name, name) == 0) {
+            return &hooks[index];
+        }
+    }
+    return 0;
+}
+
+int ot_capture_bind_buffer(CaptureBuffer *buffer) {
+    if (buffer == 0 || buffer->mapping == 0 || buffer->mapping_size == 0 ||
+        g_physics_installed || g_input_installed || g_timer_installed ||
+        g_clock_read_installed || g_simulation_time_store_installed ||
+        g_shared_random_installed || g_frontend_play_installed ||
+        g_frontend_level_installed || g_launch_level_installed ||
+        g_movie_primary_installed || g_movie_secondary_installed ||
+        g_frontend_key_installed || g_frontend_summary_installed) {
+        return 0;
+    }
+    g_capture_buffer = buffer;
+    return 1;
+}
+
+static int copy_player_and_timing(
+    uint32_t player,
+    uint8_t *destination,
+    CaptureTimingSnapshot *timing) {
+    if (player == 0 || destination == 0 || timing == 0) {
+        return 0;
+    }
+#if defined(_MSC_VER)
+    __try {
+#endif
+        memcpy(destination, (const void *)player, OTCAP_PLAYER_BLOB_SIZE);
+        timing->animation_clock =
+            *(volatile uint32_t *)OTCAP_ANIMATION_CLOCK_ADDRESS;
+        timing->animation_time_scale =
+            *(volatile uint32_t *)OTCAP_ANIMATION_SCALE_ADDRESS;
+        timing->animation_time_scale_square =
+            *(volatile uint32_t *)OTCAP_ANIMATION_SCALE_SQUARE_ADDRESS;
+        timing->animation_clock_accumulator =
+            *(volatile uint32_t *)OTCAP_ANIMATION_CLOCK_ACCUMULATOR_ADDRESS;
+        timing->simulation_time =
+            *(volatile uint32_t *)OTCAP_SIMULATION_TIME_ADDRESS;
+        timing->timing_delta_q11 =
+            *(volatile uint32_t *)OTCAP_TIMING_DELTA_ADDRESS;
+#if defined(_MSC_VER)
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+#endif
+    return 1;
+}
+
+static int read_timer_sample(
+    uint32_t phase,
+    uint32_t frame_index,
+    CaptureTimerSample *sample) {
+    if (sample == 0) {
+        return 0;
+    }
+#if defined(_MSC_VER)
+    __try {
+#endif
+        ZeroMemory(sample, sizeof(*sample));
+        sample->phase = phase;
+        sample->frame_index = frame_index;
+        sample->interval_ms =
+            *(volatile uint32_t *)(OTCAP_TIMER_STATE_ADDRESS + 0x04u);
+        sample->accumulated_ms =
+            *(volatile uint32_t *)(OTCAP_TIMER_STATE_ADDRESS + 0x0cu);
+        sample->public_tick =
+            *(volatile uint32_t *)OTCAP_TIMER_PUBLIC_TICK_ADDRESS;
+        sample->simulation_time =
+            *(volatile uint32_t *)OTCAP_TIMER_SIMULATION_TIME_ADDRESS;
+        sample->pause_gate_a =
+            *(volatile uint32_t *)OTCAP_TIMER_PAUSE_GATE_A_ADDRESS;
+        sample->pause_gate_b =
+            *(volatile uint32_t *)OTCAP_TIMER_PAUSE_GATE_B_ADDRESS;
+        memcpy(
+            &sample->public_accumulator_raw,
+            (const void *)OTCAP_TIMER_PUBLIC_ACCUMULATOR_ADDRESS,
+            sizeof(sample->public_accumulator_raw));
+        memcpy(
+            &sample->simulation_accumulator_raw,
+            (const void *)OTCAP_TIMER_SIMULATION_ACCUMULATOR_ADDRESS,
+            sizeof(sample->simulation_accumulator_raw));
+#if defined(_MSC_VER)
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+#endif
+    return 1;
+}
+
+static int capture_initial_timer_state(void) {
+    CaptureHeader *header;
+    CaptureInitialState *initial;
+
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0) {
+        return 0;
+    }
+    if (g_initial_timer_captured) {
+        return 1;
+    }
+    header = (CaptureHeader *)g_capture_buffer->mapping;
+    initial = (CaptureInitialState *)(
+        g_capture_buffer->mapping + header->initial_state_offset);
+#if defined(_MSC_VER)
+    __try {
+#endif
+        initial->timer_handle =
+            *(volatile uint32_t *)(OTCAP_TIMER_STATE_ADDRESS + 0x00u);
+        initial->interval_ms =
+            *(volatile uint32_t *)(OTCAP_TIMER_STATE_ADDRESS + 0x04u);
+        initial->opaque_08 =
+            *(volatile uint32_t *)(OTCAP_TIMER_STATE_ADDRESS + 0x08u);
+        initial->accumulated_ms =
+            *(volatile uint32_t *)(OTCAP_TIMER_STATE_ADDRESS + 0x0cu);
+        initial->opaque_10 =
+            *(volatile uint32_t *)(OTCAP_TIMER_STATE_ADDRESS + 0x10u);
+        memcpy(
+            &initial->public_accumulator_raw,
+            (const void *)OTCAP_TIMER_PUBLIC_ACCUMULATOR_ADDRESS,
+            sizeof(initial->public_accumulator_raw));
+        memcpy(
+            &initial->simulation_accumulator_raw,
+            (const void *)OTCAP_TIMER_SIMULATION_ACCUMULATOR_ADDRESS,
+            sizeof(initial->simulation_accumulator_raw));
+        initial->public_tick =
+            *(volatile uint32_t *)OTCAP_TIMER_PUBLIC_TICK_ADDRESS;
+        initial->simulation_time =
+            *(volatile uint32_t *)OTCAP_TIMER_SIMULATION_TIME_ADDRESS;
+        initial->simulation_pause_gate_a =
+            *(volatile uint32_t *)OTCAP_TIMER_PAUSE_GATE_A_ADDRESS;
+        initial->simulation_pause_gate_b =
+            *(volatile uint32_t *)OTCAP_TIMER_PAUSE_GATE_B_ADDRESS;
+#if defined(_MSC_VER)
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+#endif
+    g_initial_timer_captured = 1;
+    return 1;
+}
+
+static int append_pending_timer_sample(uint32_t phase, uint32_t frame_index) {
+    if (g_pending_timer_count >= OTCAP_MAX_TIMER_SAMPLES) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_OVERFLOW, OTCAP_ERROR_OVERFLOW);
+        return 0;
+    }
+    if (g_pending_timer_count == 0) {
+        g_pending_timer_frame = frame_index;
+    } else if (g_pending_timer_frame != frame_index) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_OVERFLOW, OTCAP_ERROR_OVERFLOW);
+        return 0;
+    }
+    if (!read_timer_sample(
+            phase, frame_index, &g_pending_timer_samples[g_pending_timer_count])) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_FAILED, OTCAP_ERROR_SNAPSHOT);
+        return 0;
+    }
+    ++g_pending_timer_count;
+    return 1;
+}
+
+static int drain_pending_timer_samples(uint32_t frame_index) {
+    uint32_t index;
+    if (g_pending_timer_count == 0) {
+        return 1;
+    }
+    if (g_pending_timer_frame != frame_index ||
+        g_frame_timer_count + g_pending_timer_count > OTCAP_MAX_TIMER_SAMPLES) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_OVERFLOW, OTCAP_ERROR_OVERFLOW);
+        return 0;
+    }
+    for (index = 0; index < g_pending_timer_count; ++index) {
+        g_frame_timer_samples[g_frame_timer_count++] =
+            g_pending_timer_samples[index];
+    }
+    g_pending_timer_count = 0;
+    g_pending_timer_frame = 0xffffffffu;
+    return 1;
+}
+
+static int append_frame_timer_sample(uint32_t phase, uint32_t frame_index) {
+    if (g_frame_timer_count >= OTCAP_MAX_TIMER_SAMPLES ||
+        !read_timer_sample(
+            phase, frame_index, &g_frame_timer_samples[g_frame_timer_count])) {
+        ot_capture_buffer_fail(
+            g_capture_buffer,
+            g_frame_timer_count >= OTCAP_MAX_TIMER_SAMPLES ?
+                OTCAP_STATUS_OVERFLOW : OTCAP_STATUS_FAILED,
+            g_frame_timer_count >= OTCAP_MAX_TIMER_SAMPLES ?
+                OTCAP_ERROR_OVERFLOW : OTCAP_ERROR_SNAPSHOT);
+        return 0;
+    }
+    ++g_frame_timer_count;
+    return 1;
+}
+
+void __cdecl ot_capture_physics_before(uint32_t player) {
+    CaptureHeader *header;
+    uint32_t current_player;
+
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0 ||
+        g_physics_frame_active != 0) {
+        return;
+    }
+    /* Setup code invokes Skater_PhysicsFrame before the gameplay poll has
+     * established the first canonical frame.  The post-poll action boundary
+     * is the same gate used by the GDB recorder, so ignore those setup calls
+     * until it has run once. */
+    if (g_gameplay_ready == 0) {
+        return;
+    }
+    /* The wrapper runs on the single gameplay thread.  Avoid the VC6-era
+     * InterlockedCompareExchange pointer overload and keep this state local
+     * to that deterministic boundary. */
+    g_physics_frame_active = 1;
+    header = (CaptureHeader *)g_capture_buffer->mapping;
+    if (header->status != OTCAP_STATUS_READY &&
+        header->status != OTCAP_STATUS_CAPTURING) {
+        g_physics_frame_active = 0;
+        return;
+    }
+    if (header->frame_count >= header->frame_limit) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_OVERFLOW, OTCAP_ERROR_OVERFLOW);
+        g_physics_frame_active = 0;
+        return;
+    }
+    g_physics_frame_index = header->frame_count;
+    g_frontend_summary_active = 0;
+    g_frame_timer_count = 0;
+    g_frame_causal_count = 0;
+    g_simulation_time_store_seen = 0;
+    g_simulation_time_store_value = 0;
+    if (!capture_initial_timer_state() ||
+        !drain_pending_timer_samples(g_physics_frame_index) ||
+        !append_frame_timer_sample(
+            OTCAP_TIMER_PHASE_PHYSICS_ENTRY, g_physics_frame_index)) {
+        g_physics_frame_active = 0;
+        return;
+    }
+
+#if defined(_MSC_VER)
+    __try {
+#endif
+        current_player = *(volatile uint32_t *)OTCAP_PLAYER_TABLE_ADDRESS;
+        /* Skater_PhysicsFrame is also used for the second skater.  Canonical
+         * recordings intentionally retain only table entry zero, matching the
+         * GDB recorder's player filter. */
+        if (player != current_player ||
+            !copy_player_and_timing(
+                player, g_physics_before, &g_physics_timing_before)) {
+            g_physics_frame_active = 0;
+            return;
+        }
+        g_physics_player = player;
+        g_physics_input_mask =
+            *(volatile uint32_t *)OTCAP_ACTION_MASK_ADDRESS;
+        g_physics_input_flags =
+            (*(volatile uint32_t *)OTCAP_AIR_CONTROL_ADDRESS ?
+                OTCAP_INPUT_FLAG_AIR_CONTROL : 0u) |
+            (g_input_injected_frame == header->frame_count ?
+                OTCAP_INPUT_FLAG_INJECTED : 0u);
+#if defined(_MSC_VER)
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_FAILED, OTCAP_ERROR_SNAPSHOT);
+        g_physics_frame_active = 0;
+        return;
+    }
+#endif
+    InterlockedExchange((LONG *)&header->status, OTCAP_STATUS_CAPTURING);
+    if (g_bootstrap_retired == 0) {
+        /* The action seam also runs during frontend startup.  The first
+         * player-table match is the earliest unambiguous gameplay boundary,
+         * so keep movie/selector hooks alive until this point. */
+        retire_bootstrap_hooks();
+        g_bootstrap_retired = 1;
+    }
+}
+
+void __cdecl ot_capture_physics_after(void) {
+    CaptureHeader *header;
+    uint8_t after[OTCAP_PLAYER_BLOB_SIZE];
+    CaptureTimingSnapshot timing_after;
+    uint32_t simulation_time_store_value;
+
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0 ||
+        g_physics_frame_active == 0) {
+        return;
+    }
+    header = (CaptureHeader *)g_capture_buffer->mapping;
+    /* The return boundary is observed after the exact simulation-clock load.
+     * Keep this sample on the next frame, matching the GDB recorder's
+     * frame+1 post-physics assignment and allowing replay to apply it before
+     * that frame's entry deliveries. */
+    if (!drain_pending_timer_samples(g_physics_frame_index) ||
+        !append_pending_timer_sample(
+            OTCAP_TIMER_PHASE_POST_PHYSICS, g_physics_frame_index + 1u)) {
+        g_physics_frame_active = 0;
+        return;
+    }
+    if (!copy_player_and_timing(g_physics_player, after, &timing_after)) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_FAILED, OTCAP_ERROR_SNAPSHOT);
+        g_physics_frame_active = 0;
+        return;
+    }
+    if (g_simulation_time_store_seen != 0) {
+        simulation_time_store_value = g_simulation_time_store_value;
+        memcpy(
+            after + OTCAP_SIMULATION_TIME_PLAYER_OFFSET,
+            &simulation_time_store_value,
+            sizeof(simulation_time_store_value));
+    }
+    /* A causal hook can fail the bounded capture while retail is still
+     * unwinding this physics call (for example, on event-slot overflow).
+     * Never publish a record or replace that failure with COMPLETE. */
+    if (header->status == OTCAP_STATUS_FAILED ||
+        header->status == OTCAP_STATUS_OVERFLOW) {
+        g_physics_frame_active = 0;
+        return;
+    }
+    if (!ot_capture_append_frame(
+            g_capture_buffer,
+            g_physics_frame_index,
+            g_physics_input_mask,
+            g_physics_input_flags,
+            g_physics_player,
+            g_physics_before,
+            after,
+            &g_physics_timing_before,
+            &timing_after,
+            g_frame_causal_events,
+            g_frame_causal_count,
+            g_frame_timer_samples,
+            g_frame_timer_count)) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_FAILED, OTCAP_ERROR_SNAPSHOT);
+        g_physics_frame_active = 0;
+        return;
+    }
+    if (header->frame_count >= header->frame_limit) {
+        /* The host observes this published state and ends the bounded retail
+         * process after the final complete record has been committed. */
+        InterlockedExchange((LONG *)&header->status, OTCAP_STATUS_COMPLETE);
+    }
+    g_physics_frame_active = 0;
+}
+
+void __cdecl ot_capture_simulation_time_store(uint32_t player, uint32_t value) {
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0 ||
+        g_physics_frame_active == 0 || player != g_physics_player) {
+        return;
+    }
+    g_simulation_time_store_seen = 1;
+    g_simulation_time_store_value = value;
+}
+
+void __cdecl ot_capture_shared_random_call(
+    uint32_t caller, uint32_t argument, uint32_t result) {
+    CaptureCausalEvent *event;
+    uint32_t callsite;
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0 ||
+        g_physics_frame_active == 0) {
+        return;
+    }
+    if (g_frame_causal_count >= OTCAP_MAX_CAUSAL_EVENTS) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_OVERFLOW, OTCAP_ERROR_OVERFLOW);
+        return;
+    }
+    callsite = caller >= 5u ? caller - 5u : caller;
+    event = &g_frame_causal_events[g_frame_causal_count++];
+    ZeroMemory(event, sizeof(*event));
+    event->type = OTCAP_CAUSAL_EVENT_SHARED_RANDOM_CALL;
+    event->phase = OTCAP_TIMER_PHASE_PHYSICS_ENTRY;
+    event->frame_index = g_physics_frame_index;
+    event->size = 12u;
+    memcpy(event->payload + 0u, &callsite, sizeof(callsite));
+    memcpy(event->payload + 4u, &argument, sizeof(argument));
+    memcpy(event->payload + 8u, &result, sizeof(result));
+}
+
+/* The recorded action for this input poll: 0 = leave the live mask. */
+static uint32_t capture_recorded_action(void) {
+    CaptureHeader *header;
+    CaptureConfig *config;
+    uint32_t frame_index;
+    uint32_t action_mask;
+
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0) {
+        return 0;
+    }
+    header = (CaptureHeader *)g_capture_buffer->mapping;
+    if (header->status != OTCAP_STATUS_READY &&
+        header->status != OTCAP_STATUS_CAPTURING) {
+        return 0;
+    }
+    g_gameplay_ready = 1;
+    frame_index = header->frame_count;
+    config = (CaptureConfig *)(g_capture_buffer->mapping + header->config_offset);
+    action_mask = ot_capture_action_mask(config, frame_index);
+    if (action_mask != 0) {
+        g_input_injected_frame = frame_index;
+    }
+    return action_mask;
+}
+
+/* With the platform HAL's input service active (opentony.dll, input=sdl) the
+ * recorder injects at the HAL input layer: this action source runs inside the
+ * input poll right after the retail bindings, which is the same point the
+ * 0x00489a15 detour observes (the poll's only gameplay caller returns there).
+ * The detour stays installed as a fallback and stands down for every poll the
+ * HAL already served. */
+static volatile LONG g_hal_served_poll = 0;
+static uint32_t g_hal_polls = 0;
+
+static void OT_HAL_CALL capture_action_source(void *user, uint32_t player, uint32_t poll, uint32_t *mask) {
+    uint32_t action_mask;
+    (void)user;
+    (void)poll;
+    if (player != 0) {
+        return;
+    }
+    g_hal_served_poll = 1;
+    ++g_hal_polls;
+    action_mask = capture_recorded_action();
+    if (action_mask != 0) {
+        /* Exactly the low word, as the detour writes it. */
+        *mask = (*mask & 0xffff0000u) | (action_mask & 0xffffu);
+    }
+}
+
+static void register_hal_action_source(void) {
+    HMODULE hooks = GetModuleHandleA("opentony.dll");
+    OtHalSetActionSourceFn set_source;
+    if (hooks == 0) {
+        return;
+    }
+    set_source = (OtHalSetActionSourceFn)GetProcAddress(hooks, OT_HAL_SET_ACTION_SOURCE_EXPORT);
+    if (set_source != 0 && set_source(capture_action_source, 0)) {
+        OutputDebugStringA("OpenTony capture: injecting at the HAL input layer\n");
+    }
+}
+
+void __cdecl ot_capture_input_boundary(void) {
+    uint32_t action_mask;
+
+    if (g_hal_served_poll != 0) {
+        g_hal_served_poll = 0;
+        return;
+    }
+    action_mask = capture_recorded_action();
+    if (action_mask == 0) {
+        return;
+    }
+#if defined(_MSC_VER)
+    __try {
+#endif
+        /* GDB's action-edge probe writes exactly the low word after the live
+         * poll/build boundary.  Preserve the untouched high word. */
+        *(volatile uint16_t *)OTCAP_ACTION_MASK_ADDRESS =
+            (uint16_t)action_mask;
+#if defined(_MSC_VER)
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_FAILED, OTCAP_ERROR_SNAPSHOT);
+    }
+#endif
+}
+
+void __cdecl ot_capture_timer_boundary(uint32_t phase) {
+    CaptureHeader *header;
+    uint32_t frame_index;
+
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0) {
+        return;
+    }
+    header = (CaptureHeader *)g_capture_buffer->mapping;
+    if (header->status != OTCAP_STATUS_READY &&
+        header->status != OTCAP_STATUS_CAPTURING) {
+        return;
+    }
+    frame_index = header->frame_count;
+    if (frame_index >= header->frame_limit) {
+        return;
+    }
+    if (!capture_initial_timer_state() ||
+        !append_pending_timer_sample(phase, frame_index)) {
+        return;
+    }
+}
+
+void __cdecl ot_capture_frontend_play_boundary(uint32_t stack_pointer) {
+    /* This is the exact local slot written by tony-frontend-play after the
+     * frontend selection helper returns.  The wrapper passes the game's ESP,
+     * before it saves any registers, so stack-relative semantics are intact. */
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0 ||
+        stack_pointer == 0) {
+        return;
+    }
+#if defined(_MSC_VER)
+    __try {
+#endif
+        if (g_frontend_play_armed != 0) {
+            g_frontend_play_armed = 0;
+            *(volatile uint32_t *)(stack_pointer + 0x58u) = 0x26u;
+            disarm_frontend_hook(
+                g_frontend_play_target, g_frontend_play_overwrite_size,
+                g_frontend_play_original, &g_frontend_play_installed);
+        }
+#if defined(_MSC_VER)
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_FAILED, OTCAP_ERROR_SNAPSHOT);
+    }
+#endif
+}
+
+void __cdecl ot_capture_frontend_level_boundary(void) {
+    CaptureHeader *header;
+    CaptureConfig *config;
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0) {
+        return;
+    }
+    header = (CaptureHeader *)g_capture_buffer->mapping;
+    config = (CaptureConfig *)(g_capture_buffer->mapping + header->config_offset);
+    if (config->level_index >= 13u) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_FAILED, OTCAP_ERROR_INVALID_CONFIG);
+        return;
+    }
+    if (g_frontend_level_armed != 0) {
+        g_frontend_level_armed = 0;
+        g_frontend_level_override = config->level_index;
+        g_frontend_level_override_valid = 1;
+        disarm_frontend_hook(
+            g_frontend_level_target, g_frontend_level_overwrite_size,
+            g_frontend_level_original, &g_frontend_level_installed);
+    }
+}
+
+void __cdecl ot_capture_launch_level_boundary(uint32_t stack_pointer) {
+    CaptureHeader *header;
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0 ||
+        stack_pointer == 0) {
+        return;
+    }
+    header = (CaptureHeader *)g_capture_buffer->mapping;
+#if defined(_MSC_VER)
+    __try {
+#endif
+        if (g_launch_level_armed != 0) {
+            g_launch_level_armed = 0;
+            *(volatile uint32_t *)(stack_pointer + 4u) = header->level_index;
+            disarm_frontend_hook(
+                g_launch_level_target, g_launch_level_overwrite_size,
+                g_launch_level_original, &g_launch_level_installed);
+        }
+#if defined(_MSC_VER)
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_FAILED, OTCAP_ERROR_SNAPSHOT);
+    }
+#endif
+}
+
+void __cdecl ot_capture_frontend_key_boundary(uint32_t stack_pointer) {
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0 ||
+        stack_pointer == 0) {
+        return;
+    }
+#if defined(_MSC_VER)
+    __try {
+#endif
+        /* The GDB confirmation probe only releases the level-selection and
+         * summary loops when this helper returns to 0x0046af9f. */
+        if (g_frontend_confirm_armed != 0 &&
+            *(volatile uint32_t *)stack_pointer ==
+                OTCAP_FRONTEND_SELECTION_CALL_RETURN) {
+            g_frontend_confirm_armed = 0;
+            *(volatile uint8_t *)(OTCAP_KEYBOARD_STATE_ADDRESS +
+                OTCAP_FRONTEND_CONFIRM_SCAN_CODE) = 0x80u;
+        }
+        if (g_frontend_summary_active != 0) {
+            uint32_t tick = g_frontend_summary_key_ticks;
+            if (tick < 20u) {
+                g_frontend_summary_key_ticks = tick + 1u;
+                *(volatile uint8_t *)(OTCAP_KEYBOARD_STATE_ADDRESS + 0x1cu) =
+                    tick < 5u ? 0x80u : 0u;
+                if (tick == 19u) {
+                    g_frontend_summary_active = 0;
+                    disarm_frontend_hook(
+                        g_frontend_key_target, g_frontend_key_overwrite_size,
+                        g_frontend_key_original, &g_frontend_key_installed);
+                }
+            }
+        }
+#if defined(_MSC_VER)
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        ot_capture_buffer_fail(
+            g_capture_buffer, OTCAP_STATUS_FAILED, OTCAP_ERROR_SNAPSHOT);
+    }
+#endif
+}
+
+void __cdecl ot_capture_frontend_summary_boundary(void) {
+    if (g_capture_buffer == 0 || g_capture_buffer->mapping == 0) {
+        return;
+    }
+    if (g_frontend_summary_armed != 0) {
+        g_frontend_summary_armed = 0;
+        g_frontend_summary_active = 1;
+        g_frontend_summary_key_ticks = 0;
+        *(volatile uint8_t *)(OTCAP_KEYBOARD_STATE_ADDRESS + 0x1cu) = 0x80u;
+        disarm_frontend_hook(
+            g_frontend_summary_target, g_frontend_summary_overwrite_size,
+            g_frontend_summary_original, &g_frontend_summary_installed);
+    }
+}
+
+#if defined(_MSC_VER) && defined(_M_IX86)
+/* The function has a six-byte prologue.  The naked wrapper keeps the original
+ * ECX/stack ABI, calls the trampoline once, and restores the return registers
+ * after the observer runs. */
+static __declspec(naked) void ot_capture_physics_hook(void) {
+    __asm {
+        pushad
+        pushfd
+        push ecx
+        call ot_capture_physics_before
+        add esp, 4
+        popfd
+        popad
+        call dword ptr [g_physics_trampoline]
+        pushad
+        pushfd
+        call ot_capture_physics_after
+        popfd
+        popad
+        ret
+    }
+}
+
+/* This is a mid-function boundary rather than a callable function entry.  It
+ * therefore jumps through the trampoline after the observer; no return is
+ * pushed and the original five-byte load executes in place. */
+static __declspec(naked) void ot_capture_input_hook(void) {
+    __asm {
+        pushad
+        pushfd
+        call ot_capture_input_boundary
+        popfd
+        popad
+        jmp dword ptr [g_input_trampoline]
+    }
+}
+
+/* The timer seam is a ten-byte pair of calls.  Observe the state immediately
+ * before those calls and resume through the trampoline so the retail timer
+ * model remains untouched. */
+static __declspec(naked) void ot_capture_timer_hook(void) {
+    __asm {
+        pushad
+        pushfd
+        push OTCAP_TIMER_PHASE_TIMER_UPDATE
+        call ot_capture_timer_boundary
+        add esp, 4
+        popfd
+        popad
+        jmp dword ptr [g_timer_trampoline]
+    }
+}
+
+/* Sample the simulation clock load used by the timing producer. */
+static __declspec(naked) void ot_capture_clock_read_hook(void) {
+    __asm {
+        pushad
+        pushfd
+        push OTCAP_TIMER_PHASE_CLOCK_READ
+        call ot_capture_timer_boundary
+        add esp, 4
+        popfd
+        popad
+        jmp dword ptr [g_clock_read_trampoline]
+    }
+}
+
+/* Observe the exact EDX -> player+0x2f44 publication while preserving the
+ * original six-byte store in the trampoline. */
+static __declspec(naked) void ot_capture_simulation_time_store_hook(void) {
+    __asm {
+        pushad
+        pushfd
+        push edx
+        push ebp
+        call ot_capture_simulation_time_store
+        add esp, 8
+        popfd
+        popad
+        jmp dword ptr [g_simulation_time_store_trampoline]
+    }
+}
+
+/* FUN_0048f3a0 is __thiscall with one stack selector and returns with RET 4.
+ * Duplicate that selector before calling the trampoline so its callee cleanup
+ * removes the duplicate; the wrapper then performs the original RET 4 after
+ * recording the result. */
+static __declspec(naked) void ot_capture_shared_random_hook(void) {
+    __asm {
+        push dword ptr [esp + 4]
+        call dword ptr [g_shared_random_trampoline]
+        pushad
+        pushfd
+        mov ecx, dword ptr [esp + 36]
+        mov edx, dword ptr [esp + 40]
+        push eax
+        push edx
+        push ecx
+        call ot_capture_shared_random_call
+        add esp, 12
+        popfd
+        popad
+        ret 4
+    }
+}
+
+static __declspec(naked) void ot_capture_frontend_play_hook(void) {
+    __asm {
+        mov eax, esp
+        pushad
+        pushfd
+        push eax
+        call ot_capture_frontend_play_boundary
+        add esp, 4
+        popfd
+        popad
+        jmp dword ptr [g_frontend_play_trampoline]
+    }
+}
+
+static __declspec(naked) void ot_capture_frontend_level_hook(void) {
+    __asm {
+        pushad
+        pushfd
+        call ot_capture_frontend_level_boundary
+        popfd
+        popad
+        cmp dword ptr [g_frontend_level_override_valid], 0
+        je frontend_level_original
+        mov dword ptr [g_frontend_level_override_valid], 0
+        mov eax, dword ptr [g_frontend_level_override]
+        mov edx, OTCAP_FRONTEND_LEVEL_RESULT_ADDRESS
+        jmp edx
+frontend_level_original:
+        jmp dword ptr [g_frontend_level_trampoline]
+    }
+}
+
+static __declspec(naked) void ot_capture_launch_level_hook(void) {
+    __asm {
+        mov eax, esp
+        pushad
+        pushfd
+        push eax
+        call ot_capture_launch_level_boundary
+        add esp, 4
+        popfd
+        popad
+        jmp dword ptr [g_launch_level_trampoline]
+    }
+}
+
+static __declspec(naked) void ot_capture_movie_primary_hook(void) {
+    __asm {
+        xor eax, eax
+        ret
+    }
+}
+
+static __declspec(naked) void ot_capture_movie_secondary_hook(void) {
+    __asm {
+        xor eax, eax
+        ret
+    }
+}
+
+static __declspec(naked) void ot_capture_frontend_key_hook(void) {
+    __asm {
+        mov eax, esp
+        pushad
+        pushfd
+        push eax
+        call ot_capture_frontend_key_boundary
+        add esp, 4
+        popfd
+        popad
+        jmp dword ptr [g_frontend_key_trampoline]
+    }
+}
+
+static __declspec(naked) void ot_capture_frontend_summary_hook(void) {
+    __asm {
+        pushad
+        pushfd
+        call ot_capture_frontend_summary_boundary
+        popfd
+        popad
+        jmp dword ptr [g_frontend_summary_trampoline]
+    }
+}
+#endif
+
+/* One descriptor drives installation, rollback, and trampoline ownership for
+ * every active seam.  The small legacy slots remain named because the VC6
+ * naked wrappers address their trampolines directly; all lifecycle state is
+ * nevertheless traversed through this table. */
+#if defined(_MSC_VER) && defined(_M_IX86)
+typedef struct CaptureHookState {
+    const char *name;
+    const CaptureHookSpec *spec;
+    void *handler;
+    void **target_slot;
+    void **trampoline_slot;
+    uint8_t *original;
+    uint32_t *overwrite_size_slot;
+    int *installed_slot;
+    uint32_t group;
+    int needs_trampoline;
+    int patched;
+} CaptureHookState;
+
+enum {
+    OTCAP_HOOK_GROUP_PERSISTENT = 0,
+    OTCAP_HOOK_GROUP_BOOTSTRAP = 1
+};
+
+enum {
+    OTCAP_HOOK_PHYSICS = 0,
+    OTCAP_HOOK_ACTION,
+    OTCAP_HOOK_TIMER,
+    OTCAP_HOOK_CLOCK_READ,
+    OTCAP_HOOK_SIMULATION_TIME_STORE,
+    OTCAP_HOOK_SHARED_RANDOM,
+    OTCAP_HOOK_FRONTEND_PLAY,
+    OTCAP_HOOK_FRONTEND_LEVEL,
+    OTCAP_HOOK_LAUNCH_LEVEL,
+    OTCAP_HOOK_MOVIE_PRIMARY,
+    OTCAP_HOOK_MOVIE_SECONDARY,
+    OTCAP_HOOK_FRONTEND_KEY,
+    OTCAP_HOOK_FRONTEND_SUMMARY,
+    OTCAP_HOOK_COUNT
+};
+
+static CaptureHookState g_hook_states[OTCAP_HOOK_COUNT] = {
+    {"physics_frame", 0, (void *)ot_capture_physics_hook,
+        &g_physics_target, &g_physics_trampoline, g_physics_original,
+        &g_physics_overwrite_size, &g_physics_installed,
+        OTCAP_HOOK_GROUP_PERSISTENT, 1, 0},
+    {"action_mask_injection", 0, (void *)ot_capture_input_hook,
+        &g_input_target, &g_input_trampoline, g_input_original,
+        &g_input_overwrite_size, &g_input_installed,
+        OTCAP_HOOK_GROUP_PERSISTENT, 1, 0},
+    {"timer_update", 0, (void *)ot_capture_timer_hook,
+        &g_timer_target, &g_timer_trampoline, g_timer_original,
+        &g_timer_overwrite_size, &g_timer_installed,
+        OTCAP_HOOK_GROUP_PERSISTENT, 1, 0},
+    {"clock_read", 0, (void *)ot_capture_clock_read_hook,
+        &g_clock_read_target, &g_clock_read_trampoline, g_clock_read_original,
+        &g_clock_read_overwrite_size, &g_clock_read_installed,
+        OTCAP_HOOK_GROUP_PERSISTENT, 1, 0},
+    {"simulation_time_store", 0,
+        (void *)ot_capture_simulation_time_store_hook,
+        &g_simulation_time_store_target, &g_simulation_time_store_trampoline,
+        g_simulation_time_store_original,
+        &g_simulation_time_store_overwrite_size,
+        &g_simulation_time_store_installed,
+        OTCAP_HOOK_GROUP_PERSISTENT, 1, 0},
+    {"shared_random_call", 0, (void *)ot_capture_shared_random_hook,
+        &g_shared_random_target, &g_shared_random_trampoline,
+        g_shared_random_original, &g_shared_random_overwrite_size,
+        &g_shared_random_installed,
+        OTCAP_HOOK_GROUP_PERSISTENT, 1, 0},
+    {"frontend_play_result", 0, (void *)ot_capture_frontend_play_hook,
+        &g_frontend_play_target, &g_frontend_play_trampoline,
+        g_frontend_play_original, &g_frontend_play_overwrite_size,
+        &g_frontend_play_installed, OTCAP_HOOK_GROUP_BOOTSTRAP, 1, 0},
+    {"frontend_level_select", 0, (void *)ot_capture_frontend_level_hook,
+        &g_frontend_level_target, &g_frontend_level_trampoline,
+        g_frontend_level_original, &g_frontend_level_overwrite_size,
+        &g_frontend_level_installed, OTCAP_HOOK_GROUP_BOOTSTRAP, 1, 0},
+    {"launch_level", 0, (void *)ot_capture_launch_level_hook,
+        &g_launch_level_target, &g_launch_level_trampoline,
+        g_launch_level_original, &g_launch_level_overwrite_size,
+        &g_launch_level_installed, OTCAP_HOOK_GROUP_BOOTSTRAP, 1, 0},
+    {"skip_movie_primary", 0, (void *)ot_capture_movie_primary_hook,
+        &g_movie_primary_target, 0, g_movie_primary_original,
+        &g_movie_primary_overwrite_size, &g_movie_primary_installed,
+        OTCAP_HOOK_GROUP_BOOTSTRAP, 0, 0},
+    {"skip_movie_secondary", 0, (void *)ot_capture_movie_secondary_hook,
+        &g_movie_secondary_target, 0, g_movie_secondary_original,
+        &g_movie_secondary_overwrite_size, &g_movie_secondary_installed,
+        OTCAP_HOOK_GROUP_BOOTSTRAP, 0, 0},
+    {"frontend_key_state", 0, (void *)ot_capture_frontend_key_hook,
+        &g_frontend_key_target, &g_frontend_key_trampoline,
+        g_frontend_key_original, &g_frontend_key_overwrite_size,
+        &g_frontend_key_installed, OTCAP_HOOK_GROUP_BOOTSTRAP, 1, 0},
+    {"frontend_summary", 0, (void *)ot_capture_frontend_summary_hook,
+        &g_frontend_summary_target, &g_frontend_summary_trampoline,
+        g_frontend_summary_original, &g_frontend_summary_overwrite_size,
+        &g_frontend_summary_installed, OTCAP_HOOK_GROUP_BOOTSTRAP, 1, 0}
+};
+#endif
+
+#if defined(_MSC_VER) && defined(_M_IX86)
+static void retire_bootstrap_hooks(void) {
+    uint32_t index;
+    for (index = 0; index < OTCAP_HOOK_COUNT; ++index) {
+        CaptureHookState *state = &g_hook_states[index];
+        if (state->group != OTCAP_HOOK_GROUP_BOOTSTRAP ||
+            *state->installed_slot == 0) {
+            continue;
+        }
+        if (*state->target_slot != 0 && state->spec != 0) {
+            ot_capture_restore_target(
+                (unsigned char *)*state->target_slot,
+                state->spec->overwrite_size, state->original);
+        }
+        if (state->trampoline_slot != 0 && *state->trampoline_slot != 0) {
+            VirtualFree(*state->trampoline_slot, 0, MEM_RELEASE);
+            *state->trampoline_slot = 0;
+        }
+        *state->target_slot = 0;
+        *state->overwrite_size_slot = 0;
+        *state->installed_slot = 0;
+        state->patched = 0;
+    }
+}
+#else
+static void retire_bootstrap_hooks(void) {
+}
+#endif
+
+int ot_capture_install_hooks(void *module_base) {
+    uint32_t index;
+
+    if (g_physics_installed || g_input_installed || g_timer_installed ||
+        g_clock_read_installed || g_simulation_time_store_installed ||
+        g_shared_random_installed || g_frontend_play_installed ||
+        g_frontend_level_installed || g_launch_level_installed ||
+        g_movie_primary_installed || g_movie_secondary_installed ||
+        g_frontend_key_installed || g_frontend_summary_installed ||
+        g_capture_buffer == 0 ||
+        g_capture_buffer->mapping == 0 ||
+        (unsigned long)module_base != 0x00400000UL) {
+        return 0;
+    }
+#if !defined(_MSC_VER) || !defined(_M_IX86)
+    (void)module_base;
+    return 0;
+#else
+    if (!ot_capture_verify_hooks(module_base, 0)) {
+        return 0;
+    }
+    for (index = 0; index < OTCAP_HOOK_COUNT; ++index) {
+        CaptureHookState *state = &g_hook_states[index];
+        state->spec = find_hook(state->name);
+        if (state->spec == 0 || state->spec->overwrite_size < 5u ||
+            state->spec->overwrite_size > 16u ||
+            state->spec->expected_size > state->spec->overwrite_size) {
+            goto install_failed;
+        }
+        *state->target_slot = (unsigned char *)module_base + state->spec->rva;
+        *state->overwrite_size_slot = state->spec->overwrite_size;
+        if (state->needs_trampoline && !ot_capture_create_trampoline(
+                (unsigned char *)*state->target_slot, state->spec,
+                state->original, state->trampoline_slot)) {
+            goto install_failed;
+        }
+        if (!state->needs_trampoline) {
+            memcpy(state->original, *state->target_slot,
+                state->spec->overwrite_size);
+        }
+        if (!ot_capture_patch_target(
+                (unsigned char *)*state->target_slot,
+                state->spec->overwrite_size, state->handler, state->original)) {
+            goto install_failed;
+        }
+        state->patched = 1;
+        *state->installed_slot = 1;
+    }
+    register_hal_action_source();
+    return 1;
+
+install_failed:
+    for (index = OTCAP_HOOK_COUNT; index != 0; --index) {
+        CaptureHookState *state = &g_hook_states[index - 1u];
+        if (state->patched && *state->target_slot != 0 &&
+            state->spec != 0) {
+            ot_capture_restore_target(
+                (unsigned char *)*state->target_slot,
+                state->spec->overwrite_size, state->original);
+        }
+        if (state->trampoline_slot != 0 && *state->trampoline_slot != 0) {
+            VirtualFree(*state->trampoline_slot, 0, MEM_RELEASE);
+            *state->trampoline_slot = 0;
+        }
+        *state->target_slot = 0;
+        *state->overwrite_size_slot = 0;
+        *state->installed_slot = 0;
+        state->spec = 0;
+        state->patched = 0;
+    }
+    return 0;
+#endif
+}

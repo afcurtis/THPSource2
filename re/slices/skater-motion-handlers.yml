@@ -1,0 +1,44 @@
+version: 1
+id: skater-motion-handlers
+subsystem: physics
+status: complete
+scope:
+  functions:
+  - 0x004993f0
+  - 0x004995d0
+  - 0x00497bb0
+  - 0x0049d480
+  - 0x0049d2f0
+  - 0x0049d740
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/skater-stats-and-motion.md
+  - re/evidence/fixtures/skater-calls-physB.txt
+  - re/evidence/fixtures/skater-calls-physD.txt
+  - re/evidence/fixtures/skater-calls-physG.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/skater_kit.hpp
+  - src/runtime/skater_motion.cpp
+  - src/runtime/skater_damp.cpp
+  - re/gdb/probes/phys_specs_stats.py
+  - re/gdb/probes/phys_specs_hit.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/skater_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups phk, phq): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (skater_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 6 of the 6 functions (the motion handlers: the footplant, the special basis update, the manual, the speed damping, the collision of two skaters and the trigger check along the line moved this tick) are replayed over 1300 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 180 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - the footplant divides by 15 less a twentieth of two stats, which faults in retail at exactly 15: such cases end in a retail error and are skipped; the trigger layer, the collision queries and `atexit` are services; the other skater of the collision is a fake object in the slab.'

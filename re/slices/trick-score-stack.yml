@@ -1,0 +1,69 @@
+version: 1
+id: trick-score-stack
+subsystem: tricks
+status: complete
+
+scope:
+  functions:
+    - 0x0048f720
+    - 0x0048d710
+    - 0x0048cbc0
+    - 0x0048cd40
+    - 0x0048e680
+    - 0x0048e8a0
+    - 0x0048f5f0
+    - 0x0048f8f0
+    - 0x0048caf0
+    - 0x0048cb10
+    - 0x0048cb60
+    - 0x0048d960
+    - 0x0048e3b0
+    - 0x0048e620
+    - 0x0048d7a0
+    - 0x0048d7b0
+    - 0x0048ddc0
+    - 0x0048e320
+    - 0x0048f8a0
+    - 0x0048f7c0
+    - 0x0048f800
+    - 0x0048d6d0
+  types:
+    - RuntimeSkaterMovementState
+  globals: []
+
+shared:
+  functions:
+    - 0x004be450
+
+artifacts:
+  evidence:
+    - re/evidence/functions/hud-panel.md
+    - re/evidence/fixtures/hud-calls-construction.txt
+    - re/evidence/fixtures/hud-calls-draw.txt
+    - re/evidence/fixtures/hud-calls-natural-frame400.txt
+    - re/evidence/fixtures/hud-calls-natural-frame5.txt
+    - re/evidence/fixtures/hud-calls-score.txt
+    - re/evidence/fixtures/hud-calls-sprites.txt
+  native:
+    - src/runtime/hud_panel.cpp
+    - src/runtime/hud_panel.hpp
+    - src/runtime/hud_display.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_common.py
+    - re/gdb/probes/frontend_specs_panel.py
+    - re/gdb/probes/frontend_specs_panel_draw.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/hud_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/hud_test.cpp
+    - tests/test_hud_panel.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/frontend_calls.py` with the panel group): the retail function is called on a random legal state poked into the live player-one skater and the HUD globals, its virtual methods and every service outside panel.cpp stubbed; the return value, every written byte and the ordered service calls are compared with the native replay (`hud_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The trick score stack: the stack sum and landed value with their multiplier tables, pushing and closing entries, the landing commit and rollback, the point timer, take-off and landing, and the stack text builder: 22 of the 22 functions are replayed over 839 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the services the stack calls (the career's trick-gap and goal-gap awards, the replay highlight recorder, the trick history at skater + 0x3214, sound, the font's width, the text effects, the gap definition applier, trick-object activation) are seams reported by name; their own units replay them.

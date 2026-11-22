@@ -1,0 +1,53 @@
+version: 1
+id: heap-allocator
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x0046e7f0
+  - 0x0046e8c0
+  - 0x0046e9c0
+  - 0x0046ee20
+  - 0x0046ee40
+  - 0x0046f000
+  - 0x0046f0e0
+  - 0x0046f250
+  - 0x0046f2c0
+  - 0x0046f2e0
+  - 0x0046f3b0
+  - 0x0046f3e0
+  - 0x0046f460
+  - 0x0046f470
+  - 0x0046f480
+  - 0x0046f490
+  - 0x0046f4d0
+  - 0x0046f4e0
+  - 0x0046f510
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/heap-allocator.md
+  - re/evidence/fixtures/heap-calls-memA.txt
+  - re/evidence/fixtures/heap-calls-memB.txt
+  - re/evidence/fixtures/heap-calls-memC.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/heap_kit.hpp
+  - src/runtime/heap.cpp
+  - re/gdb/probes/mem_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/heap_retail_calls_test.cpp
+  - tests/test_heap.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mem): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (heap_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 18 of the 19 functions (the game''s heap: two zones cut into blocks with packed headers, the free lists and their merge, the front, top and placement allocations, free and shrink, the block-size and free-bytes queries, the memory copies and swap, the empty debug hooks and the four wrappers other code calls (the loaded-buffer allocation, delete, shrink and block size)) are replayed over 7000 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 540 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - `Bang` (0x0046ee20), the out-of-memory stop, prints through a PSX stub and spins for ever, so no forced call can return from it: the port reports the print and returns, and the test checks that print; the two calls to it in the allocators are the only lines of `heap.cpp` the replay does not reach. Not replayed: 0x0046ee20.'

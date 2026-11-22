@@ -1,0 +1,51 @@
+version: 1
+id: frontend-screen-loops
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x0046aef0
+    - 0x0046c460
+    - 0x00426430
+    - 0x0046aee0
+    - 0x0046be90
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/screen-loops.md
+    - re/evidence/functions/title-screen.md
+    - re/evidence/fixtures/menu-calls-loops-card.txt
+    - re/evidence/fixtures/menu-calls-loops-credits.txt
+    - re/evidence/fixtures/menu-calls-loops-main.txt
+    - re/evidence/fixtures/menu-calls-loops-wrappers.txt
+  native:
+    - src/runtime/mainmenu.hpp
+    - src/runtime/mainmenu.cpp
+    - src/runtime/mainmenu_screens.cpp
+    - src/runtime/credits.hpp
+    - src/runtime/credits.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_loops.py
+    - re/gdb/probes/frontend_specs_mainmenu.py
+    - re/gdb/probes/frontend_specs_credits.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/menu_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/menu_test.cpp
+    - tests/test_menu_toolkit.py
+    - tests/test_bitmap_loader.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the mloop and cloop groups of `frontend_specs_loops.py`): the loop runs inside the forced call with the retail constructors and destructors, the clock written by a stubbed Game_FrameTick and the six pad edge bytes by a stubbed input poll (the case''s chosen frame presses one), the quit tests answered from a frame counter and the windows'' hooks and prompt windows reported by address; the return value, every written byte and the ordered service calls are compared with the native replay (`menu_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 5 of the 5 functions are replayed over 229 cases with no mismatch.'
+  - Documented exclusion, not a blocker - the roll's text mode outside 0..1 reads a stack leftover in retail (the check only logs) and is unit tested only; the engine's sprite, text, sound, pad and card calls are seams reported by name. The whole-flow walk of the plan (title, card scan, main menu, every screen, a level, back) was replaced by these loop replays plus the FrontEnd_Main replays of 4.10i2, which script every screen's answer.

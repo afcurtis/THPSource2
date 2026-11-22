@@ -1,0 +1,37 @@
+version: 1
+id: rail-runtime-records
+subsystem: physics
+status: complete
+scope:
+  functions:
+  - 0x004aa870
+  - 0x004aa8a0
+  - 0x004aaf10
+  - 0x004aaf30
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/rail-nodes.md
+  - re/evidence/fixtures/rail-calls-rlnA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/rail_kit.hpp
+  - src/runtime/rail_nodes.cpp
+  - re/gdb/probes/rail_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/rail_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rln): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (rail_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 4 of the 4 functions (the list of rail runtime records: the deletion of every record through its virtual destructor (Rail_Init, Rail_DeleteAll) and the record''s destructor and list-unlink) are replayed over 1200 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 120 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the object operator delete (`CClass_OpDelete`) is a service; a record with a different vtable would be a virtual call on an engine object and is reported as a service (the probe only builds real rail records).

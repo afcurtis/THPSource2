@@ -1,0 +1,154 @@
+version: 1
+id: menu-toolkit
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x0046f680
+    - 0x0046f6a0
+    - 0x0046f6c0
+    - 0x0046f6d0
+    - 0x0046f6e0
+    - 0x0046f6f0
+    - 0x0046f710
+    - 0x0046f720
+    - 0x0046f740
+    - 0x0046f760
+    - 0x0046f770
+    - 0x0046f820
+    - 0x0046f840
+    - 0x0046f890
+    - 0x0046f910
+    - 0x0046f930
+    - 0x0046f940
+    - 0x0046f960
+    - 0x0046fa60
+    - 0x0046fc50
+    - 0x0046fd70
+    - 0x0046fd90
+    - 0x0046fe80
+    - 0x0046fe90
+    - 0x004701d0
+    - 0x00470280
+    - 0x004702a0
+    - 0x004702b0
+    - 0x00470530
+    - 0x00470540
+    - 0x00470550
+    - 0x00470630
+    - 0x004706c0
+    - 0x004706e0
+    - 0x00470710
+    - 0x00470720
+    - 0x00470730
+    - 0x004707e0
+    - 0x004708d0
+    - 0x00470910
+    - 0x00470930
+    - 0x00470940
+    - 0x00470a30
+    - 0x00470a70
+    - 0x00470ab0
+    - 0x00470b20
+    - 0x00470bd0
+    - 0x00470c60
+    - 0x00470cf0
+    - 0x00470d10
+    - 0x00470d20
+    - 0x00470ec0
+    - 0x00470f50
+    - 0x00470f80
+    - 0x00471050
+    - 0x004710d0
+    - 0x00471180
+    - 0x004711a0
+    - 0x004711b0
+    - 0x00471370
+    - 0x00471550
+    - 0x00471650
+    - 0x00471750
+    - 0x00471800
+    - 0x004718c0
+    - 0x004718e0
+    - 0x00471930
+    - 0x00471b40
+    - 0x00471b80
+    - 0x00471bb0
+    - 0x00471c80
+    - 0x00471cf0
+    - 0x00471d70
+    - 0x00471e30
+    - 0x004727d0
+    - 0x004727f0
+    - 0x00472920
+    - 0x00472930
+    - 0x00472a70
+    - 0x00472b50
+    - 0x00472cc0
+    - 0x00472ef0
+    - 0x00473220
+    - 0x00473230
+    - 0x00473240
+    - 0x00473260
+    - 0x00473270
+    - 0x00473290
+    - 0x00473330
+    - 0x00473380
+    - 0x00473450
+    - 0x00473460
+    - 0x00473470
+    - 0x00473480
+    - 0x00473490
+    - 0x004734a0
+  types: []
+  globals: []
+
+shared:
+  functions:
+    - 0x004ac5b0
+    - 0x004ac610
+    - 0x004ac670
+    - 0x004ac730
+    - 0x004ac770
+
+artifacts:
+  evidence:
+    - re/evidence/functions/menu-toolkit.md
+    - re/evidence/fixtures/menu-calls-credits.txt
+    - re/evidence/fixtures/menu-calls-entry.txt
+    - re/evidence/fixtures/menu-calls-items.txt
+    - re/evidence/fixtures/menu-calls-lists.txt
+    - re/evidence/fixtures/menu-calls-main.txt
+    - re/evidence/fixtures/menu-calls-screens.txt
+  native:
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/menu_toolkit.cpp
+    - src/runtime/menu_lists.cpp
+    - src/runtime/menu_screens.cpp
+    - src/runtime/menu_dispatch.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_common.py
+    - re/gdb/probes/frontend_specs_menu.py
+    - re/gdb/probes/frontend_specs_menu_items.py
+    - re/gdb/probes/frontend_specs_menu_lists.py
+    - re/gdb/probes/frontend_specs_menu_screens.py
+    - re/gdb/probes/frontend_specs_mainmenu.py
+    - re/gdb/probes/frontend_specs_credits.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/menu_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/menu_test.cpp
+    - tests/test_menu_toolkit.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the menu group): the retail function is called on a random legal state built in a scratch slab, its virtual methods and every service outside the file stubbed (fake vtables whose slots are retail functions nothing here reaches, one per method, so each call is a named service carrying the object; some cases use the real vtables so the native dispatch runs the toolkit''s own methods); the return value, every written byte and the ordered service calls are compared with the native replay (`menu_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The toolkit of menu.cpp: controls and the style object, text items, rows, dots, sliders, scaled text, lists, scrolling lists, grids, the name entry keyboard, the wrapper and the static initialisers: 96 of the 96 functions are replayed over 2768 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - sprites, fonts, the engine's rectangle fills and the pad edge scan are seams reported by name (a draw is a reported call carrying the object), so what each draw looks like is the text layer's and the engine's validation; strings of 32 characters or more overrun the item and are not generated (retail corrupts the item's style pointer), nor are lists with no selectable child (the layout searches for ever) or a highlight request for an id that is not there (retail calls through the next field).

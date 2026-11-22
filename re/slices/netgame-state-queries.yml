@@ -1,0 +1,48 @@
+version: 1
+id: netgame-state-queries
+subsystem: netgame
+status: complete
+scope:
+  functions:
+  - 0x004dd890
+  - 0x004ddb70
+  - 0x004ddbe0
+  - 0x004ddc00
+  - 0x004ddce0
+  - 0x004dddb0
+  - 0x004dde10
+  - 0x004ddf30
+  - 0x004de000
+  - 0x004de010
+  - 0x004de040
+  - 0x004de060
+  - 0x004de0a0
+  - 0x004de150
+  - 0x004de170
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/network-layer.md
+  - re/evidence/fixtures/net-calls-nets1.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/net_game.hpp
+  - src/runtime/net_state.cpp
+  - re/gdb/probes/net_specs.py
+  - re/gdb/probes/net_specs_state.py
+  - re/gdb/probes/net_specs_play.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/net_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_net_game.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups nets of net_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`net_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 15 of the 15 functions (the network state and its queries: the reset and close, the options file, the session lookup and connect, the player registration, the host / guest / remote tests, the pause handshake query and the abort key) are replayed over 3000 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 450 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - DirectPlay (the 0x004daf10..0x004dbd90 wrappers: close, lookup, connect), the options file, the session start (0x004dd980) and the keyboard poll are services.'

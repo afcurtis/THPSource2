@@ -1,0 +1,42 @@
+version: 1
+description: "Boot, main menu to the Park Editor (Right x5), Play, move the cursor, place and change pieces, save through the editor menu, Test Play."
+deliveries: 12000
+keys:
+  - {poll: 530, key: right, hold: 5}
+  - {poll: 560, key: right, hold: 5}
+  - {poll: 590, key: right, hold: 5}
+  - {poll: 620, key: right, hold: 5}
+  - {poll: 650, key: right, hold: 5}
+  - {poll: 710, key: enter, hold: 5}
+  - {poll: 900, key: enter, hold: 5}
+  - {poll: 1400, key: right, hold: 12}
+  - {poll: 1450, key: down, hold: 12}
+  - {poll: 1500, key: enter, hold: 5}
+  - {poll: 1560, key: 0x3d, hold: 5}
+  - {poll: 1600, key: 0x3d, hold: 5}
+  - {poll: 1640, key: enter, hold: 5}
+  - {poll: 1700, key: 0x4e, hold: 5}
+  - {poll: 1760, key: 0x3b, hold: 5}
+  - {poll: 1800, key: 0x3e, hold: 5}
+  - {poll: 1850, key: enter, hold: 5}
+  - {poll: 1950, key: right, hold: 20}
+  - {poll: 2000, key: enter, hold: 5}
+  - {poll: 2100, key: esc, hold: 5}
+  - {poll: 2200, key: down, hold: 5}
+  - {poll: 2260, key: down, hold: 5}
+  - {poll: 2320, key: down, hold: 5}
+  - {poll: 2380, key: down, hold: 5}
+  - {poll: 2460, key: enter, hold: 5}
+  - {poll: 2800, key: enter, hold: 5}
+  - {poll: 3100, key: enter, hold: 5}
+  - {poll: 3400, key: enter, hold: 5}
+  - {poll: 3700, key: esc, hold: 5}
+  - {poll: 3800, key: down, hold: 5}
+  - {poll: 3880, key: enter, hold: 5}
+  - {poll: 4500, key: enter, hold: 5}
+  - {poll: 4900, key: up, hold: 60}
+  - {poll: 5100, key: space, hold: 5}
+  - {poll: 5300, key: up, hold: 80}
+  - {poll: 5600, key: left, hold: 40}
+  - {poll: 5900, key: up, hold: 60}
+masks: ["55dce8:4", "55dd0c:8", "55dd28:4", "55dd5c:4", "6a04c4:8", "6a7674:8"]

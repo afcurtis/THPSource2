@@ -1,0 +1,555 @@
+version: 1
+types:
+
+  - name: RuntimeGenPoint
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "A polygon-ring point of the park generator's outline (gen_objs_poly.cpp): position words and the ring links. Only the words the park generator's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x2
+        name: field_2
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x4
+        name: field_4
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+
+  - name: RuntimeGenPolygon
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "A generator polygon: a ring of points, its bounds and the merge flags. Only the words the park generator's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x2
+        name: field_2
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x4
+        name: field_4
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x6
+        name: field_6
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x8
+        name: field_8
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xa
+        name: field_a
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x14
+        name: field_14
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x18
+        name: field_18
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+
+  - name: RuntimeGenPolygonList
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "A list of generator polygons. Only the words the park generator's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x4
+        name: field_4
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+
+  - name: RuntimeGenOut
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "An 'out' record of the generator (an outline cell's geometry before it is hidden or merged). Only the words the park generator's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x1
+        name: field_1
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x2
+        name: field_2
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x3
+        name: field_3
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x4
+        name: field_4
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xb
+        name: field_b
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xc
+        name: field_c
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xd
+        name: field_d
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xe
+        name: field_e
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x10
+        name: field_10
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x12
+        name: field_12
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x14
+        name: field_14
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x218
+        name: field_218
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x21c
+        name: field_21c
+        type: i16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x220
+        name: field_220
+        type: i16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x224
+        name: field_224
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x228
+        name: field_228
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x22c
+        name: field_22c
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x230
+        name: field_230
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x234
+        name: field_234
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+
+  - name: RuntimeGenIn
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "An 'in' record of the generator (the model data an outline cell takes). Only the words the park generator's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x4
+        name: field_4
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x8
+        name: field_8
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x9
+        name: field_9
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xa
+        name: field_a
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xb
+        name: field_b
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xc
+        name: field_c
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xd
+        name: field_d
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xe
+        name: field_e
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x10
+        name: field_10
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x12
+        name: field_12
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x14
+        name: field_14
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x16
+        name: field_16
+        type: u16
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x20
+        name: field_20
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+
+  - name: RuntimeGenGap
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "A gap record of the generator (the gap's edges and primitives). Only the words the park generator's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: field_0
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x4
+        name: field_4
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x8
+        name: field_8
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0xc
+        name: field_c
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x14
+        name: field_14
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x18
+        name: field_18
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x20
+        name: field_20
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x24
+        name: field_24
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x28
+        name: field_28
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x2c
+        name: field_2c
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x30
+        name: field_30
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x34
+        name: field_34
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x38
+        name: field_38
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x39
+        name: field_39
+        type: u8
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x3c
+        name: field_3c
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x40
+        name: field_40
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x44
+        name: field_44
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x50
+        name: field_50
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md
+      - offset: 0x54
+        name: field_54
+        type: u32
+        confidence: observed
+        description: "Read or written by the gen Kit's park-generator methods; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/generator-objects.md

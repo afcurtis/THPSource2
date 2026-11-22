@@ -1,0 +1,47 @@
+version: 1
+id: game-fmv-and-movie-interface
+subsystem: movie
+status: complete
+scope:
+  functions:
+  - 0x00454d30
+  - 0x00454e50
+  - 0x00454e70
+  - 0x004e7070
+  - 0x004e7090
+  - 0x004e70e0
+  - 0x004e7140
+  - 0x004e71c0
+  - 0x004e6e70
+  - 0x004e7260
+  - 0x004e72d0
+  - 0x004e7310
+  - 0x004e7370
+  - 0x004e73e0
+  - 0x004e6f00
+  - 0x004e5ec0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/audio-movie.md
+  - re/evidence/fixtures/audio-calls-movie.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/audio_game.hpp
+  - src/runtime/audio_movie.cpp
+  - re/gdb/probes/audio_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/audio_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_audio_game.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups movie of audio_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`audio_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 16 of the 16 functions (the game FMV list (gamefmv.cpp) and the movie interface the game calls (pc\pcmovie.cpp): start, stop, update, pause, music, the XA volume, XA play and stop, the movie window''s primitive and the startup media loop) are replayed over 3200 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 480 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - Bink (StartBinkMovie, CreateBinkSurface, NextBinkFrame, CloseBinkMovie, ...: out of scope, owned by the HAL''s movie backend), the music thread, the Win32 and Bink imports (stubbed on their call sites) and the pad and key polls are services.'

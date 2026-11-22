@@ -1,0 +1,41 @@
+version: 1
+id: render-scene-traversal
+subsystem: renderer
+status: complete
+
+scope:
+  # Closed by 4.14c and 4.15e (2026-10-26). The callers above M3D_SubmitModelState are native and
+  # owned by those milestones' slices: the per-view stage that picks the ordering table and arena
+  # (M3D_RenderStage 0x00467c90, slice main-display), the view binding (M3D_BeginRenderView 0x0045e8e0)
+  # and the object-list walk with its state word (M3D_RenderObjects 0x0045f530, slice
+  # render-view-objects), and the frame boundary that clears the ordering table (Db_WaitRender
+  # 0x0042fed0, slice render-display-buffers; Db_ClearOrderingTable 0x004d3b00 stays in
+  # render-packet-submission).
+  functions: []
+  types: []
+  globals: []
+
+shared:
+  functions:
+    - 0x004d14d0
+    - 0x004d3b00
+    - 0x004d3160
+
+artifacts:
+  evidence:
+    - re/evidence/functions/render-packet-submission.md
+    - re/evidence/functions/renderer.md
+    - re/evidence/functions/renderer-view-objects.md
+    - re/evidence/functions/renderer-scene-frame.md
+    - re/evidence/functions/renderer-display-buffers.md
+  native:
+    - src/trg/render_model_submit.hpp
+    - src/trg/render_model_submit.cpp
+  tests:
+    - src/trg/render_model_retail_trace_test.cpp
+
+open_questions: []
+
+completion:
+  - The object-list walk, the per-view stage and arena setup and the frame boundary are evidence-backed and native (4.14c, 4.15e), each replayed against retail by forced calls (view, sky, objects, item shadow and skater model 730 cases; frame functions 160; display buffers 552), with 0 mismatches.
+  - Validation method: per-function forced-call replay replaced the whole-frame capture this slice first asked for. A single capture of every submit and the drawn list of one frame is a Phase 5 check of the standalone renderer.

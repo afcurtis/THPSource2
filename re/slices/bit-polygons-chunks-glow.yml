@@ -1,0 +1,73 @@
+version: 1
+id: bit-polygons-chunks-glow
+subsystem: effects
+status: complete
+scope:
+  functions:
+  - 0x00404af0
+  - 0x00404bd0
+  - 0x00404bf0
+  - 0x00404cb0
+  - 0x004051c0
+  - 0x00405390
+  - 0x004053b0
+  - 0x004053d0
+  - 0x004054b0
+  - 0x00405520
+  - 0x004056c0
+  - 0x004057f0
+  - 0x00405810
+  - 0x00405990
+  - 0x00405a70
+  - 0x00405aa0
+  - 0x00405b20
+  - 0x00405b50
+  - 0x00405b90
+  - 0x00405c40
+  - 0x00405d20
+  - 0x00405d60
+  - 0x00405e30
+  - 0x00405e50
+  - 0x00405e60
+  - 0x00405ec0
+  - 0x00405ef0
+  - 0x00405f10
+  - 0x00405f30
+  - 0x00405f70
+  - 0x00405f90
+  - 0x00405fb0
+  - 0x00405fd0
+  - 0x00405ff0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/bit-polygons-chunks-glow.md
+  - re/evidence/fixtures/bit-calls-bit2A.txt
+  - re/evidence/fixtures/bit-calls-bit3A.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/bit_kit.hpp
+  - src/runtime/bit_core.cpp
+  - src/runtime/bit_glow.cpp
+  - re/gdb/probes/bit_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/bit_specs.py
+  tests:
+  - src/runtime/bit_retail_calls_test.cpp
+  - tests/test_bit_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups bit2, bit3): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (bit_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 33 of the 33 functions (the general polygon (three or four corners), the chunk bit (a triangle that flies off along its normal: constructor, colours, texture words and world coordinates through the GTE), the glow (sections and fringes in one block: constructors, setters, destructor), the wobbly glow, and the flat, linked and pixel bits) are replayed over 6600 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 990 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the allocator, the block-size query and the random numbers are services; the glow with no points divides by zero in retail and is skipped.

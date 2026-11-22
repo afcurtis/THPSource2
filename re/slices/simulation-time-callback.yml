@@ -1,0 +1,43 @@
+version: 1
+id: simulation-time-callback
+subsystem: timing
+status: complete
+
+scope:
+  functions:
+    - 0x004dace0
+  types:
+    - RetailTimerState
+  globals:
+    - SimulationPublicTick
+    - SimulationTime
+    - TimerPublicAccumulator
+    - TimerSimulationAccumulator
+    - TimerState
+
+shared:
+  functions: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/simulation-time-callback.md
+  native:
+    - src/camera/camera_timing.hpp
+  tests:
+    - tests/test_camera_system.py
+    - tests/test_gdb_runtime.py
+    - tests/test_recording.py
+    - tests/test_timer_replay.py
+    - re/gdb/opentony/timer.py
+    - re/gdb/opentony/replay.py
+    - re/evidence/fixtures/timer-warehouse-idle.json
+
+open_questions: []
+
+completion:
+  - The callback boundary and timer-state fields read/written by 0x004dace0 are recorded.
+  - Recording events represent callback delivery as an external input while retaining derived clocks as observations.
+  - The offline native model covers the callback transition, x87-style publication, 16 ms deliveries, and both pause gates.
+  - Strict replay has a deterministic timer service and suppresses uncontrolled callback stores without injecting derived clock values.
+  - Callback count, order, interval and pause-gate behaviour are characterized across five repeated idle Warehouse recordings; the recorded delivery order is compacted into re/evidence/fixtures/timer-warehouse-idle.json and the C++ model reproduces every recorded entry clock bit-exactly from it.
+  - The GDB retail replay delivers callbacks at the frame-limiter wait sites (lockstep model in re/gdb/opentony/timer.py and replay.py), so all five Warehouse recordings replay 256/256 through retail instead of stalling at frame 0.

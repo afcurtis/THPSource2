@@ -1,0 +1,48 @@
+version: 1
+id: world-object-lists
+subsystem: world
+status: complete
+
+scope:
+  functions:
+    - 0x004801d0
+    - 0x004801f0
+    - 0x004802f0
+    - 0x004803b0
+    - 0x00480ff0
+    - 0x00480fa0
+    - 0x004c5b30
+    - 0x004c5c00
+    - 0x004c5c40
+    - 0x004c7a00
+    - 0x004c7bf0
+    - 0x004c9620
+  types: []
+  globals: []
+
+shared:
+  functions:
+    - 0x004c5b60
+    - 0x004c5c70
+
+artifacts:
+  evidence:
+    - re/evidence/functions/object-script-vm.md
+    - re/evidence/fixtures/object-script-warehouse.txt
+  native:
+    - src/trg/world_objects.hpp
+    - src/trg/world_objects.cpp
+    - src/trg/script_world.hpp
+    - src/trg/script_world.cpp
+  tests:
+    - src/trg/world_objects_test.cpp
+    - src/trg/object_script_retail_trace_test.cpp
+
+open_questions: []
+
+completion:
+  - "The intrusive object lists are reproduced link for link, including the retail habit of leaving a removed object's own next pointer untouched, so the suspend-by-node and unsuspend-by-node loops carry on into the list the object just joined."
+  - "Ob_AI is a native per-frame loop: nearest-player distance, far-away suspension, the update hooks, and the two-frame death then delete sequence; the distance formula matches the retail value stored at +0xb8 in 948 replayed updates."
+  - "TRG_CreateObject for the 0xcb family is modelled by ScriptWorld: objects are created suspended unless the node option list carries option 2, and activate/suspend/signal/kill messages act on the real lists."
+  - "Documented exclusion, not a blocker - SendVisible, enviro-item, rail and light kills are hooks only and belong to the planned slice world-enviro-messaging; the platform kill path and the game-object loop moved to the completed slice platform-script-object."
+  - "Documented exclusion, not a blocker - retail traces do not exercise suspension, activation or kill messages on baddy objects (idle Warehouse); these are covered by unit tests built from the disassembly."

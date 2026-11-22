@@ -1,0 +1,82 @@
+version: 1
+id: world-skater-methods
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x0046c5f0
+  - 0x0046c630
+  - 0x0046c670
+  - 0x0046c720
+  - 0x0046cbe0
+  - 0x0046cc00
+  - 0x0046cca0
+  - 0x0046cdf0
+  - 0x0046ce20
+  - 0x0046ce60
+  - 0x0046ce70
+  - 0x0046cf20
+  - 0x0046cfe0
+  - 0x0046d010
+  - 0x0046d040
+  - 0x0046d160
+  - 0x0046d1d0
+  - 0x0046d220
+  - 0x0046d2e0
+  - 0x0046d6e0
+  - 0x0046d750
+  - 0x0046d770
+  - 0x0046d780
+  - 0x0046d790
+  - 0x0046d7a0
+  - 0x0046d940
+  - 0x0046d970
+  - 0x0046da70
+  - 0x0046dd20
+  - 0x0046dd60
+  - 0x0046e080
+  - 0x0046e1d0
+  - 0x0046e3f0
+  - 0x0046e410
+  - 0x0046e460
+  - 0x0046e470
+  - 0x0046e4f0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/fixtures/world-calls-wskD.txt
+  - re/evidence/functions/world-skater-methods.md
+  - re/evidence/fixtures/world-calls-wsbA.txt
+  - re/evidence/fixtures/world-calls-wsbB.txt
+  - re/evidence/fixtures/world-calls-wsgC.txt
+  - re/evidence/fixtures/world-calls-wsgD.txt
+  - re/evidence/fixtures/world-calls-wskA.txt
+  - re/evidence/fixtures/world-calls-wskB.txt
+  - re/evidence/fixtures/world-calls-wskC.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/world_kit.hpp
+  - src/runtime/world_skater.cpp
+  - src/runtime/world_skater_effects.cpp
+  - re/gdb/probes/world_specs_skater.py
+  - re/gdb/probes/world_specs_skater2.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/world_specs.py
+  tests:
+  - src/runtime/world_retail_calls_test.cpp
+  - tests/test_world_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups wsk, wsb, wsg): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (world_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 34 of the 34 functions (the skater object''s methods: the constructor, destructors, board bits, the registry of reference-counted animation names, the light colour fade and its shade from the face under the skater, the ground probe, the shadow''s line geometry, the flip to the velocity, the blood splat, the water splash, the grunt sounds and the water droplet object) are replayed over 8488 cases with no mismatch (at least 238 cases each; the committed fixtures keep the first 30 of each capture per function, 1020 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the panel's text members, the sprite objects, the effect bits, the hook queries, the collision zone query and the sound are services (the zone query's answers are scripted).

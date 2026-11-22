@@ -1,0 +1,48 @@
+version: 1
+id: replay-bit-stream
+subsystem: video
+status: complete
+scope:
+  functions:
+  - 0x004cbc90
+  - 0x004cbca0
+  - 0x004cbf30
+  - 0x004cbf70
+  - 0x004cbfa0
+  - 0x004cc020
+  - 0x004ccc40
+  - 0x004ccc70
+  - 0x004cd5a0
+  - 0x004cd690
+  - 0x004cd710
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/replay-recorder.md
+  - re/evidence/fixtures/video-calls-vbtA.txt
+  - re/evidence/fixtures/video-calls-vcsA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/video_kit.hpp
+  - src/runtime/video_stream.cpp
+  - re/gdb/probes/video_specs.py
+  - re/gdb/probes/video_specs_more.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/video_retail_calls_test.cpp
+  - tests/test_camera_video_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups vbt, vcs): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (video_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 11 of the 11 functions (the bit stream of the replay file: the width a signed field needs, writing and reading 1..32 bits (across word boundaries), reading a flag or a sign-extended field, flushing a partly filled word, and the stream''s start, stop and rewind) are replayed over 4200 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 330 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - Mem_Delete and the assertion routine are services; Replay_BitsNeeded never ends in retail for a value of 0x40000000 or more, which the probe never asks.

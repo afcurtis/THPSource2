@@ -1,0 +1,50 @@
+version: 1
+id: collision-query
+subsystem: collision
+status: complete
+
+scope:
+  functions:
+    - 0x004624d0
+    - 0x004628f0
+    - 0x00462a20
+    - 0x004638d0
+    - 0x00463d50
+    - 0x00466090
+    - 0x004660b0
+    - 0x0048ea80
+  types:
+    - RuntimeCollisionObject
+    - SColCache
+    - SFaceCache
+    - SLineInfo
+  globals:
+    - CollisionModelCache
+    - CollisionFaceCache
+    - GameObjectListHead
+
+artifacts:
+  evidence:
+    - re/evidence/functions/collision.md
+    - re/evidence/functions/blockmap-collision.md
+    - re/evidence/fixtures/collision-selection-policy.json
+  native:
+    - re/evidence/collision_reference.hpp
+    - src/collision/psx_scene.hpp
+    - src/assets/psx_collision.cpp
+    - src/runtime/psx_collision_probe.cpp
+  tests:
+    - re/evidence/collision_reference_test.cpp
+    - src/collision/psx_scene_test.cpp
+    - src/assets/psx_collision_test.cpp
+    - src/runtime/psx_collision_probe_test.cpp
+
+open_questions: []
+
+completion:
+  - The natural non-injected moving-prop capture is a world-object question (which baddy/car/platform objects move their linked collision nodes) and moved to the planned moving-prop-collision slice; the primitive is confirmed by natural Hangar linked-object hits and the controlled transform replay.
+  - All scoped function boundaries and ABIs are evidence-backed.
+  - Accessed retail fields and globals have validated types.
+  - Query initialization, candidate testing, and result publication have semantic tests.
+  - Retail/native observations agree at the collision-query boundary.
+  - Exact matching implementations retain a byte-identical executable.

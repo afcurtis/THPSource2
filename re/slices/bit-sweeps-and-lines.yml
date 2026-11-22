@@ -1,0 +1,66 @@
+version: 1
+id: bit-sweeps-and-lines
+subsystem: effects
+status: complete
+scope:
+  functions:
+  - 0x00407250
+  - 0x00407270
+  - 0x0040a740
+  - 0x0040a860
+  - 0x0040a880
+  - 0x0040a900
+  - 0x0040aa20
+  - 0x0040ab50
+  - 0x0040ab70
+  - 0x0040ad30
+  - 0x0040ae20
+  - 0x0040ae40
+  - 0x0040ae50
+  - 0x0040af70
+  - 0x0040afe0
+  - 0x0040b000
+  - 0x0040b060
+  - 0x0040b1a0
+  - 0x0040b1c0
+  - 0x0040b1d0
+  - 0x0040b2e0
+  - 0x0040b300
+  - 0x0040b350
+  - 0x0040b3e0
+  - 0x0040b3f0
+  - 0x0040b410
+  - 0x0040b4e0
+  - 0x0040b500
+  - 0x0040b570
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/bit-sweeps-and-lines.md
+  - re/evidence/fixtures/bit-calls-bit5A.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/bit_kit.hpp
+  - src/runtime/bit_misc.cpp
+  - re/gdb/probes/bit_specs3.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/bit_specs.py
+  tests:
+  - src/runtime/bit_retail_calls_test.cpp
+  - tests/test_bit_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups bit5): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (bit_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 27 of the 27 functions (the per-frame sweeps of the bit lists (Bit_Move, MoveList), the polyline and gouraud polyline classes, the smoke generator, the line bits, the blood manager''s destructors and reset, the vector jitter, the camera''s small random generator and its identity quaternion) are replayed over 5348 cases with no mismatch (at least 172 cases each; the committed fixtures keep the first 30 of each capture per function, 810 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the class delete and the quaternion constructor are services; the bits' virtual Move and deleting destructors are stubs.

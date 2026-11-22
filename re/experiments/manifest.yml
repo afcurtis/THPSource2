@@ -1,0 +1,40 @@
+version: 1
+
+experiments:
+  - name: warehouse-idle
+    status: observed
+    purpose: Establish stable player object/state while stationary in Warehouse.
+    evidence:
+      - re/evidence/functions/game-loop.md
+    capture:
+      - frame
+      - player_position
+      - player_velocity
+      - player_state
+      - player_animation
+
+  - name: warehouse-run
+    status: partial
+    purpose: Establish horizontal movement update and acceleration/velocity behavior.
+    evidence:
+      - re/evidence/functions/physics.md
+
+  - name: warehouse-ollie
+    status: confirmed
+    purpose: Capture the KICK-gated ollie launch, airborne interval, landing, state transitions, and action-record correlation.
+    evidence:
+      - re/evidence/experiments/warehouse-ollie.md
+      - re/evidence/functions/physics-states.md
+    decisive_captures:
+      - build/debug/sessions/physics-states32/jump.trace.ndjson
+      - build/debug/sessions/physics-states33/kick.trace.ndjson
+
+  - name: warehouse-animation
+    status: complete
+    purpose: Recover the skater animation selector, cursor timing, resource identity, and skeleton-pose boundary.
+    capture:
+      - animation_selector
+      - animation_requests
+      - animation_cursor
+      - animation_resource
+      - skeleton_pose_boundary

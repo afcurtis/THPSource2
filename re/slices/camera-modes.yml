@@ -1,0 +1,45 @@
+version: 1
+id: camera-modes
+subsystem: camera
+status: complete
+scope:
+  functions:
+  - 0x0040be70
+  - 0x0040c1a0
+  - 0x0040e090
+  - 0x004103e0
+  - 0x00410610
+  - 0x00410c40
+  - 0x00410c90
+  - 0x004113f0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/camera-rigs.md
+  - re/evidence/fixtures/camera-calls-cmmA.txt
+  - re/evidence/fixtures/camera-calls-cmmB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/camera_kit.hpp
+  - src/runtime/camera_modes.cpp
+  - src/runtime/camera_smooth.cpp
+  - re/gdb/probes/cam_specs_modes.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/camera_retail_calls_test.cpp
+  - tests/test_camera_video_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cmm): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (camera_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 8 of the 8 functions (the camera modes: following the target, the second mode (both steer to the view), the tripod rotation, the reset, the death camera, the smoothing and validation of the quaternion and the push of the viewport effects) are replayed over 2500 cases with no mismatch (at least 250 cases each; the committed fixtures keep the first 30 of each capture per function, 300 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the collision queries, the viewport, the skater queries and the object lists are services; a division by zero faults in retail and ends the case in an error, which is skipped.

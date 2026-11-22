@@ -1,0 +1,79 @@
+version: 1
+id: render-images
+subsystem: renderer
+status: complete
+scope:
+  functions:
+  - 0x004564b0
+  - 0x00456550
+  - 0x00456570
+  - 0x00456580
+  - 0x00456600
+  - 0x00456790
+  - 0x004568d0
+  - 0x00456990
+  - 0x004569a0
+  - 0x00456a00
+  - 0x00456a70
+  - 0x00456ae0
+  - 0x00456c60
+  - 0x00456c90
+  - 0x00456cb0
+  - 0x00456cd0
+  - 0x00456cf0
+  - 0x00456d10
+  - 0x00456d90
+  - 0x00456e10
+  - 0x00457090
+  - 0x00457120
+  - 0x00457130
+  - 0x00457150
+  - 0x00457160
+  - 0x004573e0
+  - 0x00457400
+  - 0x004573f0
+  - 0x00457420
+  - 0x00457520
+  - 0x00457540
+  - 0x00457660
+  - 0x004576f0
+  - 0x00457810
+  - 0x00457820
+  - 0x00457830
+  - 0x00457870
+  - 0x004578a0
+  - 0x004578c0
+  - 0x00457e10
+  - 0x00457f30
+  - 0x004581a0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/fixtures/world-calls-bemD.txt
+  - re/evidence/functions/renderer-images.md
+  - re/evidence/fixtures/render-calls-rimA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/render_image.cpp
+  - re/gdb/probes/render_specs4.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/render_retail_calls_test.cpp
+  - tests/test_render_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rim): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (render_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 41 of the 41 functions (the screen image classes: the base image object, the flat and rectangle primitives, the BMP depth and palette loaders, the sliced, raw and bitmap images and the sprite (constructors, deleting destructors, drawing and size queries), the loading of a BMP into a material''s texture, the release of a region''s textures and the fill of a material''s palette) are replayed over 1640 cases with no mismatch (at least 40 cases each; the committed fixtures keep the first 30 of each capture per function, 1230 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the file loader, the PSX library's primitives, the texture layer and the allocator are services; a BMP header is a scripted 0x40-byte read.

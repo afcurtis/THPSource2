@@ -1,0 +1,142 @@
+version: 1
+types:
+  - name: RuntimeD3DPolygonCommandHeader
+    kind: fixed_layout
+    size: null
+    confidence: confirmed
+    description: Common linked command prefix consumed by the final polygon-list dispatcher.
+    fields:
+      - offset: 0x00
+        name: next
+        type: pointer<void>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x04
+        name: enabled_or_payload_word
+        type: u32
+        overlay_group: command_word
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x07
+        name: opcode_and_format
+        type: u8
+        overlay_group: command_word
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x08
+        name: render_flags
+        type: u32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/renderer.md
+
+  - name: RuntimeD3DPrimitiveDispatchTable
+    kind: fixed_layout
+    size: 0x400
+    confidence: confirmed
+    description: 256-entry opcode-base dispatch table initialized by the renderer; uninstalled slots point to a no-op handler.
+    fields:
+      - offset: 0x00
+        name: handlers
+        type: array<pointer<void>,256>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/renderer.md
+
+  - name: RuntimeD3DPolygonRecord
+    kind: fixed_layout
+    size: 0x30
+    confidence: observed
+    description: Fixed-size logical polygon record allocated after PSX face color and vertex resolution. The stable copied record is 0x30 bytes, while the retail per-frame arena reserves one 0xc0-byte slot for each construction attempt. The view record advances the cursor by 0x14 before the first slot; failed clip/cull attempts rewind one slot before any bucket link is published. Accepted slots remain arena-owned through linked dispatch until the next buffer reset. The tail is a variable vertex/color/UV stream; non-textured vertices occupy 0x14 bytes and textured vertices occupy 0x1c bytes.
+    fields:
+      - offset: 0x00
+        name: next
+        type: pointer<RuntimeD3DPolygonRecord>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x07
+        name: packet_format
+        type: u8
+        confidence: observed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x08
+        name: packed_render_flags
+        type: u32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x10
+        name: material_or_pc_texture
+        type: pointer<RuntimePsxMaterialRecord>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/renderer.md
+          - re/evidence/functions/texture-runtime.md
+      - offset: 0x14
+        name: vertex_count
+        type: u32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x18
+        name: vertex_color_uv_stream
+        type: bytes
+        confidence: observed
+        description: Each vertex begins with four f32 values (projected x/y/z and reciprocal depth), followed by one u32 color; textured records append f32 U/V. The stride is 0x14 for solid and 0x1c for textured records.
+        evidence:
+          - re/evidence/functions/renderer.md
+
+  - name: RuntimeM3DTransformedVertex
+    kind: fixed_layout
+    size: 0x1c
+    confidence: observed
+    description: Seven-float working record produced by the packed model vertex transformer. It contains projected coordinates, reciprocal depth, source vertex flags, clip flags, and one mode-dependent auxiliary value.
+    fields:
+      - offset: 0x00
+        name: projected_x
+        type: f32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x04
+        name: projected_y
+        type: f32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x08
+        name: projected_z
+        type: f32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x0c
+        name: reciprocal_depth
+        type: f32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x10
+        name: source_vertex_flags
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x14
+        name: clip_flags
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/renderer.md
+      - offset: 0x18
+        name: auxiliary_or_override_value
+        type: f32
+        confidence: observed
+        description: Zero for ordinary transformed vertices; the line/override path reuses it for a source/scale value.
+        evidence:
+          - re/evidence/functions/renderer.md

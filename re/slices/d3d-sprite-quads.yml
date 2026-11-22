@@ -1,0 +1,39 @@
+version: 1
+id: d3d-sprite-quads
+subsystem: renderer
+status: complete
+scope:
+  functions:
+  - 0x004d7990
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/renderer-d3d.md
+  - re/evidence/fixtures/render-calls-p24-rd3dD.txt
+  - re/evidence/fixtures/render-calls-rd3dA.txt
+  - re/evidence/fixtures/render-calls-rd3dC.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/render_d3d.cpp
+  - re/gdb/probes/render_specs6.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/render_retail_calls_test.cpp
+  - tests/test_render_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rd3d, rd3dr): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (render_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 1 of the 1 functions (the sprite quad builder (a thiscall with an ordering-table list and an x / y offset: one 0xc0-byte packet per rectangle written into the render arena with float products)) are replayed over 80 cases with no mismatch (at least 80 cases each; the committed fixtures keep the first 30 of each capture per function, 80 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the case runs through a trampoline that sets the render window's 24-bit control word around the call (`this` travels in eax), and the replay computes in float at that precision.

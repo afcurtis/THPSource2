@@ -1,0 +1,132 @@
+version: 1
+id: equipment-select-screen
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x00444510
+    - 0x00444550
+    - 0x00444560
+    - 0x00444580
+    - 0x00444590
+    - 0x004445b0
+    - 0x00444810
+    - 0x00444880
+    - 0x004448c0
+    - 0x004448f0
+    - 0x00444900
+    - 0x00444940
+    - 0x00444970
+    - 0x00444980
+    - 0x00444ff0
+    - 0x00445010
+    - 0x004450a0
+    - 0x004450e0
+    - 0x00445540
+    - 0x00445550
+    - 0x004455c0
+    - 0x004456a0
+    - 0x004456c0
+    - 0x00445740
+    - 0x00445780
+    - 0x00445810
+    - 0x004458b0
+    - 0x00445920
+    - 0x00445cf0
+    - 0x00445d10
+    - 0x00445d80
+    - 0x00445e70
+    - 0x00445ea0
+    - 0x004460a0
+    - 0x004460c0
+    - 0x00446150
+    - 0x00446180
+    - 0x00446420
+    - 0x00446440
+    - 0x00446470
+    - 0x00446490
+    - 0x00446650
+    - 0x00446670
+    - 0x004466d0
+    - 0x004468a0
+    - 0x004468e0
+    - 0x00446900
+    - 0x00446910
+    - 0x00446920
+    - 0x00446940
+    - 0x00446950
+    - 0x00446990
+    - 0x004469f0
+    - 0x00446c20
+    - 0x00446c40
+    - 0x00446d80
+    - 0x00446fb0
+    - 0x00447340
+    - 0x00447440
+    - 0x004474b0
+    - 0x00447730
+    - 0x00447a90
+    - 0x00447ae0
+    - 0x00447b70
+    - 0x00447b80
+    - 0x00447be0
+    - 0x00447c00
+    - 0x00447c20
+    - 0x00447cf0
+    - 0x00447d10
+    - 0x00447d30
+    - 0x00447d70
+    - 0x00447e00
+    - 0x00447e80
+    - 0x00447f40
+    - 0x00448110
+    - 0x004481c0
+    - 0x00448230
+    - 0x00448480
+    - 0x004484a0
+    - 0x00448540
+    - 0x00448740
+    - 0x00448790
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/equipment-select-screen.md
+    - re/evidence/fixtures/eqsel-calls-eqh.txt
+    - re/evidence/fixtures/eqsel-calls-eqloop.txt
+    - re/evidence/fixtures/eqsel-calls-eqpan.txt
+    - re/evidence/fixtures/eqsel-calls-eqrack.txt
+    - re/evidence/fixtures/eqsel-calls-eqview.txt
+    - re/evidence/fixtures/eqsel-calls-eqwin.txt
+  native:
+    - src/runtime/equip_select.hpp
+    - src/runtime/equip_select_window.cpp
+    - src/runtime/equip_select_panels.cpp
+    - src/runtime/equip_select_racks.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - src/runtime/career.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_eqsel.py
+    - re/gdb/probes/frontend_specs_eqsel_cases.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/equip_select_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/equip_select_test.cpp
+    - tests/test_equip_select.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the eqh, eqwin, eqpan, eqview, eqrack and eqloop groups): the retail function is called on a random legal state built in a scratch slab (objects built by hand with fake pool objects whose virtual methods are reported services, fake racks and dialog with their own vtables, real text elements, fonts and menu dots where a width or a text is computed, constructors run for real in the arena); the return value, every written byte and the ordered service calls are compared with the native replay (`equip_select_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 83 of the 83 functions are replayed over 3391 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the constructors of the screen's other classes (as the window's and the view's initialisers call them), the prompt, score counter and flagged text constructors of player_ui.cpp, the confirm box, the spool's file calls, the engine's model, render, camera and fog calls and the screen loop's window constructor are seams reported by name with the arguments retail passed (each is replayed on its own, the confirm box and the prompt windows by earlier slices).

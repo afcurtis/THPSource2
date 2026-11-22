@@ -1,0 +1,41 @@
+version: 1
+id: math-rotation-matrices
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x004e7c60
+  - 0x004e7de0
+  - 0x004e7f60
+  - 0x004e8140
+  - 0x004e81a0
+  - 0x004e8200
+  - 0x004e8280
+  - 0x004e8410
+  - 0x004e8460
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/math-layer.md
+  - re/evidence/fixtures/math-calls-mathA.txt
+  - re/evidence/fixtures/math-calls-p24-mathrA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/math_fixed.cpp
+  - re/gdb/probes/math_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/math_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_math_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mathk of math_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`math_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 9 of the 9 functions (the Q12 matrix builders: the rotations about X, Y and Z of a matrix in place (a column at a time through gte_rtir, so they leave RT, IR and MAC behind), the three-angle constructors (Y X Z, Z Y X and a second copy of the first), the matrix multiply and the Rz Rx Ry chain, the transpose and the translation store) are replayed over 5400 cases with no mismatch (at least 600 cases each; the committed fixtures keep the first 30 of each capture per function, 540 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - `Math_RotationMatrixFromAngles` (0x004e80e0) was ported with the platform script objects and keeps that mapping; it is replayed here too. The 14 bytes the multiply copies from the stack past its 18-byte result are not compared (the replay marks them unspecified).

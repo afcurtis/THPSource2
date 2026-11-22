@@ -1,0 +1,17 @@
+# Pinned Dear ImGui for the THPSource2 launcher (THPSource2_Launcher.exe, src/launcher/thpsource2, docs/LAUNCHER.md).
+#
+# `tony hooks build` fetches the release source, checks its size and SHA-256, and compiles the library and its SDL3 platform and SDL_Renderer backends into
+# the launcher; nothing else of the release is used. The game itself does not use ImGui.
+#
+# Licence: MIT (the notice is in THIRD_PARTY_NOTICES.md; `tony release package` ships LICENSE.txt as licenses/imgui-LICENSE.txt).
+version: 1
+imgui:
+  release: "1.92.9b"
+  url: https://github.com/ocornut/imgui/archive/refs/tags/v1.92.9b.tar.gz
+  path: .tools/media/imgui/imgui-1.92.9b.tar.gz
+  size: 2123074
+  sha256: 21d8a0a565e85dce943e375db00812c2f3f0ab21f3f0f7964e364a63422d7f99
+  source_dir: .tools/imgui/src
+  root: imgui-1.92.9b
+  license: LICENSE.txt
+  sources: [imgui.cpp, imgui_draw.cpp, imgui_tables.cpp, imgui_widgets.cpp, backends/imgui_impl_sdl3.cpp, backends/imgui_impl_sdlrenderer3.cpp]

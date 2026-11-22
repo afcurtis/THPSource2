@@ -1,0 +1,62 @@
+version: 1
+id: park-editor-cursor
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004377d0
+  - 0x00437840
+  - 0x00437850
+  - 0x00437860
+  - 0x004378d0
+  - 0x00437950
+  - 0x00437c30
+  - 0x00437cd0
+  - 0x00437d30
+  - 0x00437dc0
+  - 0x00438320
+  - 0x00438360
+  - 0x00438400
+  - 0x00438410
+  - 0x004385b0
+  - 0x00438610
+  - 0x00438c50
+  - 0x00438ce0
+  - 0x00438dc0
+  - 0x00438e00
+  - 0x00438e60
+  - 0x00439110
+  - 0x00439130
+  - 0x00439540
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-editor.md
+  - re/evidence/fixtures/leveleditor-calls-edk1.txt
+  - re/evidence/fixtures/leveleditor-calls-edk2.txt
+  - re/evidence/fixtures/leveleditor-calls-edk3.txt
+  - re/evidence/fixtures/leveleditor-calls-edk4.txt
+  - re/evidence/fixtures/leveleditor-calls-edk5.txt
+  - re/evidence/fixtures/leveleditor-calls-edk6.txt
+  - re/evidence/fixtures/leveleditor-calls-edk7.txt
+  - re/evidence/fixtures/leveleditor-calls-edk8.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/level_editor.hpp
+  - src/runtime/level_editor_cursor.cpp
+  - re/gdb/probes/editor_specs.py
+  - re/gdb/probes/editor_specs_view.py
+  - re/gdb/probes/editor_specs_cursor.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_editor_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_editor.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of editor_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_editor_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 24 of the 24 functions (the editor cursor: the element arrays, the piece in hand, moving, turning, placing and removing pieces and items, the base indicator and its drawing) are replayed over 7668 cases with no mismatch (at least 100 cases each; the committed fixtures keep the first 30 of each capture per function, 1020 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the park generator's operations (4.11c), the piece tables (4.11b), the budgets, sine and cosine and the renderer are services with scripted results; the pieces are made-up objects.

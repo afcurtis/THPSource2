@@ -1,0 +1,48 @@
+version: 1
+id: main-small-helpers
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x00466b60
+  - 0x00466b70
+  - 0x00466bb0
+  - 0x00466be0
+  - 0x00466c00
+  - 0x00466de0
+  - 0x00468350
+  - 0x004684f0
+  - 0x00467610
+  - 0x00468b00
+  - 0x00468b30
+  - 0x004699f0
+  - 0x00469d30
+  - 0x0046a1a0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/core-main-loop.md
+  - re/evidence/fixtures/core-calls-mnA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/core_main.cpp
+  - re/gdb/probes/core_specs_main.py
+  - re/gdb/probes/core_specs_main_cases.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/core_retail_calls_test.cpp
+  - tests/test_core_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mn): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (core_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 14 of the 14 functions (the small functions of main.cpp: the class allocation and release with their usage counter, the polygon buffer end, the dimming overlay, the quad and rectangle primitives, the screen-flip cheat over the ordering table, the frame clocks, the input update, the skater stop check and the end of a frame) are replayed over 2800 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 420 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the vertex loop of a 0xb0 primitive is checked for one or two vertices (the ordering-table nodes of the probe are 0x80 bytes).

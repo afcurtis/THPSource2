@@ -1,0 +1,118 @@
+# Named seams: the out-of-scope retail functions (re/symbols/scope.yml) that native code calls.
+# Phase 4 completion target 2: every native call into out-of-scope code goes through a named seam,
+# so the standalone link (Phase 5) can resolve each one to its replacement (the category's
+# `replacement` in scope.yml). Native code passes the seam's constant to `engine(...)`, and
+# tests/test_oos_seams.py fails when a native source (outside src/hooks, which are the adapters)
+# uses an out-of-scope function address at all: since 5.3a native code names the seam
+# (`seam::<category>::<name>`, src/runtime/seam_addresses_generated.hpp, generated from this file by
+# scripts/generate_seam_addresses.py) and this registry is the only place the address lives.
+#
+# Only code references count (an address in a comment does not). Names come from
+# re/symbols/functions.yml; where Ghidra has none, from the native source's own constant or
+# comment, or `FUN_<address>`. The seam id is `<prefix>.<name>`: crt, zlib, hal, bink, net (DirectPlay).
+version: 1
+
+seams:
+  - {address: 0x004cf850, name: printf_log, seam: hal.printf_log, category: platform-hal, callers: "src/runtime/pc_platform.hpp, src/runtime/skater_ground_steps.cpp"}
+  - {address: 0x004cfb60, name: Debug_ReportError, seam: hal.Debug_ReportError, category: platform-hal, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x004d0c30, name: D3D_PresentFrame, seam: hal.D3D_PresentFrame, category: platform-hal, callers: "src/runtime/render_display.cpp"}
+  - {address: 0x004d0ec0, name: D3D_ClearBuffers, seam: hal.D3D_ClearBuffers, category: platform-hal, callers: "src/runtime/audio_movie.cpp, src/runtime/core_main.cpp"}
+  - {address: 0x004d0f80, name: D3D_Shutdown, seam: hal.D3D_Shutdown, category: platform-hal, callers: "src/runtime/audio_movie.cpp, src/runtime/pc_system.cpp"}
+  - {address: 0x004d36c0, name: D3D_SetViewportRect, seam: hal.D3D_SetViewportRect, category: platform-hal, callers: "src/runtime/pc_system.cpp"}
+  - {address: 0x004d3b40, name: D3DPoly_StartScene, seam: hal.D3DPoly_StartScene, category: platform-hal, callers: "src/runtime/pc_system.cpp"}
+  - {address: 0x004d42f0, name: D3D_DrawSolidTriangle, seam: hal.D3D_DrawSolidTriangle, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d45f0, name: D3D_DrawTexturedTriangle, seam: hal.D3D_DrawTexturedTriangle, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d49e0, name: D3D_DrawSolidQuad, seam: hal.D3D_DrawSolidQuad, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d4bf0, name: D3D_DrawTexturedQuad, seam: hal.D3D_DrawTexturedQuad, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d5040, name: D3D_DrawGouraudTriangle, seam: hal.D3D_DrawGouraudTriangle, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d5280, name: D3D_DrawTexturedGouraudTriangle, seam: hal.D3D_DrawTexturedGouraudTriangle, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d56c0, name: D3D_DrawGouraudQuad, seam: hal.D3D_DrawGouraudQuad, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d5960, name: D3D_DrawTexturedGouraudQuad, seam: hal.D3D_DrawTexturedGouraudQuad, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d5e40, name: D3D_DrawSolidRectangle, seam: hal.D3D_DrawSolidRectangle, category: platform-hal, callers: "src/runtime/pc_system.cpp, src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d6120, name: D3D_DrawLineStrip, seam: hal.D3D_DrawLineStrip, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d6320, name: D3D_DrawClosedLineStrip, seam: hal.D3D_DrawClosedLineStrip, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d6560, name: D3D_DrawLine, seam: hal.D3D_DrawLine, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d66f0, name: D3D_DrawColoredLine, seam: hal.D3D_DrawColoredLine, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d68b0, name: D3D_DrawGeneralPolygon, seam: hal.D3D_DrawGeneralPolygon, category: platform-hal, callers: "src/trg/render_command_dispatch.cpp"}
+  - {address: 0x004d74a0, name: D3DSprite_Create, seam: hal.D3DSprite_Create, category: platform-hal, callers: "src/runtime/createobj_screen.cpp, src/runtime/credits.cpp, src/runtime/front_screens.cpp, src/runtime/mainmenu.cpp, src/runtime/player_select_window.cpp, src/runtime/screen_kit.cpp"}
+  - {address: 0x004d78c0, name: D3DSprite_Destroy, seam: hal.D3DSprite_Destroy, category: platform-hal, callers: "src/runtime/career_select.cpp, src/runtime/create_screens_editor.cpp, src/runtime/create_screens_save.cpp, src/runtime/create_screens_select.cpp, src/runtime/create_screens_stat.cpp, src/runtime/createobj_screen.cpp, src/runtime/credits.cpp, src/runtime/equip_select_window.cpp, src/runtime/front_screens.cpp, src/runtime/goals_loading.cpp, src/runtime/handicap.cpp, src/runtime/level_select.cpp, src/runtime/mainmenu.cpp, src/runtime/multi_select.cpp, src/runtime/netmenu_update.cpp, src/runtime/options_menu.cpp, src/runtime/options_pages.cpp, src/runtime/player_select_window.cpp, src/runtime/trick_screens_screen.cpp"}
+  - {address: 0x004d8b50, name: D3DTex_DestroyRecord, seam: hal.D3DTex_DestroyRecord, category: platform-hal, callers: "src/runtime/pc_system.cpp"}
+  - {address: 0x004d9950, name: D3DTex_LoadIndexedBitmap, seam: hal.D3DTex_LoadIndexedBitmap, category: platform-hal, callers: "src/runtime/pc_system.cpp, src/runtime/render_image.cpp"}
+  - {address: 0x004d9f50, name: D3DTex_GrayTexture, seam: hal.D3DTex_GrayTexture, category: platform-hal, callers: "src/runtime/render_image.cpp"}
+  - {address: 0x004dab80, name: D3DTimer_Shutdown, seam: hal.D3DTimer_Shutdown, category: platform-hal, callers: "src/runtime/pc_system.cpp"}
+  - {address: 0x004db1a0, name: FUN_004db1a0, seam: net.FUN_004db1a0, category: directplay, callers: "src/runtime/net_state.cpp"}
+  - {address: 0x004db1c0, name: NetGame_PollMessages, seam: net.NetGame_PollMessages, category: directplay, callers: "src/runtime/net_update.cpp"}
+  - {address: 0x004db200, name: NetGame_NextMessage, seam: net.NetGame_NextMessage, category: directplay, callers: "src/runtime/net_update.cpp"}
+  - {address: 0x004db2d0, name: NetGame_Latency, seam: net.NetGame_Latency, category: directplay, callers: "src/runtime/net_update.cpp"}
+  - {address: 0x004db350, name: NetGame_SendPacket, seam: net.NetGame_SendPacket, category: directplay, callers: "src/runtime/net_play.cpp"}
+  - {address: 0x004dba20, name: FUN_004dba20, seam: net.FUN_004dba20, category: directplay, callers: "src/runtime/net_state.cpp"}
+  - {address: 0x004dbc50, name: FUN_004dbc50, seam: net.FUN_004dbc50, category: directplay, callers: "src/runtime/net_state.cpp"}
+  - {address: 0x004dbcc0, name: FUN_004dbcc0, seam: net.FUN_004dbcc0, category: directplay, callers: "src/runtime/net_play.cpp"}
+  - {address: 0x004dbf90, name: NetMouse_HitRect, seam: net.NetMouse_HitRect, category: directplay, callers: "src/runtime/net_mouse.cpp"}
+  - {address: 0x004dd980, name: NetGame_SessionStart, seam: net.NetGame_SessionStart, category: directplay, callers: "src/runtime/net_state.cpp, src/runtime/netmenu_state.cpp"}
+  - {address: 0x004ddbf0, name: FUN_004ddbf0, seam: net.FUN_004ddbf0, category: directplay, callers: "src/runtime/net_state.cpp"}
+  - {address: 0x004ddd60, name: FUN_004ddd60, seam: net.FUN_004ddd60, category: directplay, callers: "src/runtime/netmenu_update.cpp"}
+  - {address: 0x004de6d0, name: FUN_004de6d0, seam: net.FUN_004de6d0, category: directplay, callers: "src/runtime/world_skater_effects.cpp"}
+  - {address: 0x004de790, name: FUN_004de790, seam: net.FUN_004de790, category: directplay, callers: "src/runtime/world_skater_effects.cpp"}
+  - {address: 0x004dea30, name: FUN_004dea30, seam: net.FUN_004dea30, category: directplay, callers: "src/runtime/net_play.cpp"}
+  - {address: 0x004dec50, name: FUN_004dec50, seam: net.FUN_004dec50, category: directplay, callers: "src/runtime/net_play.cpp, src/runtime/net_update.cpp"}
+  - {address: 0x004deff0, name: NetGame_LinkLost, seam: net.NetGame_LinkLost, category: directplay, callers: "src/runtime/net_play.cpp, src/runtime/net_update.cpp"}
+  - {address: 0x004df170, name: FUN_004df170, seam: net.FUN_004df170, category: directplay, callers: "src/runtime/net_state.cpp"}
+  - {address: 0x004df420, name: FUN_004df420, seam: net.FUN_004df420, category: directplay, callers: "src/runtime/net_update.cpp"}
+  - {address: 0x004e00c0, name: NetGame_EventSend, seam: net.NetGame_EventSend, category: directplay, callers: "src/runtime/net_play.cpp, src/runtime/net_update.cpp"}
+  - {address: 0x004e0120, name: FUN_004e0120, seam: net.FUN_004e0120, category: directplay, callers: "src/runtime/net_play.cpp"}
+  - {address: 0x004e0180, name: NetGame_SendLevel, seam: net.NetGame_SendLevel, category: directplay, callers: "src/runtime/net_update.cpp"}
+  - {address: 0x004e0210, name: NetGame_SendSkater, seam: net.NetGame_SendSkater, category: directplay, callers: "src/runtime/net_update.cpp"}
+  - {address: 0x004e0dd0, name: NetGame_HandleMessage, seam: net.NetGame_HandleMessage, category: directplay, callers: "src/runtime/net_update.cpp"}
+  - {address: 0x004e4a60, name: PCInput_Shutdown, seam: hal.PCInput_Shutdown, category: platform-hal, callers: "src/runtime/pc_system.cpp"}
+  - {address: 0x004e4a90, name: PCInput_Poll, seam: hal.PCInput_Poll, category: platform-hal, callers: "src/runtime/net_state.cpp"}
+  - {address: 0x004e4c10, name: PCInput_SetCursorPos, seam: hal.PCInput_SetCursorPos, category: platform-hal, callers: "src/runtime/net_mouse.cpp"}
+  - {address: 0x004e4c40, name: PCInput_ActuatorOn, seam: hal.PCInput_ActuatorOn, category: platform-hal, callers: "src/runtime/pad_input.cpp"}
+  - {address: 0x004e4cf0, name: PCInput_ActuatorOff, seam: hal.PCInput_ActuatorOff, category: platform-hal, callers: "src/runtime/pad_input.cpp"}
+  - {address: 0x004e5720, name: SetupFullScreenMovie, seam: bink.SetupFullScreenMovie, category: bink, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x004e5a80, name: DrawFullScreenMovie, seam: bink.DrawFullScreenMovie, category: bink, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x004e6020, name: CreateBinkSurface, seam: bink.CreateBinkSurface, category: bink, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x004e6590, name: StartBinkMovie, seam: bink.StartBinkMovie, category: bink, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x004e6890, name: NextBinkFrame, seam: bink.NextBinkFrame, category: bink, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x004e6da0, name: CloseBinkMovie, seam: bink.CloseBinkMovie, category: bink, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x004e6e50, name: BinkMovieUpdate, seam: bink.BinkMovieUpdate, category: bink, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x004e71d0, name: PCMOVIE_StreamThread, seam: bink.PCMOVIE_StreamThread, category: bink, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x004e73f0, name: PCinit, seam: hal.PCinit, category: platform-hal, callers: "src/runtime/level_editor_global.cpp, src/runtime/mmu_setup.cpp"}
+  - {address: 0x004ebfe0, name: FUN_004ebfe0, seam: hal.FUN_004ebfe0, category: platform-hal, callers: "src/runtime/core_pkr.cpp"}
+  - {address: 0x004ec6b0, name: SDXKeyboard_KeyIsDown, seam: hal.SDXKeyboard_KeyIsDown, category: platform-hal, callers: "src/runtime/pad_input.hpp"}
+  - {address: 0x004f23d0, name: FUN_004f23d0, seam: hal.FUN_004f23d0, category: platform-hal, callers: "src/runtime/pc_system.cpp"}
+  - {address: 0x004f2700, name: FUN_004f2700, seam: hal.FUN_004f2700, category: platform-hal, callers: "src/runtime/video_menu.cpp"}
+  - {address: 0x004f2ad0, name: Audio_FreeSoundBank, seam: hal.Audio_FreeSoundBank, category: platform-hal, callers: "src/runtime/audio_sfx.cpp"}
+  - {address: 0x004f2e20, name: Audio_PlaySound, seam: hal.Audio_PlaySound, category: platform-hal, callers: "src/runtime/audio_sfx.cpp"}
+  - {address: 0x004f34b0, name: Audio_SetVoiceVolume, seam: hal.Audio_SetVoiceVolume, category: platform-hal, callers: "src/runtime/audio_sfx.cpp"}
+  - {address: 0x004f3690, name: Audio_SetVoiceFrequency, seam: hal.Audio_SetVoiceFrequency, category: platform-hal, callers: "src/runtime/audio_sfx.cpp"}
+  - {address: 0x004f3720, name: Audio_GetVoiceFrequency, seam: hal.Audio_GetVoiceFrequency, category: platform-hal, callers: "src/runtime/audio_sfx.cpp"}
+  - {address: 0x004f37c0, name: Audio_StopSound, seam: hal.Audio_StopSound, category: platform-hal, callers: "src/runtime/audio_sfx.cpp"}
+  - {address: 0x004f3900, name: Audio_PauseLooping, seam: hal.Audio_PauseLooping, category: platform-hal, callers: "src/runtime/audio_sfx.cpp, src/runtime/net_update.cpp"}
+  - {address: 0x004f3940, name: Audio_ResumeLooping, seam: hal.Audio_ResumeLooping, category: platform-hal, callers: "src/runtime/audio_sfx.cpp, src/runtime/net_update.cpp"}
+  - {address: 0x004f6510, name: CD_Recheck, seam: hal.CD_Recheck, category: platform-hal, callers: "src/runtime/front_main.cpp"}
+  - {address: 0x004f6550, name: WINMAIN_Sleep, seam: hal.WINMAIN_Sleep, category: platform-hal, callers: "src/runtime/pc_system.cpp, src/runtime/video_frame.cpp"}
+  - {address: 0x004f6560, name: WINMAIN_FindFiles, seam: hal.WINMAIN_FindFiles, category: platform-hal, callers: "src/runtime/net_mouse.cpp"}
+  - {address: 0x004f6ca0, name: WINMAIN_LoadSetting, seam: hal.WINMAIN_LoadSetting, category: platform-hal, callers: "src/runtime/pc_platform.hpp"}
+  - {address: 0x004f6cd0, name: WINMAIN_SaveSetting, seam: hal.WINMAIN_SaveSetting, category: platform-hal, callers: "src/runtime/pc_platform.hpp"}
+  - {address: 0x004f6d20, name: WINMAIN_SwitchRenderer, seam: hal.WINMAIN_SwitchRenderer, category: platform-hal, callers: "src/runtime/video_menu.cpp"}
+  - {address: 0x004f6e60, name: WINMAIN_SwitchResolution, seam: hal.WINMAIN_SwitchResolution, category: platform-hal, callers: "src/runtime/core_display.cpp, src/runtime/front_main.cpp"}
+  - {address: 0x004f7a70, name: WINMAIN_EnumDisplayModes, seam: hal.WINMAIN_EnumDisplayModes, category: platform-hal, callers: "src/runtime/pc_system.cpp"}
+  - {address: 0x004f7ce0, name: Game_FrameTick, seam: hal.Game_FrameTick, category: platform-hal, callers: "src/runtime/audio_movie.cpp, src/runtime/core_main.cpp, src/runtime/createobj_screen.cpp, src/runtime/credits.cpp, src/runtime/file_loader.cpp, src/runtime/level_editor_load.cpp, src/runtime/mainmenu.cpp, src/runtime/net_play.cpp, src/runtime/screen_kit.cpp"}
+  - {address: 0x004f9d30, name: zlib_compress, seam: zlib.zlib_compress, category: zlib, callers: "src/runtime/core_pkr.cpp"}
+  - {address: 0x00500132, name: CRT_vsnprintf, seam: crt.CRT_vsnprintf, category: crt, callers: "src/runtime/world_baddy.cpp"}
+  - {address: 0x00500260, name: CRT_atexit, seam: crt.CRT_atexit, category: crt, callers: "src/runtime/skater_kit.hpp"}
+  - {address: 0x005002a1, name: CRT_sprintf, seam: crt.CRT_sprintf, category: crt, callers: "src/runtime/camera_rigs.cpp, src/runtime/core_main.cpp, src/runtime/core_pkr.cpp, src/runtime/mmu_manager.cpp, src/runtime/world_cmd.cpp"}
+  - {address: 0x005002f3, name: FUN_005002f3, seam: crt.FUN_005002f3, category: crt, callers: "src/runtime/core_init.cpp, src/runtime/core_pkr.cpp, src/runtime/createobj_screen.cpp, src/runtime/render_palette.cpp"}
+  - {address: 0x005002fe, name: CRT_operator_new, seam: crt.CRT_operator_new, category: crt, callers: "src/runtime/core_init.cpp, src/runtime/core_pkr.cpp, src/runtime/createobj_screen.cpp, src/runtime/render_palette.cpp"}
+  - {address: 0x0050030c, name: FUN_0050030c, seam: crt.FUN_0050030c, category: crt, callers: "src/runtime/equip_select_racks.cpp, src/runtime/goals_competition.cpp, src/runtime/level_editor_cursor.cpp"}
+  - {address: 0x00500400, name: FUN_00500400, seam: crt.FUN_00500400, category: crt, callers: "src/runtime/equip_select_racks.cpp, src/runtime/goals_competition.cpp, src/runtime/level_editor_cursor.cpp"}
+  - {address: 0x005005d3, name: CRT_stat, seam: crt.CRT_stat, category: crt, callers: "src/runtime/mmu_manager.cpp"}
+  - {address: 0x005009d1, name: FUN_005009d1, seam: crt.FUN_005009d1, category: crt, callers: "src/runtime/netmenu_state.cpp"}
+  - {address: 0x005013f9, name: PKR2_OpenPackageStream, seam: crt.PKR2_OpenPackageStream, category: crt, callers: "src/runtime/core_pkr.cpp"}
+  - {address: 0x00501439, name: CRT_exit, seam: crt.CRT_exit, category: crt, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x00501b6c, name: CRT_free, seam: crt.CRT_free, category: crt, callers: "src/runtime/core_pkr.cpp"}
+  - {address: 0x00501bb4, name: CRT_malloc, seam: crt.CRT_malloc, category: crt, callers: "src/runtime/core_pkr.cpp"}
+  - {address: 0x00501e57, name: CRT_beginthread, seam: crt.CRT_beginthread, category: crt, callers: "src/runtime/audio_movie.cpp"}
+  - {address: 0x00502688, name: CRT_log_error, seam: crt.CRT_log_error, category: crt, callers: "src/runtime/core_pkr.cpp"}
+  - {address: 0x00502ccb, name: FUN_00502ccb, seam: crt.FUN_00502ccb, category: crt, callers: "src/runtime/math_psx.cpp"}

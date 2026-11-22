@@ -1,0 +1,43 @@
+version: 1
+id: park-editor-global
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004326a0
+  - 0x004327a0
+  - 0x00432840
+  - 0x00432850
+  - 0x00432860
+  - 0x004328c0
+  - 0x00432960
+  - 0x00432980
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-editor.md
+  - re/evidence/fixtures/leveleditor-calls-edg.txt
+  - re/evidence/fixtures/leveleditor-calls-edg2.txt
+  - re/evidence/fixtures/leveleditor-calls-edg3.txt
+  - re/evidence/fixtures/leveleditor-calls-edr.txt
+  - re/evidence/fixtures/leveleditor-calls-edr2.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/level_editor.hpp
+  - src/runtime/level_editor_global.cpp
+  - re/gdb/probes/editor_specs.py
+  - re/gdb/probes/editor_specs_view.py
+  - re/gdb/probes/editor_specs_cursor.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_editor_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_editor.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of editor_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_editor_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 8 of the 8 functions (the editor''s maps (cell rows and item records), its command table, the base objects'' shade, a loaded buffer and the park''s name) are replayed over 1410 cases with no mismatch (at least 65 cases each; the committed fixtures keep the first 30 of each capture per function, 280 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the allocator, Mem_Delete, the logger and the assertion are services; the sprintf of the name is done natively.

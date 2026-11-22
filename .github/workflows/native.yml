@@ -1,0 +1,62 @@
+name: Native build and Windows package
+
+# What CI can do without the player's game files: the portable reconstruction on the host compiler (ctest; the cases that replay a retail fixture are
+# disabled, the fixtures are not in the repository), and the cross-build of the Windows program (x86-64, llvm-mingw) packaged as a zip with no game data
+# in it. The scenarios (retail against the standalone, frame for frame) need THawk2.exe, ALL.PKR and Wine: run `tony gates full` on a machine that has them.
+# docs/BUILDING.md is the same list of steps for a person.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ctest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build zlib1g-dev
+      - name: Configure
+        run: cmake -S . -B build/native -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build/native -j"$(nproc)"
+      - name: ctest
+        run: ctest --test-dir build/native -j"$(nproc)" --output-on-failure
+
+  windows-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build make cmake xz-utils zlib1g-dev
+      - name: Install tony
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+      - name: Cache the pinned toolchains and libraries
+        uses: actions/cache@v4
+        with:
+          path: |
+            .tools/llvm-mingw
+            .tools/sdl3
+            .tools/ffmpeg
+            .tools/zlib
+            .tools/downloads
+            .tools/media
+          key: tools-${{ hashFiles('re/config/llvm_mingw.yml', 're/config/sdl3.yml', 're/config/ffmpeg.yml', 're/config/zlib.yml') }}-64
+      - name: Provision the pinned toolchain, SDL3, FFmpeg
+        run: |
+          tony setup llvm-mingw
+          tony setup sdl3
+          tony setup ffmpeg --arch 64
+      - name: Build (opentony.exe, the standalone, its DLLs)
+        run: tony hooks build --arch 64
+      - name: Package
+        run: tony release package --arch 64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opentony-win64
+          path: build/release/thpsource2-win64.zip
+          if-no-files-found: error

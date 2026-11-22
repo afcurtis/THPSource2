@@ -1,0 +1,71 @@
+version: 1
+id: skater-manager
+subsystem: career
+status: complete
+
+scope:
+  functions:
+    - 0x004b0bc0
+    - 0x004b0c30
+    - 0x004b0c40
+    - 0x004b0c50
+    - 0x004b0c60
+    - 0x004b0cd0
+    - 0x004b0d40
+    - 0x004b0e60
+    - 0x004b0f80
+    - 0x004b0fe0
+    - 0x004b1070
+    - 0x004b1130
+    - 0x004b1140
+    - 0x004b1150
+    - 0x004b1180
+    - 0x004b11c0
+    - 0x004b1240
+    - 0x004b1360
+    - 0x004b1430
+    - 0x004b14a0
+    - 0x004b1570
+    - 0x004b1630
+    - 0x004b1700
+    - 0x004b1810
+    - 0x004b1890
+    - 0x004b18a0
+    - 0x004b18d0
+    - 0x004b1980
+    - 0x004b19f0
+    - 0x004b1a30
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/skater-manager-runtime.md
+    - re/evidence/fixtures/career-calls-progress.txt
+    - re/evidence/fixtures/career-calls-systems.txt
+  native:
+    - src/runtime/skater_manager.cpp
+    - src/runtime/skater_manager.hpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/career_tables.cpp
+    - src/runtime/career_tables.hpp
+    - scripts/generate_career_tables.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/career_calls.py
+    - re/gdb/probes/career_state.py
+    - re/gdb/probes/career_specs.py
+    - re/gdb/probes/career_specs_more.py
+    - re/gdb/probes/career_specs_skater.py
+    - re/gdb/probes/career_specs_competition.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/career_retail_calls_test.cpp
+    - src/runtime/career_test.cpp
+    - tests/test_career.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/career_calls.py`): random legal state poked into the career records, skater manager, level, game mode and player; the retail function called with its outside services stubbed; the return value, every written byte and the ordered service calls compared with the native replay, and a changed fixture value makes the replay fail. 30 of the 30 functions of skatmgr.cpp are replayed over 449 cases with no mismatch; the slot, character, costume and custom-skater arguments include the out-of-range values whose asserts retail only logs.'
+  - Documented exclusion, not a blocker - the flag bytes at row +0x14f and in the loaded records are named by use only, and slots 2 to 7 (players beyond the first two) were exercised only through generated state.

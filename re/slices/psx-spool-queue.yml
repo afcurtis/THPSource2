@@ -1,0 +1,98 @@
+version: 1
+id: psx-spool-queue
+subsystem: asset-runtime
+status: complete
+
+scope:
+  # spool.cpp, 0x004b1ac0..0x004b5010 (the player spooler 0x004b50e0.. is player-spool-trace)
+  functions:
+    - 0x004b1ac0
+    - 0x004b1bb0
+    - 0x004b1c20
+    - 0x004b1c70
+    - 0x004b1d10
+    - 0x004b1de0
+    - 0x004b1f40
+    - 0x004b1f70
+    - 0x004b1fd0
+    - 0x004b2030
+    - 0x004b2060
+    - 0x004b2080
+    - 0x004b20f0
+    - 0x004b2120
+    - 0x004b2390
+    - 0x004b2440
+    - 0x004b2ac0
+    - 0x004b2b70
+    - 0x004b2f70
+    - 0x004b3090
+    - 0x004b3230
+    - 0x004b3270
+    - 0x004b32b0
+    - 0x004b32f0
+    - 0x004b3460
+    - 0x004b34b0
+    - 0x004b34f0
+    - 0x004b3680
+    - 0x004b3750
+    - 0x004b37a0
+    - 0x004b3990
+    - 0x004b39b0
+    - 0x004b3df0
+    - 0x004b3e20
+    - 0x004b3e50
+    - 0x004b40a0
+    - 0x004b43e0
+    - 0x004b4640
+    - 0x004b46a0
+    - 0x004b47a0
+    - 0x004b4ad0
+    - 0x004b4e00
+    - 0x004b4e70
+    - 0x004b5010
+    - 0x004b50a0
+  types: []
+  globals: []
+
+shared:
+  functions:
+    - 0x004b2450
+    - 0x004b4940
+
+artifacts:
+  evidence:
+    - re/evidence/functions/psx-spool.md
+    - re/evidence/functions/psx-lifecycle.md
+    - re/evidence/functions/asset-loading.md
+    - re/evidence/fixtures/psx-calls-mat.txt
+    - re/evidence/fixtures/psx-calls-reg.txt
+    - re/evidence/fixtures/psx-calls-queue.txt
+    - re/evidence/fixtures/psx-calls-bits.txt
+    - re/evidence/fixtures/psx-calls-anim.txt
+    - re/evidence/fixtures/psx-calls-tex.txt
+    - re/evidence/fixtures/psx-calls-save.txt
+  native:
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/psx_spool.hpp
+    - src/runtime/psx_spool.cpp
+    - src/runtime/psx_spool_anim.cpp
+    - src/runtime/psx_spool_tex.cpp
+    - re/gdb/probes/psx_specs.py
+    - re/gdb/probes/psx_specs_regions.py
+    - re/gdb/probes/psx_specs_anim.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+    - src/assets/psx_runtime.cpp
+  tests:
+    - src/runtime/psx_spool_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - tests/test_psx_spool.py
+    - src/assets/psx_runtime_test.cpp
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the psxmat, psxreg, psxq, psxbits, psxanim, psxtex and psxsave groups): the probe replaces the region table, material hash table, queue and environment list with a made-up legal world in a scratch slab, pokes a random state per case, calls the retail function and records the return value, every written byte and the ordered service calls (assertion, allocator, Mem_Delete, file layer, texture and palette services, the region parser); the native replay (`psx_spool_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 45 of the 45 functions are replayed over 3759 cases with no mismatch.'
+  - 'Documented exclusion, not a blocker - the region parser (PSX_ParseEnvironment, a separate native model) is a seam: the probe''s stub publishes the words of a block kept in the image and the replay''s parse hook does the same; the rectangle words PSX_LoadTextureReferences builds from an uninitialised local are not compared; cases whose retail run faults (a null raw image after a failed assertion) are not part of the corpus.'

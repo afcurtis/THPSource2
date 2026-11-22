@@ -1,0 +1,52 @@
+version: 1
+id: render-animation-pose
+subsystem: renderer
+status: complete
+scope:
+  functions:
+  - 0x004305e0
+  - 0x00430920
+  - 0x00431190
+  - 0x004311b0
+  - 0x004311d0
+  - 0x00464b90
+  - 0x00464bb0
+  - 0x00464c00
+  - 0x00464d10
+  - 0x00464e90
+  - 0x00465060
+  - 0x00465110
+  - 0x00465300
+  - 0x00465830
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/renderer-animation-pose.md
+  - re/evidence/fixtures/render-calls-ranimD.txt
+  - re/evidence/fixtures/render-calls-rpcB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/render_anim.cpp
+  - src/runtime/render_m3d_anim.cpp
+  - re/gdb/probes/render_specs3.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/render_retail_calls_test.cpp
+  - tests/test_render_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups ranim): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (render_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 14 of the 14 functions (the pose side of the animation: the pose of a model''s current animation and frame (compressed channels through the stream decoder of an earlier slice, or the uncompressed form), an empty hook, the model list, the hook and link packets, the world positions of a part and of a hook, the blend of key frames, the pose built from links and the closest points of two segments) are replayed over 659 cases with no mismatch (at least 35 cases each; the committed fixtures keep the first 30 of each capture per function, 420 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the allocator and the assertion routine are services; the stream decoder is the native one of an earlier slice; an animation of a kind other than 0x2a and 0x2c asserts and is replayed only as far as the assertion.

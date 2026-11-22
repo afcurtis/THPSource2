@@ -1,0 +1,75 @@
+version: 1
+id: render-packet-submission
+subsystem: renderer
+status: complete
+
+scope:
+  functions:
+    - 0x004d14d0
+    - 0x004d18b0
+    - 0x004d1d40
+    - 0x004d20f0
+    - 0x004d2310
+    - 0x004d25c0
+    - 0x004d26b0
+    - 0x004d29e0
+    - 0x004d3160
+    - 0x004d1960
+    - 0x004d1cd0
+    - 0x004d3b00
+  types:
+    - RuntimeD3DPolygonRecord
+    - RuntimeM3DTransformedVertex
+  globals:
+    - RenderPolygonArenaCursor
+    - RenderPolygonArenaEnd
+    - RenderBucketHeads
+    - RenderWindingThreshold
+    - RenderReverseWinding
+    - RenderNearDepth
+    - RenderViewportEdges
+    - RenderProjectionUnitScale
+    - RenderProjectionCenterX
+    - RenderProjectionCenterY
+    - RenderProjectionDepthScale
+    - RenderDepthModeSelector
+    - RenderDepthOffset2000
+    - RenderDepthOffset4000
+    - RenderDepthOffset6000
+
+artifacts:
+  evidence:
+    - re/evidence/functions/render-packet-submission.md
+    - re/evidence/fixtures/render-model-warehouse.txt
+    - re/evidence/fixtures/render-model-hangar.txt
+    - re/evidence/fixtures/render-order-warehouse.txt
+  native:
+    - src/trg/render_packet_builder.hpp
+    - src/trg/render_packet_builder.cpp
+    - src/trg/render_polygon_bucket_test.cpp
+    - src/trg/render_command_dispatch.hpp
+    - src/trg/render_command_dispatch.cpp
+    - src/camera/camera_math.hpp
+    - src/trg/render_model_submit.hpp
+    - src/trg/render_model_submit.cpp
+  tests:
+    - src/trg/render_packet_builder_test.cpp
+    - src/trg/render_polygon_bucket_test.cpp
+    - src/trg/render_command_dispatch_test.cpp
+    - tests/test_camera_math.py
+    - src/trg/render_model_submit_test.cpp
+    - src/trg/render_model_retail_trace_test.cpp
+    - src/trg/render_order_retail_trace_test.cpp
+
+open_questions: []
+
+completion:
+  - The model/state, ordinary transform, face-walk, and polygon-record boundaries have recorded inputs and outputs.
+  - The ordinary seven-word transformed-vertex contract has deterministic native coverage.
+  - Native packet construction preserves source face order, vertex order, format, material identity, and UV normalization.
+  - Native command dispatch preserves the recorded opcode handler table and list order without treating submission as presentation.
+  - Native visibility/depth classification and near clipping record source decisions, rewritten packet order, and exact per-bucket prepend links; the 0x004d20f0 state/depth-offset selector and textured material flag rewrite are deterministic caller inputs.
+  - Native arena fixtures cover the 0x14 view-record cursor advance, 0xc0 per-attempt reservation, exclusive-end behavior, failed near-clip rollback, slot reuse, head-prepend links, and arena-owned packet lifetime through dispatch.
+  - Exact matching work remains byte-identical where pursued.
+  - "Phase 4.6 retail validation: RetailModelRenderer replays 279 retail M3D_SubmitModelState calls (Warehouse 165, Hangar 114; 20,538 events, 103 near clips, 2,199 linked polygons) and RetailOrderingTable replays 3 retail frames (6,235 links) with zero mismatches; mutation replays fail."
+  - "Documented exclusions (disassembly-derived and unit tested only, never raised by the captures): state bits 0x04, 0x10, 0x20, 0x40 and 0x200 paths, the software renderer (D3DSoftwareRenderer != 0), the two-point strip vertex (source flag 0x10) and classify mode 4. They are the first open question of the planned render-scene-traversal slice."

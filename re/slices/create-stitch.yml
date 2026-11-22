@@ -1,0 +1,61 @@
+version: 1
+id: create-stitch
+subsystem: create
+status: complete
+
+scope:
+  functions:
+    - 0x00425110
+    - 0x00425180
+    - 0x00425200
+    - 0x00425270
+    - 0x004252a0
+    - 0x00424a90
+    - 0x00424bb0
+    - 0x00424e40
+    - 0x004257d0
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/create-skater-runtime.md
+    - re/evidence/fixtures/create-calls-color.txt
+    - re/evidence/fixtures/create-calls-cretex.txt
+    - re/evidence/fixtures/create-calls-palette.txt
+    - re/evidence/fixtures/create-calls-parts.txt
+    - re/evidence/fixtures/create-calls-records.txt
+    - re/evidence/fixtures/create-calls-stitch1.txt
+    - re/evidence/fixtures/create-calls-stitch2.txt
+    - re/evidence/fixtures/create-calls-stitch3.txt
+    - re/evidence/fixtures/create-calls-textures.txt
+  native:
+    - src/runtime/create_stitch.cpp
+    - src/runtime/create_stitch.hpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/create_services.hpp
+    - src/runtime/create_tables.cpp
+    - src/runtime/create_tables.hpp
+    - scripts/generate_create_tables.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/create_calls.py
+    - re/gdb/probes/create_specs.py
+    - re/gdb/probes/create_specs_color.py
+    - re/gdb/probes/create_specs_textures.py
+    - re/gdb/probes/create_specs_records.py
+    - re/gdb/probes/create_specs_parts.py
+    - re/gdb/probes/create_specs_spool.py
+    - re/gdb/probes/create_specs_palette.py
+    - re/gdb/probes/create_specs_stitch.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/create_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/create_test.cpp
+    - tests/test_create.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/create_calls.py`): the retail function is called on random legal state laid out in a scratch slab and at its retail addresses, its outside services stubbed; the return value, every written byte and the ordered service calls are compared with the native replay (`create_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The stitch helpers of create_stitch.cpp: 9 of the 9 functions are replayed over 1080 cases with no mismatch, assertion paths included.'

@@ -1,0 +1,50 @@
+version: 1
+id: skater-pose-and-state
+subsystem: physics
+status: complete
+scope:
+  functions:
+  - 0x0048eb70
+  - 0x0048f590
+  - 0x0048f5d0
+  - 0x004900b0
+  - 0x004902e0
+  - 0x004904c0
+  - 0x00490610
+  - 0x00490680
+  - 0x0049c7d0
+  - 0x0049c850
+  - 0x0049e430
+  - 0x0049e480
+  - 0x004903f0
+  - 0x00490420
+  - 0x00490450
+  - 0x00490480
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/skater-state-helpers.md
+  - re/evidence/fixtures/skater-calls-physA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/skater_kit.hpp
+  - src/runtime/skater_pose.cpp
+  - re/gdb/probes/phys_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/skater_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups phs): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (skater_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 16 of the 16 functions (the pose and state helpers of physics.cpp: the saved pose, the state transition (with its counters, the saved landing vector and the quarter turn leaving a grind), the pending facing and orientation flips, the four animation requests, the orientation shorts and the integer basis, the removal of a normal component, the flip counter and the run''s timer) are replayed over 4000 cases with no mismatch (at least 250 cases each; the committed fixtures keep the first 30 of each capture per function, 480 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the animation player, the panel and the netgame layer are services; the division of `Animation_PingPong` by a rate over 60 or a zero width faults in retail, so the probe never asks.

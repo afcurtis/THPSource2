@@ -1,0 +1,39 @@
+version: 1
+id: pc-timers-and-small
+subsystem: platform
+status: complete
+scope:
+  functions:
+  - 0x004dab30
+  - 0x004dae00
+  - 0x004ec930
+  - 0x0040b5c0
+  - 0x0040b610
+  - 0x0044b1c0
+  - 0x004bb220
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/pc-platform.md
+  - re/evidence/fixtures/platform-calls-d3dm.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/pc_system.hpp
+  - src/runtime/pc_system.cpp
+  - re/gdb/probes/platform_specs.py
+  - re/gdb/probes/platform_specs_sys.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/platform_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_pc_platform.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups d3dm of platform_specs*.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`platform_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 7 of the 7 functions (the timer state query, the frame-rate meter, the DirectInput mouse wrapper''s bounds, the two camera resets, the falling-text object''s constructor and the record version tag) are replayed over 1050 cases with no mismatch (at least 150 cases each; the committed fixtures keep the first 30 of each capture per function, 210 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the camera object's method and the falling-text constructor are services; the frame-rate meter's float math runs at 53 bits (outside the renderer).

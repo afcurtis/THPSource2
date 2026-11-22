@@ -1,0 +1,40 @@
+version: 1
+id: ground-physics-mode1
+subsystem: ground-movement
+status: complete
+
+scope:
+  functions:
+    - 0x0049df00
+  types:
+    - RuntimeSkaterMovementState
+    - RuntimeAnimationObjectState
+  globals: []
+
+shared:
+  functions:
+    - 0x004903f0
+    - 0x00490450
+    - 0x00490480
+
+artifacts:
+  evidence:
+    - re/evidence/functions/ground-movement.md
+    - re/evidence/functions/animation-ground-turn-selector.md
+    - re/evidence/functions/physics.md
+  native:
+    - src/runtime/ground_physics.cpp
+    - src/runtime/ground_physics.hpp
+    - src/runtime/ground_brake.cpp
+    - src/runtime/ground_brake.hpp
+  tests:
+    - src/runtime/ground_physics_test.cpp
+
+open_questions: []
+
+completion:
+  - The mode-1 strict speed boundary is evidence-backed, and the former "surface" predicate is identified as the brake input test (Down without Left/Right, or positive vertical lean without horizontal lean) with a native truth table.
+  - The raw animation-control exchange for both mode 1 -> 3 and mode 5 -> 6, and the cooldown write, have deterministic native fixtures.
+  - The mode 0/3/5/6 animation wrapper requests, the random release sound, the fixed mode-5 sound and the type-2 dust emitter start are reported as data; the animation, audio and particle services stay caller-owned.
+  - A frame-numbered retail Warehouse brake trace joins the mode-1 transition to its release, services and follow-up Range(8, 0x13, 0) request; five of its frames are native fixtures, which also fixed the vertical-lean brake scaling input.
+  - The high-speed entry in that trace uses a controlled +0x4c injection; a natural high-speed brake (for example after a downhill) is not separately recorded.

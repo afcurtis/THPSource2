@@ -1,0 +1,67 @@
+# Pinned FFmpeg for the movie and music backend (src/hal/ffmpeg/, Phase 5.3b).
+#
+# `tony setup ffmpeg` downloads the release source, checks its size and SHA-256, and cross-builds a decode-only
+# 32-bit FFmpeg with the llvm-mingw toolchain of re/config/llvm_mingw.yml: shared libraries, the Bink demuxer and the
+# three Bink decoders and nothing else. The source's detached signature was checked against the FFmpeg release
+# signing key (fingerprint below) when this pin was made; `signature` and `signing_key` record it.
+#
+# Licence: LGPL 2.1 or later. The build is configured without --enable-gpl, --enable-nonfree and --enable-version3
+# and with no external library, so no GPL code is compiled in (`tony setup ffmpeg` refuses a build whose config.h has
+# CONFIG_GPL, CONFIG_NONFREE or CONFIG_VERSION3 on). The libraries are DLLs that the program loads at run time,
+# so a player can replace them with their own build of the same major versions. THIRD_PARTY_NOTICES.md has the
+# notice and where the exact source is.
+version: 1
+ffmpeg:
+  release: "8.1.3"
+  url: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
+  signature: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz.asc
+  signing_key: "FCF9 86EA 15E6 E293 A564  4F10 B432 2F04 D676 58D8"
+  path: .tools/media/ffmpeg/ffmpeg-8.1.3.tar.xz
+  size: 11732036
+  sha256: 7138d28c96d9d3e3af4ee3d8cad72741f8ffb40da90c1112235dea3ecd3178a3
+  source_dir: .tools/ffmpeg/src
+  root: ffmpeg-8.1.3
+  build_dir: .tools/ffmpeg/build-i686
+  install_dir: .tools/ffmpeg/i686
+  # the DLLs that the build produces and `tony hooks stage` copies next to the game (names carry the major versions)
+  libraries: [avutil, avcodec, avformat]
+  configure:
+    - --arch=x86
+    - --target-os=mingw32
+    - --enable-cross-compile
+    - --cross-prefix=i686-w64-mingw32-
+    - --cc=i686-w64-mingw32-clang
+    - --cxx=i686-w64-mingw32-clang++
+    - --ar=llvm-ar
+    - --ranlib=llvm-ranlib
+    - --nm=llvm-nm
+    - --strip=llvm-strip
+    - --enable-shared
+    - --disable-static
+    - --disable-everything
+    - --disable-autodetect
+    - --disable-programs
+    - --disable-doc
+    - --disable-debug
+    - --disable-network
+    - --disable-avdevice
+    - --disable-avfilter
+    - --disable-swscale
+    - --disable-asm
+    - --disable-gpl
+    - --disable-nonfree
+    - --disable-version3
+    - --disable-swresample
+    - --enable-demuxer=bink
+    - --enable-decoder=bink,binkaudio_dct,binkaudio_rdft
+    - --enable-protocol=file
+  # Milestone 11b: the same build for the 64-bit standalone (`tony setup ffmpeg --arch 64`). The options above are shared; `configure_target` replaces
+  # the flags that name the target.
+  x86_64:
+    build_dir: .tools/ffmpeg/build-x86_64
+    install_dir: .tools/ffmpeg/x86_64
+    configure_target:
+      - --arch=x86_64
+      - --cross-prefix=x86_64-w64-mingw32-
+      - --cc=x86_64-w64-mingw32-clang
+      - --cxx=x86_64-w64-mingw32-clang++

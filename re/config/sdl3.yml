@@ -1,0 +1,20 @@
+# Pinned SDL3 for the platform HAL (src/hal/sdl, loaded by opentony.dll).
+#
+# `tony setup sdl3` downloads the official Visual C++ development package,
+# checks its size and SHA-256 (the digest GitHub publishes for the release
+# asset), and extracts it under `install_dir`. opentony.dll compiles against
+# its headers and loads lib/x86/SDL3.dll at run time only when a [hal]
+# service is set to `sdl`; `tony hooks stage` copies SDL3.dll next to the
+# game. SDL is zlib-licensed (see THIRD_PARTY_NOTICES.md).
+version: 1
+sdl3:
+  release: "3.4.16"
+  url: https://github.com/libsdl-org/SDL/releases/download/release-3.4.16/SDL3-devel-3.4.16-VC.zip
+  path: .tools/media/sdl3/SDL3-devel-3.4.16-VC.zip
+  size: 16864776
+  sha256: 1a784cb2a5c64d56fe7a62090fe9d242d9865f235e4ea9678f1a6ba4e693e7de
+  install_dir: .tools/sdl3
+  root: SDL3-3.4.16
+  include: include
+  dll_x86: lib/x86/SDL3.dll
+  license: LICENSE.txt

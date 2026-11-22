@@ -1,0 +1,49 @@
+version: 1
+id: competition-judging
+subsystem: career
+status: complete
+
+scope:
+  functions:
+    - 0x00419460
+    - 0x00419500
+    - 0x00419880
+    - 0x00419910
+    - 0x00419cc0
+    - 0x00419f90
+    - 0x00419fb0
+    - 0x0041aee0
+    - 0x004b8410
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/competition-runtime.md
+    - re/evidence/fixtures/career-calls-progress.txt
+    - re/evidence/fixtures/career-calls-systems.txt
+  native:
+    - src/runtime/competition.cpp
+    - src/runtime/competition.hpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/career_tables.cpp
+    - scripts/generate_career_tables.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/career_calls.py
+    - re/gdb/probes/career_state.py
+    - re/gdb/probes/career_specs.py
+    - re/gdb/probes/career_specs_more.py
+    - re/gdb/probes/career_specs_skater.py
+    - re/gdb/probes/career_specs_competition.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/career_retail_calls_test.cpp
+    - src/runtime/career_test.cpp
+    - tests/test_career.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/career_calls.py`): random legal state poked into the career records, skater manager, level, game mode and player; the retail function called with its outside services stubbed; the return value, every written byte and the ordered service calls compared with the native replay, and a changed fixture value makes the replay fail. 9 of the 9 judging, ranking, scheduling and tag-handicap functions are replayed over 132 cases with no mismatch; the two random-number services are scripted from the retail call''s results and their calls and limits are compared.'
+  - Documented exclusion, not a blocker - Competition_Init (0x00419600), the win/lose and end-of-game logic and displays, the marquee and the object plumbing need the frontend and medal objects and are the planned slice competition-runtime.

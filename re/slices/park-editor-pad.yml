@@ -1,0 +1,35 @@
+version: 1
+id: park-editor-pad
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x00434090
+  - 0x004343e0
+  - 0x00435be0
+  - 0x00435e50
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-editor.md
+  - re/evidence/fixtures/leveleditor-calls-eom.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/level_editor.hpp
+  - src/runtime/level_editor_menus.cpp
+  - re/gdb/probes/editor_specs_obj.py
+  - re/gdb/probes/editor_specs.py
+  - re/gdb/probes/editor_specs_view.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_editor_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_editor.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of editor_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_editor_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 4 of the 4 functions (the editor''s pad: rotate, place, remove, the category and piece buttons, the walking cursor with its repeat delay, the gap adjustment, and placing and removing a piece or an item) are replayed over 1600 cases with no mismatch (at least 400 cases each; the committed fixtures keep the first 30 of each capture per function, 120 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the cursor's operations, the park generator's region rebuild, the camera's direction and the sounds are services with scripted results; the park's cells are made-up objects.

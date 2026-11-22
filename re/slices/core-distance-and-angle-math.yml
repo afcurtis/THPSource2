@@ -1,0 +1,62 @@
+version: 1
+id: core-distance-and-angle-math
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x004c9300
+  - 0x004c9320
+  - 0x004c9390
+  - 0x004c9400
+  - 0x004c9470
+  - 0x004c9500
+  - 0x004c9590
+  - 0x004c95e0
+  - 0x004c96d0
+  - 0x004c9770
+  - 0x004c9880
+  - 0x004c9cb0
+  - 0x004c9f50
+  - 0x004c9fd0
+  - 0x004ca0a0
+  - 0x004ca0c0
+  - 0x004ca140
+  - 0x004ca1e0
+  - 0x004ca270
+  - 0x004ca2d0
+  - 0x004ca690
+  - 0x004ca890
+  - 0x004ca8d0
+  - 0x004ca620
+  - 0x004ca650
+  - 0x004c9c90
+  - 0x004c9fb0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/core-utilities.md
+  - re/evidence/fixtures/core-calls-utlA.txt
+  - re/evidence/fixtures/core-calls-utlB.txt
+  - re/evidence/fixtures/core-calls-utlC.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/core_utils.cpp
+  - re/gdb/probes/core_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/core_retail_calls_test.cpp
+  - tests/test_core_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups utl): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (core_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 27 of the 27 functions (the rest of utils.cpp: the random seed, the y rotations, the unit vector, the direction from angles, the distances, the cosine between three points, the look angles, the turn towards a target, the case-insensitive name comparison, the platform AI window test, the arccosine to an angle, the line of sight and ground height queries, the object-list sweeps (kill in a box, visibility of the five lists), the spatial sound attenuation, the pulse and the range limit) are replayed over 8100 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 810 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the square root (0x004f53b0), the collision queries and the object methods are services; a zero distance or a period of 1 faults in retail (the probe never asks); the arccosine of a ratio beyond +-1 goes to the C runtime's error path (not asked); `Utils_TurnTowards` was already native in the object-script port and is replayed here too.

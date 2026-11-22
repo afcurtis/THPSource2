@@ -1,0 +1,36 @@
+version: 1
+id: skater-ollie
+subsystem: physics
+status: complete
+scope:
+  functions:
+  - 0x0049a280
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/skater-model-and-effects.md
+  - re/evidence/fixtures/skater-calls-physJ.txt
+  - re/evidence/fixtures/skater-calls-physL.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/skater_kit.hpp
+  - src/runtime/skater_ollie.cpp
+  - re/gdb/probes/phys_specs_big.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/skater_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups phz): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (skater_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 1 of the 1 functions (the ollie before the physics step: the animations of the held button, the landing, the charge, the take-off with its impulse and the trick chosen from the pad history (ollie, nollie, fakie ollie, boneless, no comply)) are replayed over 900 cases with no mismatch (at least 900 cases each; the committed fixtures keep the first 30 of each capture per function, 60 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the pad history matcher and record consumer, the turn phase, `Trick_TakeOff`, `Trick_Land`, the landing effects, the landed value, the gap routines and the sound are services (scripted indices for the matcher); a charge limit of 0 divides by zero in retail and ends the case in an error, which is skipped.

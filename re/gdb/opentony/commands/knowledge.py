@@ -1,0 +1,55 @@
+"""THPS2-specific addresses, identities, and recovered field knowledge."""
+
+from __future__ import annotations
+
+from ..knowledge import BUILD_SHA256, GLOBALS, known_function_addresses
+
+THPS2_BUILD_SHA256 = BUILD_SHA256
+THPS2_ADDRESSES = dict(known_function_addresses())
+THPS2_ADDRESSES["physics_frame"] = (
+    0x0049E680,
+    "per-frame gameplay skater action, collision, state, and position-update wrapper",
+    "re/evidence/functions/physics.md",
+)
+
+THPS2_LEVELS = {
+    "hangar": 0,
+    "warehouse": 12,
+}
+
+ACTION_STATE_BASE = GLOBALS["InputActionStates"]
+# Named by pad position (docs/HAL.md, "Input"), not by trick: which trick a
+# button performs is the game's own key-binding configuration.
+ACTION_STATE_RECORDS = {
+    "triangle": (ACTION_STATE_BASE, 0x0010),
+    "square": (ACTION_STATE_BASE + 0x10, 0x0080),
+    "circle": (ACTION_STATE_BASE + 0x20, 0x0020),
+    "cross": (ACTION_STATE_BASE + 0x30, 0x0040),
+    "l1": (ACTION_STATE_BASE + 0x40, 0x0004),
+    "l2": (ACTION_STATE_BASE + 0x50, 0x0001),
+    "r1": (ACTION_STATE_BASE + 0x60, 0x0008),
+    "r2": (ACTION_STATE_BASE + 0x70, 0x0002),
+    "left": (ACTION_STATE_BASE + 0x80, 0x8000),
+    "right": (ACTION_STATE_BASE + 0x90, 0x2000),
+    "up": (ACTION_STATE_BASE + 0xA0, 0x1000),
+    "down": (ACTION_STATE_BASE + 0xB0, 0x4000),
+}
+
+RECORDING_RAW_AXIS_ADDRESS = 0x0056AFBD
+RECORDING_NORMALIZED_AXIS_ADDRESS = 0x0056B140
+RECORDING_TIMING_PREVIOUS_TIME = 0x00568604
+RECORDING_TIMING_RING_INDEX = 0x0056A934
+RECORDING_TIMING_DELTA = 0x0056A93C
+RECORDING_TIMING_PREVIOUS_STORE = 0x00468BA1
+
+PLAYER_WATCH_FIELDS = {
+    "position.x": 0x08,
+    "position.y": 0x0C,
+    "position.z": 0x10,
+    "position_history.x": 0xBC,
+    "position_history.y": 0xC0,
+    "position_history.z": 0xC4,
+    "physics_state": 0x30B8,
+    "previous_physics_state": 0x30C0,
+    "unknown_state": 0x30C4,
+}

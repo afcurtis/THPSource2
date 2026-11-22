@@ -1,0 +1,69 @@
+version: 1
+id: frontend-title-screen
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x0046b0a0
+    - 0x0046b4f0
+    - 0x0046b510
+    - 0x0046b5d0
+    - 0x0046b690
+    - 0x0046b720
+    - 0x0046b870
+    - 0x0046b9a0
+    - 0x0046b9c0
+    - 0x0046ba50
+    - 0x0046bce0
+    - 0x0046bd20
+    - 0x0046bd70
+    - 0x0046be60
+    - 0x0046be80
+    - 0x0046bea0
+    - 0x0046c080
+    - 0x0046c0a0
+    - 0x0046c120
+    - 0x0046c3d0
+    - 0x0046c450
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/title-screen.md
+    - re/evidence/fixtures/menu-calls-credits.txt
+    - re/evidence/fixtures/menu-calls-entry.txt
+    - re/evidence/fixtures/menu-calls-items.txt
+    - re/evidence/fixtures/menu-calls-lists.txt
+    - re/evidence/fixtures/menu-calls-main.txt
+    - re/evidence/fixtures/menu-calls-screens.txt
+  native:
+    - src/runtime/mainmenu.hpp
+    - src/runtime/mainmenu.cpp
+    - src/runtime/mainmenu_screens.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_common.py
+    - re/gdb/probes/frontend_specs_menu.py
+    - re/gdb/probes/frontend_specs_menu_items.py
+    - re/gdb/probes/frontend_specs_menu_lists.py
+    - re/gdb/probes/frontend_specs_menu_screens.py
+    - re/gdb/probes/frontend_specs_mainmenu.py
+    - re/gdb/probes/frontend_specs_credits.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/menu_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/menu_test.cpp
+    - tests/test_menu_toolkit.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the mainmenu group): the retail function is called on a random legal state built in a scratch slab, its virtual methods and every service outside the file stubbed (fake vtables whose slots are retail functions nothing here reaches, one per method, so each call is a named service carrying the object; some cases use the real vtables so the native dispatch runs the toolkit''s own methods); the return value, every written byte and the ordered service calls are compared with the native replay (`menu_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The title screen''s window, its wheel and the memory-card scan window: 21 of the 21 functions are replayed over 840 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the loops that run the screens (MainMenu_Main, CardScreen_Main and their wrappers) are the slice `frontend-screen-loops`; the engine's text effect object, the text box and the sprite classes are seams reported by name; the real classes' per-frame hook (an engine function) is reported by fake vtables, the same slot the window base reports as `element_hook`.

@@ -1,0 +1,91 @@
+version: 1
+id: camera-object-basics
+subsystem: camera
+status: complete
+scope:
+  functions:
+  - 0x0040b650
+  - 0x0040bbe0
+  - 0x0040bc00
+  - 0x0040bce0
+  - 0x0040bd00
+  - 0x0040bd10
+  - 0x0040bd20
+  - 0x0040bd30
+  - 0x0040bd40
+  - 0x0040be40
+  - 0x0040be60
+  - 0x0040c070
+  - 0x0040c0e0
+  - 0x0040c130
+  - 0x0040c170
+  - 0x0040e000
+  - 0x0040e030
+  - 0x0040e050
+  - 0x0040e060
+  - 0x0040f0d0
+  - 0x0040f0e0
+  - 0x0040f0f0
+  - 0x0040f100
+  - 0x0040f110
+  - 0x0040f120
+  - 0x0040f130
+  - 0x0040f140
+  - 0x0040f150
+  - 0x0040f160
+  - 0x0040f170
+  - 0x0040f180
+  - 0x0040f190
+  - 0x0040f1a0
+  - 0x0040f1f0
+  - 0x004113e0
+  - 0x004117a0
+  - 0x004117b0
+  - 0x004117c0
+  - 0x004117d0
+  - 0x004117e0
+  - 0x004117f0
+  - 0x00411880
+  - 0x004118a0
+  - 0x004119e0
+  - 0x00411c50
+  - 0x00411c70
+  - 0x00411ca0
+  - 0x00411cc0
+  - 0x00411cd0
+  - 0x00411ec0
+  - 0x00411ed0
+  - 0x00411ef0
+  - 0x00411f00
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/camera-object.md
+  - re/evidence/fixtures/camera-calls-cmmC.txt
+  - re/evidence/fixtures/camera-calls-cmsA.txt
+  - re/evidence/fixtures/camera-calls-cmsB.txt
+  - re/evidence/fixtures/camera-calls-cmsC.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/camera_kit.hpp
+  - src/runtime/camera_basic.cpp
+  - re/gdb/probes/cam_specs_small.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/camera_retail_calls_test.cpp
+  - tests/test_camera_video_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cms): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (camera_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 53 of the 53 functions (the small functions of the camera: the constructor (the base object, the four rigs, the ten quaternions, the overrides and the window, the player from the pad the skater listens to, the first commit of the viewport), the quaternion class, the rigs'' constructors, destructors and getters, the camera points, the override setters and their save and restore, the shake, the blend target and the empty virtual hooks) are replayed over 14649 cases with no mismatch (at least 40 cases each; the committed fixtures keep the first 30 of each capture per function, 2340 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the base object's constructor, the camera list's add, the object delete, the list walks of the shake and the competition query are services; the assertion's file and line words are not captured.

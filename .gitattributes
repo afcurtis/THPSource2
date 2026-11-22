@@ -1,0 +1,7 @@
+# Shell scripts must keep LF endings: with core.autocrlf on Windows a CRLF script breaks under WSL.
+*.sh text eol=lf
+
+# Binary files: never convert or diff as text.
+*.png binary
+*.jpg binary
+*.ico binary

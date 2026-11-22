@@ -1,0 +1,45 @@
+version: 1
+id: trg-object-script-vm
+subsystem: scripting
+status: complete
+
+scope:
+  functions:
+    - 0x00401520
+    - 0x004014a0
+    - 0x004015e0
+    - 0x004027c0
+    - 0x004027f0
+    - 0x00402bb0
+    - 0x00403410
+    - 0x004031a0
+    - 0x004013b0
+    - 0x004013d0
+  types:
+    - RuntimeTriggerSubtype0x00cb
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/object-script-vm.md
+    - re/evidence/fixtures/object-script-warehouse.txt
+  native:
+    - src/trg/object_script.hpp
+    - src/trg/object_script.cpp
+    - src/trg/trg_script_inspect.cpp
+    - scripts/make_script_trace_fixture.py
+  tests:
+    - src/trg/object_script_test.cpp
+    - src/trg/object_script_retail_trace_test.cpp
+    - tests/test_object_script.py
+
+open_questions: []
+
+completion:
+  - "The interpreter for the 0xcb level-object bytecode is a native model with an inert service interface: every command, field write, variable, conditional, label and the read-modify-write arithmetic forms are reproduced from the retail switch statements, with the operand widths and yield rules confirmed."
+  - "All 32 shipped TRG files run natively: every 0xcb object script and type-1000 script point executes 600 frames against a varying pseudo-world with no assertion and no fault (about 78,000 commands)."
+  - "981 retail Warehouse updates (including a run with the skater moved next to each object) replay from the retail entry image and match on command sequence and cursors, variable reads and results, direct side-effect calls in order, and every modelled object field (1,677 commands, 704 variable reads, 169 calls, 15 distinct opcodes)."
+  - "Documented exclusion, not a blocker - the tail of the frame update (looping positional sound refresh and attached-model transforms) is presentation and is not modelled."
+  - "Documented exclusion, not a blocker - Warehouse never executes the distance/line-of-sight variables, level-flag and goal commands, animation commands, camera shake, power-up creation or the 0x4506..0x4509 sound commands; those are covered by unit tests and the corpus run only."
+  - "Documented limit, not a blocker - retail assertions log and continue; whether the shipped build treats them as fatal is unknown, and no shipped script triggers one."
+  - "The 0x0192 (platform) subclass has its own command and field handlers over the same base interpreter and is registered as the planned slice platform-script-object."

@@ -1,0 +1,84 @@
+version: 1
+id: skater-window-helpers
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x00418200
+    - 0x004182e0
+    - 0x00418330
+    - 0x00418360
+    - 0x00418480
+    - 0x00418540
+    - 0x004185e0
+    - 0x00418600
+    - 0x00418610
+    - 0x004186f0
+    - 0x00418720
+    - 0x004187d0
+    - 0x00418900
+    - 0x00418970
+    - 0x00418980
+    - 0x004189c0
+    - 0x00418b20
+    - 0x00418b40
+    - 0x00418b50
+    - 0x00418b60
+    - 0x00418b80
+    - 0x00418d30
+    - 0x00418d80
+    - 0x00418e40
+    - 0x00418e60
+    - 0x00418e70
+    - 0x00418e80
+    - 0x00418f20
+    - 0x00418fc0
+    - 0x00419140
+    - 0x00419160
+    - 0x004191f0
+    - 0x00419220
+    - 0x00419290
+    - 0x00419390
+    - 0x004193b0
+    - 0x004193c0
+    - 0x00419420
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/skater-window-helpers.md
+    - re/evidence/fixtures/skwin-calls-skapp.txt
+    - re/evidence/fixtures/skwin-calls-skhelp.txt
+    - re/evidence/fixtures/skwin-calls-skpers.txt
+    - re/evidence/fixtures/skwin-calls-skpoll.txt
+    - re/evidence/fixtures/skwin-calls-skstat.txt
+  native:
+    - src/runtime/skater_window_helpers.hpp
+    - src/runtime/skater_window_helpers.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_common.py
+    - re/gdb/probes/frontend_specs_menu.py
+    - re/gdb/probes/frontend_specs_skhelp.py
+    - re/gdb/probes/frontend_specs_skwin.py
+    - re/gdb/probes/frontend_specs_skapp.py
+    - re/gdb/probes/frontend_specs_skstat.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/skater_windows_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/skater_windows_test.cpp
+    - tests/test_skater_windows.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the skhelp group): the retail function is called on a random legal state built in a scratch slab, its virtual methods and every service outside the file stubbed (fake vtables whose slots are retail functions nothing here reaches, one per method, so each call is a named service carrying the object); the return value, every written byte and the ordered service calls are compared with the native replay (`skater_windows_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. The helpers of commonfe.cpp: the plain functions (light rig, colour indices, RGBs chunk walk, busiest material, face bitmap, replay level flag), the ColourText, StepperRow and NumberRow menu items, the ModelView screen element and the InitialsWindow: 38 of the 38 functions are replayed over 1520 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's model, spooler and sprite calls (PSX region queue, object records, view and object rendering) are seams reported by name with the arguments retail passed; a string shortened to fit (`CommonFe_LoadFaceBitmap`) is only generated with names of three characters or more (a two-character name leaves the byte after the 'g' to the stack).

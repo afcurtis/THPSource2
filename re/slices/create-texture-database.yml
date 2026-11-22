@@ -1,0 +1,45 @@
+version: 1
+id: create-texture-database
+subsystem: create
+status: complete
+scope:
+  functions:
+  - 0x0041d790
+  - 0x0041d7b0
+  - 0x0041d7d0
+  - 0x0041db50
+  - 0x0041dbc0
+  - 0x0041dbe0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/createobj-databases-and-spooler.md
+  - re/evidence/fixtures/createobj-calls-cdb21.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/createobj_kit.hpp
+  - src/runtime/create_parts.hpp
+  - src/runtime/create_spool.hpp
+  - src/runtime/create_stitch.hpp
+  - src/runtime/createobj_small.cpp
+  - re/gdb/probes/cobj_specs.py
+  - re/gdb/probes/cobj_world.py
+  - re/gdb/probes/cobj_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/createobj_retail_calls_test.cpp
+  - tests/test_createobj_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cdb): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (createobj_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 6 of the 6 functions (the texture database (its constructor, deleting destructor and destructor) and the texture-set manager that holds it (constructor, which loads the cretex list, deleting destructor and destructor)) are replayed over 600 cases with no mismatch (at least 100 cases each; the committed fixtures keep the first 30 of each capture per function, 180 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the cretex loader and the heap are services; the objects are compared in the slab, and the virtual delete runs the class's own deleting destructor.

@@ -1,0 +1,37 @@
+version: 1
+id: out-model-statics
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x0043fe00
+  - 0x0043ff30
+  - 0x00440010
+  - 0x00440060
+  - 0x00440170
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/generator-objects.md
+  - re/evidence/fixtures/gen-calls-gring.txt
+  - re/evidence/fixtures/gen-calls-gnode.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/gen_objs.hpp
+  - src/runtime/gen_objs_pool.cpp
+  - re/gdb/probes/gen_specs.py
+  - re/gdb/probes/gen_specs_poly.py
+  - re/gdb/probes/gen_specs_model.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/gen_objs_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_generator_objects.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of gen_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`gen_objs_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 5 of the 5 functions (the out-model''s lights, lookup tables and ring of nodes) are replayed over 178 cases with no mismatch (at least 6 cases each).'
+- Documented exclusion, not a blocker - the ring of nodes in the node cases is a table of which only 64 nodes are captured (the scan always ends inside them); a ring with no free node is not generated (the scan would read every node); the logger reports only the format address.

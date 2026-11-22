@@ -1,0 +1,611 @@
+from __future__ import annotations
+
+import argparse
+import sys
+
+from . import __version__, commands
+from .levels import parse_level
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="tony", description="THPSource2 reverse-engineering and build workflow")
+    parser.add_argument("--version", action="version", version=f"THPSource2 {__version__}")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("doctor", help="check required/optional tools")
+    p.set_defaults(func=commands.doctor)
+
+    setup = sub.add_parser("setup", help="provision project-managed tools")
+    setup_sub = setup.add_subparsers(dest="setup_command", required=True)
+    p = setup_sub.add_parser("ghidra", help="download pinned Ghidra and install bundled PyGhidra")
+    p.set_defaults(func=commands.setup_ghidra)
+    p = setup_sub.add_parser("media", help="download and verify the recorded THPS2 disc image")
+    p.set_defaults(func=commands.setup_media)
+    p = setup_sub.add_parser("vc6", help="provision the exact Visual C++ 6.0 SP3 toolchain under Wine")
+    p.set_defaults(func=commands.setup_vc6)
+    from .sdl3 import setup_sdl3
+
+    p = setup_sub.add_parser("sdl3", help="download and verify the pinned SDL3 package for the platform HAL")
+    p.set_defaults(func=setup_sdl3)
+    from .glslang import setup_glslang
+
+    p = setup_sub.add_parser("glslang", help="download and verify the pinned glslang shader compiler (SDL_GPU shaders)")
+    p.set_defaults(func=setup_glslang)
+    from .llvm_mingw import setup_llvm_mingw
+
+    p = setup_sub.add_parser("llvm-mingw", help="download and verify the pinned llvm-mingw toolchain (native Kit DLL)")
+    p.set_defaults(func=setup_llvm_mingw)
+    from .ffmpeg import setup_ffmpeg
+
+    p = setup_sub.add_parser("ffmpeg", help="download, verify and cross-build the pinned decode-only FFmpeg (movies and music)")
+    p.add_argument("--arch", choices=("32", "64"), default="32", help="the 32-bit build (default) or the x86-64 one for the 64-bit standalone (milestone 11b)")
+    p.set_defaults(func=setup_ffmpeg)
+
+    prerequisites = sub.add_parser("prerequisites", help="bootstrap shared reversing prerequisites")
+    prerequisites_sub = prerequisites.add_subparsers(dest="prerequisites_command", required=True)
+    p = prerequisites_sub.add_parser("bootstrap", help="install shared PyGhidra and create the canonical project")
+    p.add_argument("--profile", choices=("fast", "complete"), default="complete")
+    p.set_defaults(func=commands.prerequisites_bootstrap, repair=False)
+    p = prerequisites_sub.add_parser("repair", help="reinstall shared PyGhidra and rebuild the canonical project")
+    p.add_argument("--profile", choices=("fast", "complete"), default="complete")
+    p.set_defaults(func=commands.prerequisites_bootstrap, repair=True)
+
+    vc6 = sub.add_parser("vc6", help="manage the pinned Visual C++ 6.0 SP3 toolchain")
+    vc6_sub = vc6.add_subparsers(dest="vc6_command", required=True)
+    p = vc6_sub.add_parser("verify", help="verify the provisioned compiler and linker versions")
+    p.set_defaults(func=commands.vc6_verify)
+    p = vc6_sub.add_parser("compile", help="compile one C/C++ source file to a VC6 COFF object")
+    p.add_argument("source")
+    p.add_argument("--output")
+    p.add_argument("--flag", action="append", help="compiler flag; repeat to replace the defaults")
+    p.set_defaults(func=commands.vc6_compile)
+    p = vc6_sub.add_parser("compare", help="compare VC6 COFF .text with one original split module")
+    p.add_argument("module", help="module ID or start address")
+    p.add_argument("--source", help="C/C++ source; defaults to the module's cpp_source")
+    p.add_argument("--flag", action="append", help="compiler flag; repeat to replace manifest/default flags")
+    p.set_defaults(func=commands.vc6_compare)
+
+    media = sub.add_parser("media", help="inspect original disc media")
+    media_sub = media.add_subparsers(dest="media_command", required=True)
+    p = media_sub.add_parser("identify", help="hash and identify disc image without modifying it")
+    p.add_argument("path", nargs="?")
+    p.add_argument("--record", action="store_true")
+    p.set_defaults(func=commands.media_identify)
+    p = media_sub.add_parser("tracks", help="report filesystem and unclassified raw-disc regions")
+    p.add_argument("path", nargs="?")
+    p.set_defaults(func=commands.media_tracks)
+    p = media_sub.add_parser("list", help="probe/list image contents")
+    p.add_argument("path", nargs="?")
+    p.set_defaults(func=commands.media_list)
+    p = media_sub.add_parser("extract", help="extract image/container to a generated build directory")
+    p.add_argument("path", nargs="?")
+    p.add_argument("--output", default="build/disc")
+    p.add_argument("--force", action="store_true", help="replace an existing generated output directory")
+    p.set_defaults(func=commands.media_extract)
+
+    assets = sub.add_parser("assets", help="inspect and extract game asset archives")
+    assets_sub = assets.add_subparsers(dest="assets_command", required=True)
+    p = assets_sub.add_parser("inventory", help="summarize extracted assets by file extension")
+    p.add_argument("path")
+    p.add_argument("--examples", type=int, default=3, help="number of example paths to retain per extension")
+    p.set_defaults(func=commands.assets_inventory)
+    p = assets_sub.add_parser("inspect-pkr", help="inspect a PKR2 asset archive")
+    p.add_argument("path")
+    p.add_argument("--entries", action="store_true", help="include every file entry in the JSON output")
+    p.set_defaults(func=commands.assets_inspect_pkr)
+    p = assets_sub.add_parser("inspect-pre", help="inspect a PRE resource archive")
+    p.add_argument("path")
+    p.add_argument("--entries", action="store_true", help="include every file entry in the JSON output")
+    p.set_defaults(func=commands.assets_inspect_pre)
+    p = assets_sub.add_parser("inspect-trg", help="inspect a TRG header, node table, and script streams")
+    p.add_argument("path")
+    p.add_argument("--nodes", action="store_true", help="include every node offset and type")
+    p.add_argument("--scripts", action="store_true", help="decode autoexec, command-point, and restart streams")
+    p.set_defaults(func=commands.assets_inspect_trg)
+    p = assets_sub.add_parser("inspect-psx", help="inspect a PSX model and texture container")
+    p.add_argument("path")
+    p.add_argument("--models", action="store_true", help="include every model header and face flags")
+    p.add_argument("--textures", action="store_true", help="include every texture header")
+    p.add_argument("--tags", action="store_true", help="include every PSX tag")
+    p.set_defaults(func=commands.assets_inspect_psx)
+    p = assets_sub.add_parser("inspect-hed", help="inspect a CD.HED hash table and associated HET/WAD files")
+    p.add_argument("path")
+    p.add_argument("--names", help="HET filename table; defaults to the sibling .HET file")
+    p.add_argument("--wad", help="WAD payload file; defaults to the sibling .WAD file")
+    p.add_argument("--entries", action="store_true", help="include every hash/offset/size entry")
+    p.set_defaults(func=commands.assets_inspect_hed)
+    p = assets_sub.add_parser("extract-pkr", help="extract a PKR2 asset archive into build/")
+    p.add_argument("path")
+    p.add_argument("--output", default="build/assets/pkr")
+    p.add_argument("--force", action="store_true", help="replace an existing generated output directory")
+    p.set_defaults(func=commands.assets_extract_pkr)
+    p = assets_sub.add_parser("extract-pre", help="extract a PRE resource archive into build/")
+    p.add_argument("path")
+    p.add_argument("--output", default="build/assets/pre")
+    p.add_argument("--force", action="store_true", help="replace an existing generated output directory")
+    p.set_defaults(func=commands.assets_extract_pre)
+    p = assets_sub.add_parser("extract-psx", help="export PSX models as OBJ and textures as PPM")
+    p.add_argument("path")
+    p.add_argument("--output", default="build/assets/psx")
+    p.add_argument("--force", action="store_true", help="replace an existing generated output directory")
+    group = p.add_mutually_exclusive_group()
+    group.add_argument("--models-only", action="store_true", help="export only OBJ model files")
+    group.add_argument("--textures-only", action="store_true", help="export only PPM texture files")
+    p.set_defaults(func=commands.assets_extract_psx)
+    p = assets_sub.add_parser("explore", help="serve a local browser explorer for generated assets")
+    p.add_argument("path", nargs="?", help="generated asset directory or asset workspace; defaults to build/assets")
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8765)
+    p.add_argument("--open", action="store_true", dest="open_browser", help="open the explorer in a browser")
+    p.set_defaults(func=commands.assets_explore)
+    p = assets_sub.add_parser("extract-hed", help="extract a CD.HED/CD.WAD asset table into build/")
+    p.add_argument("path")
+    p.add_argument("--names", help="HET filename table; defaults to the sibling .HET file")
+    p.add_argument("--wad", help="WAD payload file; defaults to the sibling .WAD file")
+    p.add_argument("--output", default="build/assets/cd-wad")
+    p.add_argument("--force", action="store_true", help="replace an existing generated output directory")
+    p.add_argument(
+        "--allow-zero-wad",
+        action="store_true",
+        help="allow extraction from an all-zero WAD for forensic inspection",
+    )
+    p.set_defaults(func=commands.assets_extract_hed)
+
+    exe = sub.add_parser("exe", help="inspect installed PE executable")
+    exe_sub = exe.add_subparsers(dest="exe_command", required=True)
+    p = exe_sub.add_parser("identify", help="record PE identity and entry-point metadata")
+    p.add_argument("path")
+    p.add_argument("--record", action="store_true")
+    p.set_defaults(func=commands.exe_identify)
+    p = exe_sub.add_parser("patch-nocd", help="create an adjacent executable that bypasses the CD TOC check")
+    p.add_argument("--output", help="output path; defaults beside the recorded executable")
+    p.set_defaults(func=commands.exe_patch_nocd)
+
+    p = sub.add_parser("verify", help="verify canonical repository knowledge and recorded inputs")
+    p.add_argument("--all", action="store_true", help="also rebuild/verify matching output and verify Ghidra state")
+    p.set_defaults(func=commands.verify)
+
+    worktree = sub.add_parser("worktree", help="prepare and check isolated reconstruction worktrees")
+    worktree_sub = worktree.add_subparsers(dest="worktree_command", required=True)
+    p = worktree_sub.add_parser("prepare", help="share immutable inputs and seed a private Ghidra project")
+    p.add_argument("--source", help="ready primary checkout; defaults to the main Git worktree")
+    p.set_defaults(func=commands.worktree_prepare)
+    p = worktree_sub.add_parser("verify", help="check prerequisites without provisioning or rebuilding")
+    p.set_defaults(func=commands.worktree_verify)
+
+    recovered_types = sub.add_parser("types", help="validate recovered retail memory layouts")
+    recovered_types_sub = recovered_types.add_subparsers(dest="types_command", required=True)
+    p = recovered_types_sub.add_parser("verify", help="validate recovered type schemas and evidence")
+    p.set_defaults(func=commands.types_verify)
+
+    split = sub.add_parser("split", help="build a byte-preserving modular executable split")
+    split_sub = split.add_subparsers(dest="split_command", required=True)
+    p = split_sub.add_parser("init", help="create a coarse split manifest and raw NASM modules")
+    p.add_argument("--chunk-size", type=lambda value: int(value, 0), default=64 * 1024)
+    p.add_argument("--force", action="store_true", help="replace the existing manifest and raw module sources")
+    p.set_defaults(func=commands.split_init)
+    p = split_sub.add_parser("extract", help="extract original module byte ranges")
+    p.set_defaults(func=commands.split_extract)
+    p = split_sub.add_parser("build", help="assemble every module independently with NASM")
+    p.set_defaults(func=commands.split_build)
+    p = split_sub.add_parser("symbols", help="generate NASM equates from tracked symbols")
+    p.set_defaults(func=commands.split_symbols)
+    p = split_sub.add_parser("module", help="split a raw module around one VA range")
+    p.add_argument("start_va")
+    p.add_argument("end_va")
+    p.set_defaults(func=commands.split_module)
+    p = split_sub.add_parser("compare", help="compare one assembled module with its original bytes")
+    p.add_argument("module", help="module ID or an address it owns")
+    p.set_defaults(func=commands.split_compare)
+    p = split_sub.add_parser("coverage", help="export complete Ghidra-backed .text coverage")
+    p.set_defaults(func=commands.split_coverage)
+    p = split_sub.add_parser("propose-modules", help="propose function-aware splits without changing sources")
+    p.add_argument("--safe-only", action="store_true", help="emit only instruction-aligned low-risk proposals")
+    p.add_argument("--range", dest="address_range", help="limit proposals to a START:END virtual-address range")
+    p.set_defaults(func=commands.split_propose_modules)
+    p = split_sub.add_parser("accept-proposal", help="apply one safe split proposal")
+    p.add_argument("selector", help="proposal function name or start address")
+    p.add_argument("--dry-run", action="store_true")
+    p.set_defaults(func=commands.split_accept_proposal)
+    p = split_sub.add_parser("accept-proposals", help="transactionally apply a filtered safe proposal batch")
+    p.add_argument("--tracked-only", action="store_true", help="accept only tracked function addresses")
+    p.add_argument("--range", dest="address_range", help="limit acceptance to START:END")
+    p.add_argument("--dry-run", action="store_true")
+    p.set_defaults(func=commands.split_accept_proposals)
+    p = split_sub.add_parser("rebuild", help="assemble modules and patch them into the original PE container")
+    p.add_argument("--output", default="match/generated/THawk2.rebuilt.exe")
+    p.add_argument("--no-build", action="store_true", help="reuse existing built module binaries")
+    p.set_defaults(func=commands.split_rebuild)
+    p = split_sub.add_parser("verify", help="verify coverage, module bytes, and the rebuilt executable")
+    p.set_defaults(func=commands.split_verify)
+
+    wine = sub.add_parser("wine", help="Wine runtime management")
+    wine_sub = wine.add_subparsers(dest="wine_command", required=True)
+    p = wine_sub.add_parser("init", help="initialize canonical Wine prefix")
+    p.set_defaults(func=commands.wine_init)
+    p = wine_sub.add_parser("mount-disc", help="mount normalized disc and map it as Wine D: CD-ROM")
+    p.set_defaults(func=commands.wine_mount_disc)
+    p = wine_sub.add_parser("unmount-disc", help="unmount normalized disc and remove its loop device")
+    p.set_defaults(func=commands.wine_unmount_disc)
+
+    p = sub.add_parser("run", help="run recorded THPS2 executable under Wine")
+    p.add_argument("--headless", action="store_true", help="run inside the configured Xvfb software-rendering display")
+    p.add_argument("--screenshot", metavar="PATH", help="capture the isolated display immediately after launch")
+    p.add_argument("--record", metavar="PATH", help="record the isolated display until the game exits")
+    p.add_argument("--unmute", action="store_true", help="headless: leave game audio enabled (no PulseAudio sink needed)")
+    p.add_argument("game_args", nargs=argparse.REMAINDER)
+    p.set_defaults(func=commands.run_game)
+
+    p = sub.add_parser("play", help="mount the disc if needed and run the recorded game under Wine")
+    p.add_argument("--headless", action="store_true", help="run inside the configured Xvfb software-rendering display")
+    p.add_argument("--screenshot", metavar="PATH", help="capture the isolated display immediately after launch")
+    p.add_argument("--record", metavar="PATH", help="record the isolated display until the game exits")
+    p.add_argument("--unmute", action="store_true", help="headless: leave game audio enabled (no PulseAudio sink needed)")
+    p.add_argument(
+        "--level",
+        type=parse_level,
+        metavar="NAME|INDEX",
+        help="launch through the frontend directly into a level (name or index 0-12)",
+    )
+    p.add_argument("game_args", nargs=argparse.REMAINDER)
+    p.set_defaults(func=commands.play_game)
+
+    replay = sub.add_parser("replay", help="replay recorded gameplay through a target runtime")
+    replay_sub = replay.add_subparsers(dest="replay_command", required=True)
+    p = replay_sub.add_parser("retail", help="replay one recording through the retail executable")
+    p.add_argument("path")
+    p.add_argument("--session", help="named debug session; omitted generates a unique session")
+    p.add_argument("--port", type=int)
+    p.add_argument("--unmute", action="store_true", help="leave game audio enabled")
+    p.set_defaults(func=commands.replay_retail)
+    p = replay_sub.add_parser("native", help="replay one recording through the native gameplay session")
+    p.add_argument("path")
+    p.add_argument("--trg", help="native level trigger asset; defaults to Warehouse")
+    p.add_argument("--psx", help="native level collision/scene asset; defaults to Warehouse")
+    p.add_argument("--asset-root", help="native asset directory; defaults to build/assets/all-pkr/files/data")
+    p.add_argument("--native-binary", help="native replay executable")
+    p.add_argument("--output", help="generated native JSONL trace")
+    p.set_defaults(func=commands.replay_native)
+
+    p = sub.add_parser("debug", help="run through WineDbg GDB proxy and interactive GDB")
+    p.add_argument("--headless", action="store_true", help="use the isolated Xvfb display (the default for launches)")
+    p.add_argument("--unmute", action="store_true", help="leave game audio enabled for this debug session")
+    p.add_argument("--screenshot", metavar="PATH", help="capture the isolated display after the target starts")
+    p.add_argument("--record", metavar="PATH", help="record the isolated display until GDB exits")
+    p.add_argument("--session", help="named debug session; omitted generates a unique session")
+    p.add_argument("--port", type=int)
+    p.add_argument("--pid", help="attach to a PID, or use 'auto' to find the running game")
+    p.add_argument(
+        "--level",
+        type=parse_level,
+        metavar="NAME|INDEX",
+        help="launch through the frontend directly into a level (name or index 0-12)",
+    )
+    p.add_argument("game_args", nargs=argparse.REMAINDER)
+    p.set_defaults(func=commands.debug_game)
+
+    record = sub.add_parser("record", help="control and validate retail gameplay recordings")
+    record_sub = record.add_subparsers(dest="record_command", required=True)
+    p = record_sub.add_parser("start", help="request recording at the next gameplay frame")
+    p.add_argument("--session", help="debug session ID; required when multiple sessions are active")
+    p.add_argument("--output", help="recording path; defaults to build/recordings/retail/")
+    p.add_argument("--force", action="store_true", help="replace an existing recording")
+    p.add_argument("--frames", type=int, help="stop after exactly this many completed gameplay frames")
+    p.set_defaults(func=commands.record_start)
+    p = record_sub.add_parser("stop", help="request recording stop after the current gameplay frame")
+    p.add_argument("--session", help="debug session ID; required when multiple sessions are active")
+    p.set_defaults(func=commands.record_stop)
+    p = record_sub.add_parser("toggle", help="toggle recording on the next gameplay boundary")
+    p.add_argument("--session", help="debug session ID; required when multiple sessions are active")
+    p.add_argument("--output", help="recording path when toggling from idle")
+    p.add_argument("--force", action="store_true", help="replace an existing recording")
+    p.set_defaults(func=commands.record_toggle)
+    p = record_sub.add_parser("status", help="show the recording state for a debug session")
+    p.add_argument("--session", help="debug session ID; required when multiple sessions are active")
+    p.set_defaults(func=commands.record_status)
+    p = record_sub.add_parser("validate", help="validate a legacy or binary recording file")
+    p.add_argument("path")
+    p.set_defaults(func=commands.record_validate)
+    p = record_sub.add_parser("export-json", help="export a recording as human-readable JSONL")
+    p.add_argument("path")
+    p.add_argument("--output")
+    p.add_argument("--force", action="store_true")
+    p.set_defaults(func=commands.recording_export_json)
+    p = record_sub.add_parser("dump", help="dump a recording as human-readable JSONL")
+    p.add_argument("path")
+    p.add_argument("--output")
+    p.add_argument("--force", action="store_true")
+    p.set_defaults(func=commands.recording_export_json)
+
+    capture = sub.add_parser("capture", help="decode and compare in-process capture artifacts")
+    capture_sub = capture.add_subparsers(dest="capture_command", required=True)
+    p = capture_sub.add_parser("decode", help="convert a fixed-layout .otcap into an .otrec recording")
+    p.add_argument("path")
+    p.add_argument("--output", required=True)
+    p.add_argument("--force", action="store_true")
+    p.add_argument(
+        "--binary",
+        dest="binary",
+        action="store_true",
+        default=True,
+        help="write canonical binary OTREC2 (the default)",
+    )
+    p.add_argument(
+        "--legacy-jsonl",
+        dest="binary",
+        action="store_false",
+        help="write the legacy JSONL view for old fixtures",
+    )
+    p.set_defaults(func=commands.capture_decode)
+    p = capture_sub.add_parser("compare", help="compare two recordings frame by frame")
+    p.add_argument("left")
+    p.add_argument("right")
+    p.add_argument(
+        "--scope",
+        choices=("all", "snapshots", "qualification"),
+        default="all",
+        help="comparison scope; qualification checks stable snapshots and timer boundaries",
+    )
+    p.set_defaults(func=commands.capture_compare)
+    p = capture_sub.add_parser(
+        "qualify",
+        help="qualify GDB and in-process before/after snapshots for M3",
+    )
+    p.add_argument("--gdb", required=True, help="GDB-produced .otrec")
+    p.add_argument("--inproc", required=True, help="in-process-produced .otrec")
+    p.add_argument(
+        "--scope",
+        choices=("qualification", "snapshots", "all"),
+        default="qualification",
+        help="qualification checks stable snapshots and timer boundaries (default)",
+    )
+    p.set_defaults(func=commands.capture_qualify)
+
+    gdb = sub.add_parser("gdb", help="generate and inspect THPSource2 GDB support files")
+    gdb_sub = gdb.add_subparsers(dest="gdb_command", required=True)
+    p = gdb_sub.add_parser("generate", help="generate GDB symbol knowledge from re/symbols")
+    p.add_argument("--output", help="generated module path; defaults to build/gdb/knowledge.py")
+    p.set_defaults(func=commands.gdb_generate)
+
+    sessions = sub.add_parser("sessions", help="manage concurrent debug sessions")
+    sessions_sub = sessions.add_subparsers(dest="sessions_command", required=True)
+    p = sessions_sub.add_parser("list", help="list debug sessions")
+    p.set_defaults(func=commands.sessions_list)
+    p = sessions_sub.add_parser("stop", help="stop a debug session and its owned processes")
+    p.add_argument("session_id")
+    p.set_defaults(func=commands.sessions_stop)
+    p = sessions_sub.add_parser("clean", help="remove stopped debug session metadata")
+    p.add_argument("session_id")
+    p.set_defaults(func=commands.sessions_clean)
+    p = sessions_sub.add_parser("prune", help="remove stale isolated Wine prefixes across worktrees")
+    p.add_argument("--dry-run", action="store_true", help="report stale prefixes without removing them")
+    p.set_defaults(func=commands.sessions_prune)
+
+    ghidra = sub.add_parser("ghidra", help="generated Ghidra project operations")
+    ghidra_sub = ghidra.add_subparsers(dest="ghidra_command", required=True)
+    p = ghidra_sub.add_parser("rebuild", help="recreate project, analyze executable, and apply tracked symbols")
+    p.add_argument("--profile", choices=("fast", "complete"), default="complete")
+    p.set_defaults(func=commands.ghidra_rebuild)
+    p = ghidra_sub.add_parser("sync", help="quickly apply tracked knowledge to the existing project")
+    p.add_argument("--function", action="append", type=lambda value: int(value, 0), default=[])
+    p.add_argument("--force", action="store_true", help="apply knowledge even when its fingerprint is unchanged")
+    p.set_defaults(func=commands.ghidra_sync)
+    p = ghidra_sub.add_parser("verify", help="verify generated types, signatures, globals, and fingerprints")
+    p.set_defaults(func=commands.ghidra_verify)
+    p = ghidra_sub.add_parser("inspect", help="export one function's reconstruction context as JSON")
+    p.add_argument("address", type=lambda value: int(value, 0))
+    p.add_argument("--output")
+    p.set_defaults(func=commands.ghidra_inspect)
+    p = ghidra_sub.add_parser("gaps", help="rank tracked functions with missing reconstruction knowledge")
+    p.add_argument("--limit", type=int, default=50)
+    p.add_argument("--output")
+    p.add_argument("--slice", dest="slice_id", help="restrict ranking to one reconstruction slice")
+    p.set_defaults(func=commands.ghidra_gaps)
+
+    from .xref.commands import register as register_xref
+
+    register_xref(sub)
+
+    from .hooks import register as register_hooks
+    from .hooks import with_hooks
+
+    register_hooks(sub)
+
+    from .session_scenarios import register as register_session
+
+    register_session(sub)
+
+    from .standalone_boot import register as register_standalone
+
+    register_standalone(sub)
+
+    from .release import register as register_release
+
+    register_release(sub)
+
+    from .gates import register as register_gates
+
+    register_gates(sub)
+
+    from .hal.commands import register as register_hal
+
+    register_hal(sub)
+
+    native = sub.add_parser("native", help="native reconstruction progress operations")
+    native_sub = native.add_subparsers(dest="native_command", required=True)
+    p = native_sub.add_parser("verify", help="validate function-to-native progress mappings")
+    p.set_defaults(func=commands.native_verify)
+
+    slices = sub.add_parser("slice", help="manage reconstruction work slices")
+    slices_sub = slices.add_subparsers(dest="slice_command", required=True)
+    p = slices_sub.add_parser("list", help="list committed slices and local claims")
+    p.set_defaults(func=commands.slice_list)
+    p = slices_sub.add_parser("status", help="show slice progress, leases, and current worktree state")
+    p.add_argument("slice_id", nargs="?")
+    p.set_defaults(func=commands.slice_status)
+    p = slices_sub.add_parser("show", help="show slice scope and workflow checklist")
+    p.add_argument("slice_id")
+    p.set_defaults(func=commands.slice_show)
+    p = slices_sub.add_parser("prompt", help="print a compact agent prompt for a slice")
+    p.add_argument("slice_id")
+    p.set_defaults(func=commands.slice_prompt)
+    p = slices_sub.add_parser("verify", help="validate slice scope and artifact references")
+    p.set_defaults(func=commands.slice_verify)
+    p = slices_sub.add_parser("claim", help="claim a slice in local generated state")
+    p.add_argument("slice_id")
+    p.add_argument("--owner")
+    p.add_argument("--force", action="store_true")
+    p.set_defaults(func=commands.slice_claim)
+    p = slices_sub.add_parser("release", help="release a local slice claim")
+    p.add_argument("slice_id")
+    p.add_argument("--owner")
+    p.add_argument("--force", action="store_true")
+    p.set_defaults(func=commands.slice_release)
+    p = ghidra_sub.add_parser("export-functions", help="export current function inventory as JSON")
+    p.add_argument("--output")
+    p.set_defaults(func=commands.ghidra_export_functions)
+    p = ghidra_sub.add_parser("decompile", help="decompile one function from the local Ghidra project")
+    p.add_argument("address", type=lambda value: int(value, 0), help="function entry address, for example 0x0041c2d0")
+    p.add_argument("--output", help="write decompiler output instead of printing it")
+    p.set_defaults(func=commands.ghidra_decompile)
+
+    exp = sub.add_parser("experiments", help="experiment manifest operations")
+    exp_sub = exp.add_subparsers(dest="experiments_command", required=True)
+    p = exp_sub.add_parser("list")
+    p.set_defaults(func=commands.experiments_list)
+
+    p = sub.add_parser("compare", help="compare two JSONL traces and report first divergence")
+    p.add_argument("left")
+    p.add_argument("right")
+    p.set_defaults(func=commands.compare_traces)
+
+    scenario = sub.add_parser("scenario", help="run intent-defined retail/native replay scenarios")
+    scenario_sub = scenario.add_subparsers(dest="scenario_command", required=True)
+    p = scenario_sub.add_parser("list", help="list scenario manifests")
+    p.set_defaults(func=commands.scenario_list)
+
+    def add_hooks_option(parser):
+        parser.add_argument(
+            "--hooks",
+            metavar="SPEC",
+            help="run retail with the opentony.dll hook harness (OPENTONY_HOOKS: all, none, default, Name, -Name)",
+        )
+        parser.add_argument(
+            "--clock",
+            choices=("realtime", "lockstep", "lockstep-fast"),
+            help="with --hooks: clock service (lockstep = deterministic fixed timestep)",
+        )
+
+    p = scenario_sub.add_parser("capture", help="capture a scenario from its manifest")
+    p.add_argument("name")
+    p.add_argument("--output", help="generated recording path; defaults under build/scenarios/")
+    p.add_argument(
+        "--frames",
+        type=int,
+        help="override the manifest frame count (useful for capture benchmarks)",
+    )
+    p.add_argument(
+        "--backend",
+        choices=("gdb", "inproc", "hybrid"),
+        default="inproc",
+        help="capture backend (inproc is the canonical default; gdb is diagnostic)",
+    )
+    p.add_argument("--capture-host", help="path to opentony_capture_host.exe for --backend inproc")
+    p.add_argument("--capture-dll", help="path to opentony_capture.dll for --backend inproc")
+    p.add_argument(
+        "--keep-raw-capture",
+        action="store_true",
+        help="retain the bounded .otcap transport beside a successful in-process capture",
+    )
+    p.add_argument(
+        "--headless-prefix",
+        help="optional isolated Wine prefix for in-process capture",
+    )
+    p.add_argument("--session", help="named debug session")
+    p.add_argument("--port", type=int)
+    p.add_argument("--unmute", action="store_true", help="leave game audio enabled")
+    p.add_argument(
+        "--no-forensics",
+        action="store_true",
+        help="omit diagnostic GDB probes during a GDB benchmark/capture",
+    )
+    p.add_argument("--force", action="store_true", help="replace an existing recording")
+    add_hooks_option(p)
+    p.set_defaults(func=with_hooks(commands.scenario_capture))
+
+    def add_scenario_replay_options(parser):
+        parser.add_argument("name")
+        parser.add_argument("--recording", help="recording path; defaults under build/scenarios/")
+        parser.add_argument("--session", help="named debug session (retail only)")
+        parser.add_argument("--port", type=int, help="debug port (retail only)")
+        parser.add_argument("--unmute", action="store_true", help="leave game audio enabled (retail only)")
+
+    p = scenario_sub.add_parser("retail", help="strictly replay a scenario through retail")
+    add_scenario_replay_options(p)
+    add_hooks_option(p)
+    p.set_defaults(func=with_hooks(commands.scenario_retail))
+
+    p = scenario_sub.add_parser("native", help="strictly replay a scenario through native")
+    add_scenario_replay_options(p)
+    p.add_argument("--trg", help="native level trigger asset")
+    p.add_argument("--psx", help="native level collision/scene asset")
+    p.add_argument("--asset-root", help="native asset directory")
+    p.add_argument("--native-binary", help="native replay executable")
+    p.add_argument("--output", help="generated native JSONL trace")
+    p.set_defaults(func=commands.scenario_native)
+
+    p = scenario_sub.add_parser("verify", help="validate and run strict retail and native replay")
+    add_scenario_replay_options(p)
+    p.add_argument("--trg", help="native level trigger asset")
+    p.add_argument("--psx", help="native level collision/scene asset")
+    p.add_argument("--asset-root", help="native asset directory")
+    p.add_argument("--native-binary", help="native replay executable")
+    p.add_argument("--output", help="generated native JSONL trace")
+    add_hooks_option(p)
+    p.set_defaults(func=with_hooks(commands.scenario_verify))
+
+    return parser
+
+
+def parse_args(argv=None) -> argparse.Namespace:
+    parser = build_parser()
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    args, unknown = parser.parse_known_args(argv)
+    if unknown:
+        if args.command not in {"run", "play", "debug"}:
+            parser.error("unrecognized arguments: " + " ".join(unknown))
+        args.game_args.extend(unknown)
+    if args.command in {"run", "play"}:
+        command_index = raw_argv.index(args.command)
+        raw_game_args = raw_argv[command_index + 1:]
+        args.game_args = []
+        index = 0
+        while index < len(raw_game_args):
+            value = raw_game_args[index]
+            if value == "--":
+                args.game_args.extend(raw_game_args[index + 1:])
+                break
+            if value in {"--headless", "--unmute"}:
+                index += 1
+                continue
+            if value in {"--screenshot", "--record"}:
+                index += 2
+                continue
+            if value == "--level":
+                index += 2
+                continue
+            args.game_args.append(value)
+            index += 1
+    if args.command in {"run", "play", "debug"} and args.game_args[:1] == ["--"]:
+        del args.game_args[0]
+    return args
+
+
+def main(argv=None) -> int:
+    args = parse_args(argv)
+    if args.command == "ghidra":
+        from .ghidra_lock import ghidra_project_lock
+
+        with ghidra_project_lock():
+            return int(args.func(args) or 0)
+    return int(args.func(args) or 0)

@@ -1,0 +1,51 @@
+version: 1
+id: world-trick-objects
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004bd700
+  - 0x004bd720
+  - 0x004bd740
+  - 0x004bd760
+  - 0x004bd920
+  - 0x004bd940
+  - 0x004bd980
+  - 0x004bdbd0
+  - 0x004bdc40
+  - 0x004bdd00
+  - 0x004bdea0
+  - 0x004be0b0
+  - 0x004be340
+  - 0x004be350
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/world-trick-objects.md
+  - re/evidence/fixtures/world-calls-wtk2A.txt
+  - re/evidence/fixtures/world-calls-wtkB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/world_kit.hpp
+  - src/runtime/world_trick.cpp
+  - re/gdb/probes/world_specs_trick.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/world_specs.py
+  tests:
+  - src/runtime/world_retail_calls_test.cpp
+  - tests/test_world_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups wtk, wtk2): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (world_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 14 of the 14 functions (the trick objects of a level (the tags and goals of the trigger file): the list and its delete-all, the constructor, destructor and activation by a skater, the take, the flicker, the clipped line renderer and the box outline) are replayed over 3240 cases with no mismatch (at least 120 cases each; the committed fixtures keep the first 30 of each capture per function, 420 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the model items, the sound, the net game, the replay recorder and the trigger pulse are services; the delete-all pair has a group of its own (the objects' deleting destructor is a stub there, with the list's new head scripted). `0x004be140` (an unlisted wireframe renderer) is not ported.

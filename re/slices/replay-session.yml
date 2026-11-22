@@ -1,0 +1,46 @@
+version: 1
+id: replay-session
+subsystem: video
+status: complete
+scope:
+  functions:
+  - 0x004cb810
+  - 0x004cba30
+  - 0x004cbce0
+  - 0x004cdc20
+  - 0x004cddc0
+  - 0x004cde70
+  - 0x004cde80
+  - 0x004cdef0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/replay-recorder.md
+  - re/evidence/fixtures/video-calls-vbtA.txt
+  - re/evidence/fixtures/video-calls-vrsA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/video_kit.hpp
+  - src/runtime/video_session.cpp
+  - src/runtime/video_stream.cpp
+  - re/gdb/probes/video_specs.py
+  - re/gdb/probes/video_specs_frame.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/video_retail_calls_test.cpp
+  - tests/test_camera_video_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups vbt, vrs): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (video_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 8 of the 8 functions (starting a recording or a playback: the header (frame count, highlights, skaters, level, game mode, money mask and the custom skaters'' data), the two stream buffers, the stream state of a skater, the loaded file''s header on playback, the registration of the trick scripts'' animations for each skater, the car positions kept for the cinematics and the playing test) are replayed over 2501 cases with no mismatch (at least 101 cases each; the committed fixtures keep the first 30 of each capture per function, 240 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the allocator, the file loader, Mem_Delete, the trick script walk of `RegisterAnimations` (its animation registrar) and the log line are services; the slow `RegisterAnimations` capture is 47 cases.

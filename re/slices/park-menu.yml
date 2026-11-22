@@ -1,0 +1,41 @@
+version: 1
+id: park-menu
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x004329d0
+  - 0x00432b60
+  - 0x00432b80
+  - 0x00432c10
+  - 0x00432c60
+  - 0x00432f60
+  - 0x00433090
+  - 0x00433160
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-editor.md
+  - re/evidence/fixtures/leveleditor-calls-edm.txt
+  - re/evidence/fixtures/leveleditor-calls-edm2.txt
+  - re/evidence/fixtures/leveleditor-calls-edm3.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/level_editor.hpp
+  - src/runtime/level_editor_global.cpp
+  - re/gdb/probes/editor_specs.py
+  - re/gdb/probes/editor_specs_view.py
+  - re/gdb/probes/editor_specs_cursor.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_editor_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_editor.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of editor_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_editor_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 8 of the 8 functions (the park menu: construct, destroy, step the list, the load and save state machine, load by name, the delete menu and the labels of the 50 parks on the disc) are replayed over 2300 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 270 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the list wrappers are fake objects whose virtual methods are reported services; the menu toolkit, the file layer and the memory card are services with scripted results.

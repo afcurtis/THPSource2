@@ -1,0 +1,51 @@
+version: 1
+id: sfx-front
+subsystem: audio
+status: complete
+scope:
+  functions:
+  - 0x004ad620
+  - 0x004ad750
+  - 0x004ad7d0
+  - 0x004ad870
+  - 0x004ad890
+  - 0x004ad8b0
+  - 0x004ad950
+  - 0x004ad9b0
+  - 0x004ad9c0
+  - 0x004ad9d0
+  - 0x004ad9f0
+  - 0x004ada10
+  - 0x004ada20
+  - 0x004adb90
+  - 0x004adba0
+  - 0x004adc30
+  - 0x004adc50
+  - 0x004adc60
+  - 0x004adc70
+  - 0x004f38d0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/audio-movie.md
+  - re/evidence/fixtures/audio-calls-sfx.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/audio_game.hpp
+  - src/runtime/audio_sfx.cpp
+  - re/gdb/probes/audio_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/audio_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_audio_game.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups sfx of audio_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`audio_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 20 of the 20 functions (the sound effect front (sfx.cpp, pc\soundlib.cpp''s Audio_StopAll): SFX_PlayX / PlayLR and the positional sounds with the split screen substitutes and the effects scale, the voice frequency, position and volume, pause and resume, the reverb, the empty hooks) are replayed over 5000 cases with no mismatch (at least 250 cases each; the committed fixtures keep the first 30 of each capture per function, 600 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the HAL's voices (Audio_PlaySound, SetVoiceVolume, ...), the pan service, the on-demand loader and the SPU reverb calls are services; the pitch scale is double math (the x87 runs at 53 bits outside the render window).

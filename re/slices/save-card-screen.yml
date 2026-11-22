@@ -1,0 +1,51 @@
+version: 1
+id: save-card-screen
+subsystem: frontend
+status: complete
+scope:
+  functions:
+  - 0x00476560
+  - 0x004769a0
+  - 0x004769d0
+  - 0x00476a30
+  - 0x00476b00
+  - 0x00477910
+  - 0x00477940
+  - 0x00477b40
+  - 0x004780d0
+  - 0x00478f00
+  - 0x004792f0
+  - 0x004793a0
+  - 0x00479f60
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/memory-card-layer.md
+  - re/evidence/fixtures/mmu-screens-calls-uiH.txt
+  - re/evidence/fixtures/mmu-screens-calls-uiL.txt
+  - re/evidence/fixtures/mmu-screens-calls-uiS.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/mmu_screens.hpp
+  - src/runtime/screen_kit.hpp
+  - src/runtime/create_screens.hpp
+  - src/runtime/mmu_screens.cpp
+  - re/gdb/probes/mmu_specs_ui.py
+  - re/gdb/probes/frontend_specs_screens.py
+  - re/gdb/probes/frontend_specs_screens_cases.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/mmu_screens_retail_calls_test.cpp
+  - tests/test_memory_card_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mmui): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (mmu_screens_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 13 of the 13 functions (the save-card screen and its prompt group: the constructors and destructors, the file list rebuild, the display state machine (browse, warnings, overwrite and delete questions, name entry, formatting, deleting, saving, loading, messages), the browse input, the banner and the display and draw) are replayed over 1131 cases with no mismatch (at least 60 cases each; the committed fixtures keep the first 30 of each capture per function, 390 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the card manager's methods are services here (the card slices replay them), and the window base, menu toolkit and confirm / text boxes run natively on the 4.10 harness.

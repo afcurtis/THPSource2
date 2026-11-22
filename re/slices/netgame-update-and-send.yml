@@ -1,0 +1,42 @@
+version: 1
+id: netgame-update-and-send
+subsystem: netgame
+status: complete
+scope:
+  functions:
+  - 0x004df370
+  - 0x004df6d0
+  - 0x004e02d0
+  - 0x004e1230
+  - 0x004e1250
+  - 0x004e1370
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/network-layer.md
+  - re/evidence/fixtures/net-calls-netp1.txt
+  - re/evidence/fixtures/net-calls-netp2.txt
+  - re/evidence/fixtures/net-calls-netp4.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/net_game.hpp
+  - src/runtime/net_play.cpp
+  - src/runtime/net_update.cpp
+  - re/gdb/probes/net_specs.py
+  - re/gdb/probes/net_specs_state.py
+  - re/gdb/probes/net_specs_play.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/net_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_net_game.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups netp of net_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`net_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 6 of the 6 functions (the per-frame network update (the handshake steps, the incoming messages, the remote skater and the timeouts), the state and chat senders and the three message handlers) are replayed over 1698 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 180 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - DirectPlay (send, poll, receive), the message dispatcher (0x004e0dd0) and the senders of the custom level and skater are services; the packet descriptor is a stack local recorded without its stack addresses.

@@ -1,0 +1,45 @@
+version: 1
+id: trick-recognition
+subsystem: tricks
+status: complete
+
+scope:
+  functions:
+    - 0x00492ea0
+    - 0x00492120
+    - 0x00492190
+    - 0x00491c90
+    - 0x00492560
+    - 0x00492030
+    - 0x004925e0
+    - 0x00492290
+    - 0x00492400
+    - 0x00491b80
+    - 0x004924f0
+  types:
+    - RuntimeSkaterMovementState
+  globals:
+    - PlayerOneTrickScriptTable
+    - PlayerTwoTrickScriptTable
+
+artifacts:
+  evidence:
+    - re/evidence/functions/trick-script-runtime.md
+    - re/evidence/functions/bin-runtime.md
+    - re/evidence/fixtures/trick-warehouse.txt
+  native:
+    - src/runtime/trick_script.hpp
+    - src/runtime/trick_recognition.cpp
+    - src/runtime/retail_image.hpp
+    - scripts/make_trick_trace_fixture.py
+  tests:
+    - src/runtime/trick_script_test.cpp
+    - src/runtime/trick_retail_trace_test.cpp
+    - tests/test_trick_script.py
+
+open_questions: []
+
+completion:
+  - "3,363 retail Warehouse updates (849 in the fixture: all that ran a script, made a call or changed trick state, plus every 25th quiet one) replay exactly: button-history ring and latches, selection, the ten-entry start queue and TrickScript_Start, over the whole skater image."
+  - "Documented exclusion, not a blocker - selection of three-code sequences and of the 0x2000, 0x4000 and 0x8000 flag forms and QueueStart's grind branch were not started by any recording; they are disassembly-derived; the three-code sequence and the plain queue-append branch are also unit tested."
+  - "Documented exclusion, not a blocker - the native runtime frame still uses the older action_sequence/action_commands approximations; wiring trick_script_update into the gameplay frame is a follow-up."

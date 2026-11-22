@@ -1,0 +1,37 @@
+version: 1
+id: air-spin-controls
+subsystem: tricks
+status: paused
+
+scope:
+  # Phase 4 close (2026-10-26): paused, handed to Phase 5 (native gameplay frame integration). Phase 5 close (2026-11-13): handed to Phase 6 (open_questions).
+  # 0x0048ddc0 is Panel_RefreshTrickText (slice trick-score-stack, native); 0x0049e570 is
+  # Skater_UpdateNollieFlip (slice skater-small-handlers, native).
+  # 0x0048ddc0 and 0x0049e570 join once they have evidence-backed names.
+  functions: []
+  types:
+    - RuntimeSkaterMovementState
+  globals: []
+
+shared:
+  functions:
+    - 0x00493370
+    - 0x0049dad0
+    - 0x0049b500
+
+artifacts:
+  evidence:
+    - re/evidence/functions/ground-movement.md
+    - re/evidence/functions/input.md
+  native:
+    - src/runtime/player_state.cpp
+  tests:
+    - src/runtime/player_state_test.cpp
+
+open_questions:
+  - "Phase 6 hand-off (the Phase 5 close, 2026-11-13): Phase 5 built the native gameplay frame this slice waited for. The standalone calls 0x00493370 and its spin block as a native on retail memory (SkaterKit, 10g; the Warehouse scenarios and the fuzzed Hangar seeds that spin and change stance match retail frame by frame), and nothing reads a recorded after-snapshot any more. What the slice never got is an isolated fixture of an air spin (the latch lifecycle, count, phase and half-spin counter as forced calls); src/runtime/player_state.cpp, the older replay model, stays Phase 4 tooling. Phase 6 decides whether to capture that fixture or to retire the model."
+  - Capture a live L2/R2 spin in the air (controller +0x50/+0x70 presses) and turn its frames into native fixtures; feed the live +0x306c into the 0x00497f40 air-turn modifier, which native replay still supplies as zero.
+
+completion:
+  - "Paused; handed to Phase 6 (open_questions). The standalone's native gameplay frame replaces the replay harness this slice was waiting on."
+  - "On resume: a live retail spin trace reproduces frame by frame, and the Warehouse strict native replays stay 256/256."

@@ -1,0 +1,51 @@
+version: 1
+id: front-shell-helpers
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x00452e40
+    - 0x00452ec0
+    - 0x00452fe0
+    - 0x00454130
+    - 0x00454300
+    - 0x004544a0
+    - 0x00454710
+    - 0x00454760
+    - 0x004547f0
+    - 0x004ac3f0
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/shell-and-lobby.md
+    - re/evidence/fixtures/front-calls-shell-fe2.txt
+  native:
+    - src/runtime/front.hpp
+    - src/runtime/front_shell.cpp
+    - src/runtime/front_main.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - re/gdb/probes/frontend_specs_shell.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/front_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/shell_test.cpp
+    - tests/test_front_shell.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the fe2 group: the replay header, the character table, the music cells, the park and editor flags and the skater slot tables poked per case; the skater manager, the level launch, the sound and the career services reported by address): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`front_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 10 of the 10 functions are replayed over 1500 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's text, sprite, sound, pad, card, spooler, model and script calls and the competition and replay layers other files own are seams reported by name with the arguments retail passed; a handful of branches that need an unreachable state (a hung menu, an assertion that ends the game) are covered by the unit tests only.

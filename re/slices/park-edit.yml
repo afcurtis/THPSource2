@@ -1,0 +1,42 @@
+version: 1
+id: park-edit
+subsystem: world
+status: complete
+scope:
+  functions:
+  - 0x0043c770
+  - 0x0043cc30
+  - 0x0043cd90
+  - 0x0043ce00
+  - 0x0043ce60
+  - 0x0043cf20
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-generator.md
+  - re/evidence/fixtures/levelgen-calls-lge.txt
+  - re/evidence/fixtures/levelgen-calls-lge2.txt
+  - re/evidence/fixtures/levelgen-calls-lge3.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/gen_objs.hpp
+  - src/runtime/level_gen.hpp
+  - src/runtime/level_gen_edit.cpp
+  - re/gdb/probes/levelgen_specs.py
+  - re/gdb/probes/levelgen_specs_pieces.py
+  - re/gdb/probes/levelgen_specs_edit.py
+  - re/gdb/probes/levelgen_specs_prk.py
+  - re/gdb/probes/levelgen_specs_region.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_gen_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_generator.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of levelgen_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_gen_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 6 of the 6 functions (the editor''s operations: place a piece, add, refresh and remove items, flash the gaps and take the top piece away) are replayed over 1554 cases with no mismatch (at least 150 cases each; the committed fixtures keep the first 30 of each capture per function, 240 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - none beyond the made-up park and item records.

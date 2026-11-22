@@ -1,0 +1,157 @@
+# In-process capture (Windows)
+
+The normal scenario recorder is the standalone in-process component.  GDB
+remains available explicitly with `--backend gdb` for diagnostics, and
+`--backend hybrid` remains the same-run qualification mode:
+
+```text
+tony scenario capture warehouse-idle
+```
+
+The explicit equivalent is `--backend inproc`; use `--backend gdb` only for
+diagnostics or `--backend hybrid` for same-run qualification.
+
+Build the standalone 32-bit Windows component from a Windows CMake generator
+(the Linux/native CMake project does not include these targets):
+
+```text
+cmake -S src/capture/win32 -B build/capture/win32 -A Win32
+cmake --build build/capture/win32 --config Release
+```
+
+The C hook manifest is generated from `re/config/capture_hooks.yml`; regenerate
+the checked-in VC6-compatible header with
+`python scripts/generate_capture_hooks.py re/config/capture_hooks.yml
+src/capture/win32/capture_hooks_generated.h` after changing a seam.
+
+The host creates a bounded 64 MiB named mapping, launches the selected retail
+executable suspended, injects `opentony_capture.dll`, and saves the mapping as
+temporary `retail.otcap` transport.  The host never drops records: a
+frame-limit or mapping overflow is a failed capture.  The current v3 wire
+layout reserves 32 timer samples and 32 causal events per frame.  Python
+validates it and promotes it to canonical binary OTREC2 `retail.otrec`;
+version-1 and version-2 `.otcap` files remain readable.  Successful normal
+captures remove the temporary transport; pass `--keep-raw-capture` to retain
+it for inspection.  Failed captures retain their raw transport automatically.
+
+Legacy GDB `.otrec` files remain readable during migration.  Use
+`tony record export-json recording.otrec --output recording.jsonl` (or
+`tony record dump recording.otrec`) for a human-readable compatibility view.
+
+M5 installs the proven `Skater_PhysicsFrame`, post-poll action-mask, and timer
+boundary detours. M7 adds the deterministic frontend bootstrap: the DLL skips
+the two movie entry points, releases the real PLAY and level-select boundaries,
+applies the configured level at the launch seam, and supplies the same
+keyboard-edge pulses used by the GDB frontend commands. Every frontend seam is
+covered by the same RVA/expected-byte manifest and is installed transactionally
+with the gameplay hooks.
+The installer tracks persistent recorder seams separately from one-shot
+frontend bootstrap seams; the latter are restored and their trampolines freed
+at the first canonical player physics entry (the action seam also runs during
+frontend startup).
+The DLL copies the original prologues into executable trampolines, relocates
+only the `rel32` calls/jumps listed for that seam in
+`re/config/capture_hooks.yml`, patches the entries with relative jumps, and
+captures one `0x3210` player blob immediately before and after the original
+physics function.  At the post-poll boundary it applies the same low-word
+action mask that `tony-action-edge` writes, using the fixed scenario intervals
+in the shared config.  The timer detour samples the callback-owned counter,
+accumulators, and pause gates at the timer-update and simulation-clock-read
+boundaries and stores those fixed-size observations in each frame.  A
+post-physics sample is assigned to the following frame, matching the GDB
+recorder's return-boundary semantics.  The offline decoder infers completed
+deliveries from counter deltas (deferring a torn callback when the simulation
+accumulator proves it is still in flight).  The exact simulation-time store
+seam is also observed so the after-snapshot preserves the value retail wrote
+at that boundary.  Version 1 emits typed shared-random call events from the
+proven `0x0048f3a0` service; unused fixed event slots remain zero-filled and
+the decoder rejects unknown event types.  Native replay maps the currently
+qualified callsites into its existing causal random channels while the raw
+caller, argument, and return value remain available for later analysis.
+The wrappers
+preserve the game's ECX/stack, return-value, and flags contract.  An unknown
+executable or changed byte fails closed before capture begins.
+
+The host stops the suspended retail process after the configured frame limit is
+published.  The final record is committed before `frame_count` advances, so a
+bounded run cannot produce a partially written frame.
+If the retail frontend never reaches the requested gameplay boundary, the
+host fails closed after a bounded startup wait with `OTCAP_ERROR_TIMEOUT`
+instead of leaving a Wine process running indefinitely.
+
+The Python command always starts this host inside the project-managed Xvfb
+display and creates the configured Wine virtual desktop (`THPSource2,1024x768`)
+for the legacy DirectDraw frontend. The desktop is torn down after the host
+publishes its bounded output, so no game window is exposed on the caller's
+display. Running the Windows host directly with `wine` is a diagnostic escape
+hatch and may show a game window on the caller's normal display; that does not
+change the headless scenario path.
+
+`--backend hybrid` launches the injected recorder and GDB against the same
+suspended retail process.  The host waits for GDB to install shadow
+breakpoints, then releases a file rendezvous; GDB observes the post-detour
+instruction boundaries while the DLL owns the verified prologues, frontend
+bootstrap, and action-edge injection.  The command keeps the GDB JSONL sidecar
+as `<recording>.gdb.otrec`, converts the DLL output to the requested canonical
+recording, and fails unless overlapping snapshots and inputs compare exactly.
+The asynchronous global simulation clock is intentionally retained in that
+strict comparison: GDB stop-the-world sampling can expose a different timer
+tick even when every stable player/input field matches, so hybrid remains a
+qualification gate rather than a canonical backend until that clock seam is
+made observer-independent.
+
+The qualification helpers are `scripts/benchmark_capture.py` for wall-clock
+measurements and `scripts/compare_recorders.py --scope qualification` (or
+`tony capture qualify --gdb GDB.otrec --inproc INPROC.otrec`) for M3
+same-frame before/after snapshot and timer-boundary comparisons.  The
+qualification scope removes only asynchronous stop-time clock fields from
+player snapshots; it checks the global accumulated-counter start/end,
+interval, and delivery invariants after expanding callback batches.  A
+one-interval start or end skew is allowed because GDB stop-the-world
+observation can enter or leave the bounded run one callback apart;
+recorder-specific phases and sampled clock values are ignored.  The benchmark
+reports per-run
+and aggregate seconds for GDB, in-process, and optional hybrid backends.  Add
+`--no-forensics` when comparing recorder hot paths without the diagnostic GDB
+probe families; ordinary GDB scenario capture still includes them by default.
+Use `--frames 1024 --runs 2 --warm-prefix` to separate one-time startup from
+the per-frame slope.  Version 2 expands the fixed timer-sample budget to 32
+slots and version 3 expands the causal-event budget to 32; the 64 MiB
+transport therefore has theoretical room for about 2,250 frame records.  A
+run that exceeds either bound fails closed with a bounded overflow; records
+are never dropped.  Each sample records its frame count and whether it reused
+its prefix.
+The aggregate includes failed runs as well as successful ones, so a rejected
+hybrid qualification still contributes a useful wall-clock measurement.
+By default each benchmark sample gets its own isolated headless Wine prefix
+under the benchmark output root; `--warm-prefix` deliberately reuses one per
+backend.
+The default `tony capture compare` scope remains an exact comparison that
+includes all event arrays.
+
+`warehouse-idle` is the first fixture whose manifest names only its qualified
+causal evidence (`service` and `rng`); the other forensic families remain
+available for diagnosis. This narrows the oracle's capture payload without
+claiming that debugger timing is equivalent to the in-process run. Backend
+wall time must still be measured separately: short runs can be dominated by
+Wine/Xvfb startup, while longer runs expose the actual per-frame slope.
+
+## The standalone (milestone 10f)
+
+`tony standalone warehouse [NAME...] [--keep-retail] [--dump A[,B]]` runs a Warehouse scenario in the standalone and compares it with the retail capture of
+the same scenario (`tony/standalone_warehouse.py`). Retail is the capture above with the session probe loaded beside it (`session.trace`, the `.data` blocks
+of `tony standalone parity`); the standalone is `opentony_spike.exe` cold-booting with `OT_SCENARIO` (the scenario's level, frames and action intervals, written
+by the command) and `OT_SCENARIO_OUT` (the `.otcap` it writes, frame by frame: a FATAL ends the process at once). `src/hooks/kits/standalone_scenario.cpp` does
+what the capture DLL does at the retail code, at the same points: the main menu's confirm key and its answer (0x26), the level select skipped with the level as
+its answer, the goals screen's Enter pulse, the recorded input's low word after the poll's bindings, the player blob before and after `Skater_PhysicsFrame`
+(through the resolver: the Kits call it by address). The frame writer is `shared_buffer.cpp` itself, so the wire layout is the retail recorder's and
+`tony.capture` decodes it. Not recorded yet: the timer-update and clock-read samples, the simulation-time store and the shared-random calls (inside functions the
+Kits own); the "snapshots" scope of `compare_recordings` does not need them. The scenario file may also name the player's skater (`skater <row>`, 0..19 as the
+select screen's rows) and look (`look <0..3>`): they are chosen at the skipped level select with the quick start's own call (`options_choose_skater`), and the run
+prints `scenario: skater N, look M (asked ...)`, the look the slot really holds (a look the row has no model for is left alone). The texture census uses them.
+
+The command compares the frames both runs recorded ("snapshots" scope, the first differing field named) and every `.data` block at every record both made
+(deliveries, polls, masks and identity blocks as in `tony standalone parity`). Its `status` is `match`, `stopped` (equal as far as the standalone went, then a
+FATAL) or `diverge`. The capture host starts the game suspended and injects its DLL, so retail's memory zones are at another address than in the session runs
+(0x091e0020 against 0x04f00020): the command reads the zone block from the retail run's image at delivery 2 and hands it to the standalone (`OT_ZONE_BLOCK`).
+

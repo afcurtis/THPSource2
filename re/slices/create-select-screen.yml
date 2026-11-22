@@ -1,0 +1,60 @@
+version: 1
+id: create-select-screen
+subsystem: create
+status: complete
+
+scope:
+  functions:
+    - 0x0042cd20
+    - 0x0042cd40
+    - 0x0042cd50
+    - 0x0042cd60
+    - 0x0042dda0
+    - 0x0042ddc0
+    - 0x0042df60
+    - 0x0042e180
+    - 0x0042e7d0
+    - 0x0042e860
+    - 0x0042e9c0
+    - 0x0042f100
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/create-select-screen.md
+    - re/evidence/fixtures/crscreen-calls-crsel.txt
+    - re/evidence/fixtures/crscreen-calls-crselloop.txt
+  native:
+    - src/runtime/create_screens.hpp
+    - src/runtime/create_screens_select.cpp
+    - src/runtime/create_screens_ui.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - src/runtime/skater_window_helpers.hpp
+    - re/gdb/probes/frontend_specs_select.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - re/gdb/probes/frontend_specs_menu.py
+    - re/gdb/probes/frontend_specs_skwin.py
+    - re/gdb/probes/frontend_specs_skstat.py
+    - re/gdb/probes/frontend_specs_screens.py
+    - re/gdb/probes/frontend_specs_screens_cases.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/create_screens_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - src/runtime/create_screens_test.cpp
+    - tests/test_create_screens.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the crsel and crselloop groups): the retail function is called on a random legal state built in a scratch slab (real text rows and styles, fake lists, prompts and children whose methods are reported services, a real confirm box where a state needs a dialog); the return value, every written byte and the ordered service calls are compared with the native replay (`create_screens_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 12 of the 12 functions are replayed over 660 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the memory-card layer (Mmu_*), CustomSkater_Init, Tricks_InitializeManager, CustomSave_CommitImage and CustomSave_CopySlot, the screen's save-image copy and the frame plumbing are seams reported by name with the arguments retail passed; the screen loop is replayed with its window's step, update, draw and deleting destructor as seams (those methods are replayed on their own).

@@ -1,0 +1,53 @@
+version: 1
+id: player-spool-trace
+subsystem: asset-runtime
+status: complete
+scope:
+  functions:
+  - 0x004b50e0
+  - 0x004b5190
+  - 0x004b51b0
+  - 0x004b5200
+  - 0x004b5240
+  - 0x004b5260
+  - 0x004b52b0
+  - 0x004b5300
+  - 0x004b5350
+  - 0x004b5370
+  - 0x004b5580
+  - 0x004b55a0
+  - 0x004b55c0
+  - 0x004b5620
+  - 0x004b57d0
+  - 0x004b5810
+  - 0x004b5830
+  - 0x004b58a0
+  - 0x004b5920
+  - 0x004b5990
+  - 0x004b5a00
+  - 0x004b5b00
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/player-spool.md
+  - re/evidence/fixtures/pspool-calls-spooler.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/player_spooler.hpp
+  - src/runtime/player_spooler.cpp
+  - re/gdb/probes/pspool_specs.py
+  - re/gdb/probes/pspool_specs_view.py
+  - re/gdb/probes/pspool_specs_file.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/player_spool_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_player_spool.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of pspool_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`player_spool_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 22 of the 22 functions (spooler.cpp, the player spool manager) are replayed over 2860 cases with no mismatch (at least 130 cases each).'
+- 'Documented exclusion, not a blocker - the engine''s allocator, the file layer and the PSX region spooler are services (the file layer''s read progress is scripted: the word FileIO_Continue leaves at 0x005615d0); a queued name without a dot is scanned past its end by retail and not reproduced; a full queue (64 entries) is not generated because the name copy then overwrites the manager''s counters.'

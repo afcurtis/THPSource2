@@ -1,0 +1,45 @@
+version: 1
+id: create-stitch-weld
+subsystem: create
+status: complete
+scope:
+  functions:
+  - 0x00424900
+  - 0x00424a60
+  - 0x00424a80
+  - 0x00425100
+  - 0x004252c0
+  - 0x004254c0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/createobj-stitch-weld.md
+  - re/evidence/fixtures/createobj-calls-cweld21.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/createobj_kit.hpp
+  - src/runtime/create_parts.hpp
+  - src/runtime/create_spool.hpp
+  - src/runtime/create_stitch.hpp
+  - src/runtime/createobj_weld.cpp
+  - re/gdb/probes/cobj_specs7.py
+  - re/gdb/probes/cobj_world.py
+  - re/gdb/probes/cobj_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/createobj_retail_calls_test.cpp
+  - tests/test_createobj_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cweld, cskt): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (createobj_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 6 of the 6 functions (the part stitcher''s constructor (log, copy and reorder of the stitches), its destructors and the weld (an animated object''s pose carries the vertices of the paired parts through the GTE, and vertices that meet become stitches)) are replayed over 120 cases with no mismatch (at least 20 cases each; the committed fixtures keep the first 30 of each capture per function, 120 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the animated object, its storage, the pose and the region selection are services; the GTE is the plain memory of the replay.

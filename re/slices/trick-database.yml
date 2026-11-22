@@ -1,0 +1,70 @@
+version: 1
+id: trick-database
+subsystem: tricks
+status: complete
+
+scope:
+  functions:
+    - 0x004bb4f0
+    - 0x004bb7e0
+    - 0x004bb9d0
+    - 0x004bba50
+    - 0x004bbd70
+    - 0x004bbf00
+    - 0x004bc300
+    - 0x004bc330
+    - 0x004bc3a0
+    - 0x004bc7e0
+    - 0x004bc900
+    - 0x004bca10
+    - 0x004bca80
+    - 0x004bcaa0
+    - 0x004bcb70
+    - 0x004bcc90
+    - 0x004bcdd0
+    - 0x004bcf00
+    - 0x004bd160
+    - 0x004bd170
+    - 0x004bf6c0
+    - 0x00416140
+    - 0x00416230
+    - 0x00416340
+    - 0x00416380
+    - 0x004170d0
+  types: []
+  globals:
+    - TricksBinaryBase
+    - PlayerOneTrickScriptTable
+    - PlayerTwoTrickScriptTable
+
+shared:
+  functions:
+    - 0x004bd1e0
+    - 0x00492a90
+    - 0x00416050
+    - 0x004bb770
+    - 0x004bb790
+
+artifacts:
+  evidence:
+    - re/evidence/functions/trick-database-runtime.md
+    - re/evidence/functions/bin-runtime.md
+    - re/evidence/fixtures/trickdb-warehouse.txt
+  native:
+    - src/runtime/trick_database.hpp
+    - src/runtime/trick_database.cpp
+    - src/runtime/trick_combo_tables.cpp
+    - scripts/generate_trick_combo_tables.py
+    - scripts/make_trickdb_trace_fixture.py
+  tests:
+    - src/runtime/trick_database_test.cpp
+    - src/runtime/trick_database_retail_trace_test.cpp
+    - tests/test_trick_database.py
+    - tests/test_trick_combo_tables.py
+
+open_questions: []
+
+completion:
+  - "Retail Warehouse trace (game start, level load, and the selected character overridden to 3, 7, 11, 15 and 19): all 105 database records (name, source offset, cost, flags, descriptor), the lowercased loaded TRICKS.BIN buffer, all 20 character records (unlock bitmap and binding block, byte for byte), the alternate binding block and seven player key tables (1,049 words) replay from the pristine TRICKS.BIN with identical results; every one of the 105 scripts walks to its end marker with the ported command-size routine."
+  - "Documented exclusion, not a blocker - the choice of key stream and binding block per player (Skater_GetSlotRecord, Skater_GetResourceSlot, the created-skater path) is a seam; created-skater tables and the two-player build were not recorded."
+  - "Documented exclusion, not a blocker - the alternate-stream branch was reached by forcing the selector; its unlock-state variant, paying a non-zero point cost and the special-slot removal and refusal branches are disassembly-derived and unit tested."

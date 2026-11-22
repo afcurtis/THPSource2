@@ -1,0 +1,58 @@
+version: 1
+id: career-cheats
+subsystem: career
+status: complete
+
+scope:
+  functions:
+    - 0x004168b0
+    - 0x00416940
+    - 0x00416960
+    - 0x00416980
+    - 0x00416a00
+    - 0x00416c90
+    - 0x00416cd0
+    - 0x00416de0
+    - 0x00416e30
+    - 0x00416f50
+    - 0x00416f80
+    - 0x00416fb0
+    - 0x00417060
+    - 0x00417300
+    - 0x00417330
+    - 0x00413f30
+    - 0x00413f70
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/career-runtime.md
+    - re/evidence/fixtures/career-calls-progress.txt
+    - re/evidence/fixtures/career-calls-systems.txt
+  native:
+    - src/runtime/career.cpp
+    - src/runtime/career.hpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/career_tables.cpp
+    - src/runtime/career_tables.hpp
+    - scripts/generate_career_tables.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/career_calls.py
+    - re/gdb/probes/career_state.py
+    - re/gdb/probes/career_specs.py
+    - re/gdb/probes/career_specs_more.py
+    - re/gdb/probes/career_specs_skater.py
+    - re/gdb/probes/career_specs_competition.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/career_retail_calls_test.cpp
+    - src/runtime/career_test.cpp
+    - tests/test_career.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (Warehouse, level loaded, `re/gdb/probes/career_calls.py`): random legal state poked into the career records, skater manager, level, game mode and player; the retail function called with its outside services stubbed; the return value, every written byte and the ordered service calls compared with the native replay, and a changed fixture value makes the replay fail. 17 of the 17 cheat, locked-character and options functions are replayed over 255 cases with no mismatch.'
+  - Documented exclusion, not a blocker - the cheats' effects on other subsystems (per-player scale, disco mode start) are stubbed services whose calls and arguments are compared; the skater table rows are varied by the generator (flag bits and unlocked words), not by a played unlock sequence.

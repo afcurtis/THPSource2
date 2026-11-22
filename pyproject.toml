@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "opentony"
+version = "0.1.0"
+description = "Linux-first reverse-engineering workspace for Tony Hawk's Pro Skater 2 PC"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "PyYAML>=6,<7",
+  "pefile>=2023.2.7",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "pytest-xdist>=3.6,<4",
+  "ruff==0.16.9",
+]
+
+[project.scripts]
+tony = "tony.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tony*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Use every core by default (pytest-xdist is in the dev extra). `tony gates` passes its own
+# `-n 3`, which overrides this; `-n 0` forces a serial run for debugging.
+addopts = "-n auto"
+
+[tool.ruff]
+line-length = 110

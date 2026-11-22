@@ -1,0 +1,40 @@
+version: 1
+id: traffic-object-update
+subsystem: world
+status: complete
+
+scope:
+  functions:
+    - 0x00412640
+    - 0x00412960
+    - 0x004136e0
+    - 0x00465f60
+    - 0x004e8560
+    - 0x00412930
+    - 0x004f5f50
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/traffic-object.md
+    - re/evidence/fixtures/traffic-object-ny.txt
+  native:
+    - src/trg/traffic_object.cpp
+    - src/trg/object_script.hpp
+    - src/trg/script_world.cpp
+    - scripts/make_traffic_trace_fixture.py
+  tests:
+    - src/trg/traffic_object_test.cpp
+    - src/trg/traffic_object_retail_trace_test.cpp
+    - src/trg/level_world_test.cpp
+    - tests/test_traffic_object.py
+
+open_questions: []
+
+completion:
+  - "2,856 retail updates of New York's taxis and cable cars replay from their raw entry images and match on position, angles, velocity, road node and proximity latch, and on every sound refresh, horn sound, Rnd draw and service call, across 50 road-segment changes."
+  - "All 40 shipped cars drive their roads for 600 frames with no assertion and no fault, and ScriptWorld creates and updates cars from their TRG nodes inside LevelRuntime."
+  - "Documented exclusion, not a blocker - the car-versus-skater interaction (0x00412ef0 and its worker 0x00413000) is a service; its other effects are unchecked."
+  - "Documented exclusion, not a blocker - the video-playback position restore is a service, and the volume scaling around the positional-sound refresh is presentation."
+  - "Documented exclusion, not a blocker - the horns of buses, karts, bulls, police cars and gulls were not observed in the retail trace (New York has taxis and cable cars); they follow the disassembly and are unit tested."

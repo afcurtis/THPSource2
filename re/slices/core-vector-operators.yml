@@ -1,0 +1,46 @@
+version: 1
+id: core-vector-operators
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x004ca940
+  - 0x004ca980
+  - 0x004ca9b0
+  - 0x004cabb0
+  - 0x004cabf0
+  - 0x004cac30
+  - 0x004cac60
+  - 0x004cac90
+  - 0x004cacd0
+  - 0x004cad00
+  - 0x004cad30
+  - 0x004cad60
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/core-utilities.md
+  - re/evidence/fixtures/core-calls-utlA.txt
+  - re/evidence/fixtures/core-calls-utlB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/core_utils.cpp
+  - re/gdb/probes/core_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/core_retail_calls_test.cpp
+  - tests/test_core_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups utl): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (core_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 12 of the 12 functions (the 3-vector operators of utils.cpp: the squared length, the normalise (whose z component is divided twice: a retail quirk), the dead zone, the add, subtract, scalar multiply and divide, shift and negate operators that write a result vector, and the 16-bit mask) are replayed over 3600 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 360 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - a divisor of zero (or INT_MIN / -1) faults in retail, so the probe never asks; `Math_Vector3SquaredLength` is not listed by Ghidra (no caller) and was found in the gap between two functions.

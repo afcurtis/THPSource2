@@ -1,0 +1,50 @@
+version: 1
+id: create-spooler
+subsystem: create
+status: complete
+scope:
+  functions:
+  - 0x00422b10
+  - 0x00422b20
+  - 0x00423b10
+  - 0x00423bd0
+  - 0x00424550
+  - 0x004245a0
+  - 0x004245c0
+  - 0x00424610
+  - 0x00424630
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/createobj-databases-and-spooler.md
+  - re/evidence/fixtures/createobj-calls-capp21.txt
+  - re/evidence/fixtures/createobj-calls-cdb21.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/createobj_kit.hpp
+  - src/runtime/create_parts.hpp
+  - src/runtime/create_spool.hpp
+  - src/runtime/create_stitch.hpp
+  - src/runtime/createobj_small.cpp
+  - re/gdb/probes/cobj_specs.py
+  - re/gdb/probes/cobj_specs6.py
+  - re/gdb/probes/cobj_world.py
+  - re/gdb/probes/cobj_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/createobj_retail_calls_test.cpp
+  - tests/test_createobj_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cdb, capp): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (createobj_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 9 of the 9 functions (the bitmap spooler (constructor, deleting destructor, destructor, the clearing of its 64 queue entries and the step that attaches a loaded bitmap and starts the next load) and the thunks that run those on the global spooler, with the reset of the player spool) are replayed over 820 cases with no mismatch (at least 60 cases each; the committed fixtures keep the first 30 of each capture per function, 270 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the player spool object, the sub-directory calls and the bitmap services are reported services; the queue itself (Spool_Add, Spool_FindFree) runs natively.

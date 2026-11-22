@@ -1,0 +1,60 @@
+version: 1
+id: fnt-pre-runtime
+subsystem: asset-runtime
+status: complete
+
+scope:
+  functions:
+    - 0x004a8ee0
+    - 0x004a9000
+    - 0x004a90f0
+    - 0x004a9110
+    - 0x004a9410
+    - 0x004a9480
+    - 0x004a9330
+    - 0x0044ada0
+    - 0x0044aea0
+    - 0x00449cd0
+    - 0x0044b000
+    - 0x0044b0a0
+  types:
+    - RuntimePreManager
+    - RuntimePreEntry
+    - RuntimeFont
+    - RuntimeFontGlyphEntry
+    - RuntimeFontDiskGlyphRecord
+    - RuntimeFontGlyphImage
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/pre-runtime.md
+    - re/evidence/functions/font-runtime.md
+    - re/evidence/fixtures/fnt-warehouse.txt
+    - re/evidence/fixtures/fnt-hangar.txt
+    - re/evidence/fixtures/fileio-warehouse.txt
+    - re/evidence/fixtures/fileio-hangar.txt
+  native:
+    - src/assets/pre_runtime.hpp
+    - src/assets/pre_runtime.cpp
+    - src/assets/fnt_asset.hpp
+    - src/assets/fnt_asset.cpp
+    - scripts/make_font_trace_fixture.py
+  tests:
+    - src/assets/pre_runtime_test.cpp
+    - src/assets/fnt_asset_test.cpp
+    - src/assets/fnt_retail_trace_test.cpp
+    - src/assets/resource_retail_trace_test.cpp
+
+open_questions: []
+
+completion:
+  - "PRE container ownership, sixteen-slot initialization/load/lookup/unload, and record alignment are evidence-backed. Two retail loads and unloads and nine embedded lookups per level replay against native with the same slots, hits, misses and payload sizes (Warehouse and Hangar)."
+  - "FNT record, palette, packed-data, sentinel, and eight-slot font boundaries are evidence-backed and replayed: 20 retail Font_Create calls match native on slot, every entry byte (sentinel included), every glyph pixel offset, width and height, and the CLUT word; the last glyph of every font ends at the end of its file."
+  - "Direct and PRE-embedded resource loads have deterministic malformed-input and capacity tests, including truncated glyph data, a full PRE table and a full font table."
+  - "The parsed font reaches a text-facing view without extending ownership into the renderer or Direct3D backend."
+  - "Corrections found by decompiling and tracing: PRE unload and the embedded lookup compare names exactly (the lookup lowercases only the query); Font_Find and Font_Unload compare exactly; the sentinel copies record 0's bytes; an unloaded font keeps its name in the table."
+  - "Answered open questions: the cursor is 2 * stride * rows bytes plus 2 when odd; no caller passes an atlas format (the word is the palette allocator's CLUT position); duplicates take another slot and the first matching name wins."
+  - "Documented exclusion, not a blocker - per-glyph texture coordinates and the palette upload live in FontGlyph_ConstructImage and D3DTex_CreateExternalRecord, which belong to the rendering milestone; native carries the cursor, width, height and CLUT word they receive."
+  - "Documented exclusion, not a blocker - data/LEVSEL.FNT is not a loadable runtime font (its glyphs would run past the file) and no string in THawk2.exe names it; the strict parser rejects it and the trace test records it as known-invalid."
+  - "Documented exclusion, not a blocker - retail assertions (out of font slots, out_of_PREManager_slots) only log and continue into undefined behaviour; native rejects those inputs."

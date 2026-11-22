@@ -1,0 +1,5 @@
+version: 1
+description: Boot to the main menu and take a screenshot (F9).
+deliveries: 2400
+keys:
+  - {poll: 500, key: f9, hold: 2}

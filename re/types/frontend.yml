@@ -1,0 +1,161 @@
+version: 1
+types:
+  - name: RuntimeFrontElement
+    kind: fixed_layout
+    size: 0x28
+    confidence: confirmed
+    description: The ScreenElement base of every frontend screen widget (vtable 0x005196a8 at construction); a window, a text element and a sprite element extend it. It has a target position and slides toward it each frame.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+      - offset: 0x04
+        name: pad
+        type: u16
+        confidence: observed
+        description: A half word the constructor clears (the prompt windows of the save screen write 0x80 here).
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+      - offset: 0x08
+        name: target_x
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+      - offset: 0x0c
+        name: target_y
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+      - offset: 0x10
+        name: argument
+        type: u32
+        confidence: confirmed
+        description: The draw argument the element passes on.
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+      - offset: 0x14
+        name: hidden
+        type: u32
+        confidence: confirmed
+        description: Non-zero hides the element.
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+      - offset: 0x18
+        name: delay
+        type: i32
+        confidence: confirmed
+        description: Frames to wait before the slide starts.
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+      - offset: 0x1c
+        name: arrived
+        type: u8
+        confidence: confirmed
+        description: 1 once the element is at its target.
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+      - offset: 0x20
+        name: x
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+      - offset: 0x24
+        name: y
+        type: i32
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/frontend-window-base.md
+
+  - name: RuntimeFrontMenuProperties
+    kind: fixed_layout
+    size: 0x17c
+    confidence: observed
+    description: The style object of a menu control, MenuProperties, with an embedded Font object and the scale words the rows draw with. properties_construct writes every word.
+    fields:
+      - offset: 0x00
+        name: vtable
+        type: pointer<void>
+        confidence: confirmed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x04
+        name: font
+        type: RuntimeFont
+        confidence: confirmed
+        description: The embedded Font object (0x14c bytes; copy_font_fields copies its fields from a named font).
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x150
+        name: scale_normal
+        type: u32
+        confidence: confirmed
+        description: The normal row scale (0x1324 by default); the pulse scales between it and scale_small.
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x154
+        name: scale_small
+        type: u32
+        confidence: confirmed
+        description: The small row scale (0x1000 by default).
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x158
+        name: field_158
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x15c
+        name: field_15c
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x160
+        name: field_160
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x164
+        name: field_164
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x168
+        name: field_168
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x16c
+        name: field_16c
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x170
+        name: field_170
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x174
+        name: field_174
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md
+      - offset: 0x178
+        name: field_178
+        type: u32
+        confidence: observed
+        evidence:
+          - re/evidence/functions/menu-toolkit.md

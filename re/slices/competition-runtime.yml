@@ -1,0 +1,80 @@
+version: 1
+id: competition-runtime
+subsystem: frontend
+status: complete
+
+scope:
+  functions:
+    - 0x004195b0
+    - 0x004195e0
+    - 0x00419600
+    - 0x00419da0
+    - 0x00419f10
+    - 0x0041a040
+    - 0x0041a270
+    - 0x0041a610
+    - 0x0041a780
+    - 0x0041ad40
+    - 0x0041add0
+    - 0x0041adf0
+    - 0x0041ae00
+    - 0x0041ae10
+    - 0x0041ae20
+    - 0x0041ae30
+    - 0x0041aea0
+    - 0x0041aec0
+    - 0x0041af40
+    - 0x0041b540
+    - 0x0041b590
+    - 0x0041b8b0
+    - 0x0041ba50
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/goals-screens.md
+    - re/evidence/fixtures/goal-calls-competition.txt
+    - re/evidence/fixtures/goal-calls-displays.txt
+    - re/evidence/fixtures/goal-calls-goalsrun.txt
+    - re/evidence/fixtures/goal-calls-levelpic.txt
+    - re/evidence/fixtures/goal-calls-lighteditor.txt
+    - re/evidence/fixtures/goal-calls-loading.txt
+    - re/evidence/fixtures/goal-calls-medals.txt
+    - re/evidence/fixtures/goal-calls-tag.txt
+    - re/evidence/fixtures/goal-calls-trgrecord.txt
+    - re/evidence/fixtures/goal-calls-videowin.txt
+  native:
+    - src/runtime/goals.hpp
+    - src/runtime/goals_competition.cpp
+    - src/runtime/goals_displays.cpp
+    - src/runtime/goals_windows.cpp
+    - src/runtime/goals_lights.cpp
+    - src/runtime/goals_loading.cpp
+    - src/runtime/goals_objects.cpp
+    - src/runtime/goals_tag.cpp
+    - src/runtime/goals_dispatch.cpp
+    - src/runtime/retail_memory.hpp
+    - src/runtime/retail_services.hpp
+    - src/runtime/frontend_window.hpp
+    - src/runtime/frontend_text.hpp
+    - src/runtime/menu_toolkit.hpp
+    - src/runtime/screen_kit.hpp
+    - src/runtime/screen_kit.cpp
+    - src/runtime/skater_manager.hpp
+    - re/gdb/probes/frontend_specs_goals.py
+    - re/gdb/probes/frontend_specs_goals_cases.py
+    - re/gdb/probes/frontend_specs_goals_win.py
+    - re/gdb/opentony/fcall.py
+    - re/gdb/probes/frontend_calls.py
+    - scripts/make_career_calls_fixture.py
+  tests:
+    - src/runtime/goals_retail_calls_test.cpp
+    - src/runtime/retail_calls_replay.hpp
+    - tests/test_goals_screens.py
+
+open_questions: []
+
+completion:
+  - 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the gcmp and gcdisp groups: the global competition object poked into a random legal state, the medal objects fake arena objects whose virtual methods are reported services, the Mess_* text calls, sounds, videos and the skater manager''s engine calls seams): the retail function is called on a random legal state; the return value, every written byte and the ordered service calls are compared with the native replay (`goals_retail_calls_test.cpp`), and a changed fixture value makes the replay fail. 23 of the 23 functions are replayed over 1116 cases with no mismatch, assertion paths included.'
+  - Documented exclusion, not a blocker - the engine's sprite, sound, card, model and prompt calls and the screen loop's window methods are seams reported by name with the arguments retail passed; the loop's frame waits for the clock with a spin a forced call cannot satisfy, so it is replayed on frames that end at once (the unit tests cover the rest).

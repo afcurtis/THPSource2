@@ -1,0 +1,38 @@
+version: 1
+id: gte-projection-and-colour
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x004e21e0
+  - 0x004e23a0
+  - 0x004e23f0
+  - 0x004e2450
+  - 0x004e3330
+  - 0x004e34e0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/math-layer.md
+  - re/evidence/fixtures/math-calls-gte1.txt
+  - re/evidence/fixtures/math-calls-gte3.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/math_gte.cpp
+  - re/gdb/probes/math_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/math_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_math_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups gte of math_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`math_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 6 of the 6 functions (the perspective transforms (one and three vertices into the screen slots with their depth) and the colour FIFO steps (the conversion of IR to bytes and the three interpolation ops)) are replayed over 1800 cases with no mismatch (at least 300 cases each; the committed fixtures keep the first 30 of each capture per function, 180 cases, which replay with no mismatch too).'
+- 'Documented exclusion, not a blocker - nothing: the `pow` and `_ftol` calls of the retail code are constants (32768 and 65536).'

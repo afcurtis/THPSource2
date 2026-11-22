@@ -1,0 +1,1388 @@
+version: 1
+types:
+
+  - name: RuntimeBitObject
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "The bit base class (CBit, vtable 0x0051...): the list links, age and lifetime, position, velocity, acceleration, the friction shifts and the flags every particle shares (the layout the bit:: constants of bit_kit.hpp name). Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitObject; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-lists-and-base.md
+      - offset: 0x4
+        name: previous
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitObject; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-lists-and-base.md
+      - offset: 0x8
+        name: next
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitObject; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-lists-and-base.md
+      - offset: 0x37
+        name: dead
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitObject; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-lists-and-base.md
+      - offset: 0x3a
+        name: kept_by_owner
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitObject; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-lists-and-base.md
+
+  - name: RuntimeBitSpecial
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CSpecialDisplay: a bit that draws itself through the special list. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpecial; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+
+  - name: RuntimeBitNonRendered
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CNonRenderedBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitNonRendered; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+
+  - name: RuntimeBitFt4
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CFT4Bit: a textured quad bit with an animation. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x3c
+        name: trans_decay
+        type: i16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x3e
+        name: scale_decay
+        type: i16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x40
+        name: colour
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x44
+        name: anim
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x48
+        name: frame_entry
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x4d
+        name: frame_count
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x4e
+        name: frame
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x4f
+        name: frame_fraction
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x50
+        name: anim_speed
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x52
+        name: scale
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFt4; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+
+  - name: RuntimeBitQuad
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CQuadBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitQuad; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x60
+        name: field_60
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitQuad; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+      - offset: 0x64
+        name: field_64
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitQuad; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-simple-classes.md
+
+  - name: RuntimeBitGenPoly
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CGenPoly3Bit / CGenPoly4Bit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGenPoly; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x3b
+        name: kind
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGenPoly; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x90
+        name: field_90
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGenPoly; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x92
+        name: field_92
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGenPoly; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x94
+        name: field_94
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGenPoly; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+
+  - name: RuntimeBitChunk
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CChunkBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x3b
+        name: kind
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x54
+        name: field_54
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x56
+        name: field_56
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x58
+        name: field_58
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x8c
+        name: field_8c
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x8e
+        name: field_8e
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x90
+        name: field_90
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x94
+        name: field_94
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x98
+        name: field_98
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x9c
+        name: field_9c
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0xa0
+        name: field_a0
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0xb4
+        name: field_b4
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitChunk; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+
+  - name: RuntimeBitSpark
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CSparkBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0xc
+        name: age
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0xe
+        name: lifetime
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x14
+        name: field_14
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x18
+        name: field_18
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x1c
+        name: field_1c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x20
+        name: field_20
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x24
+        name: field_24
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x28
+        name: field_28
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x2c
+        name: field_2c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x30
+        name: field_30
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x3c
+        name: trans_decay
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x43
+        name: field_43
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x44
+        name: anim
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x4c
+        name: flags
+        type: i32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSpark; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+
+  - name: RuntimeBitSimpleAnim
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CSimpleAnimBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSimpleAnim; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x4d
+        name: frame_count
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSimpleAnim; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x4e
+        name: frame
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSimpleAnim; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x52
+        name: scale
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSimpleAnim; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x64
+        name: field_64
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSimpleAnim; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x68
+        name: field_68
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSimpleAnim; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+
+  - name: RuntimeBitMotionBlur
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CMotionBlurBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitMotionBlur; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x3c
+        name: trans_decay
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitMotionBlur; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x3e
+        name: scale_decay
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitMotionBlur; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x52
+        name: scale
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitMotionBlur; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+
+  - name: RuntimeBitFrag
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CFragBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFrag; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0xe
+        name: lifetime
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFrag; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x1c
+        name: field_1c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFrag; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x2c
+        name: field_2c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFrag; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x52
+        name: scale
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFrag; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+
+  - name: RuntimeBitRibbon
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CRibbonBit's owner (the ribbon). Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitRibbon; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x3c
+        name: trans_decay
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitRibbon; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x40
+        name: colour
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitRibbon; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x44
+        name: anim
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitRibbon; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x48
+        name: frame_entry
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitRibbon; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x4c
+        name: flags
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitRibbon; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x50
+        name: anim_speed
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitRibbon; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+
+  - name: RuntimeBitSmokeTrail
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CSmokeTrailBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeTrail; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x3c
+        name: trans_decay
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeTrail; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x50
+        name: anim_speed
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeTrail; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x54
+        name: field_54
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeTrail; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+
+  - name: RuntimeBitGlassPiece
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CGlassBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0xc
+        name: age
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0xe
+        name: lifetime
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x1c
+        name: field_1c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x20
+        name: field_20
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x24
+        name: field_24
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x40
+        name: colour
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x4c
+        name: flags
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x58
+        name: field_58
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x60
+        name: field_60
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x64
+        name: field_64
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x65
+        name: field_65
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x66
+        name: field_66
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x67
+        name: field_67
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x68
+        name: field_68
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x69
+        name: field_69
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+      - offset: 0x6a
+        name: field_6a
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlassPiece; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sparks-and-animated.md
+
+  - name: RuntimeBitPolyline
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CPolyLineBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x40
+        name: colour
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x44
+        name: anim
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x48
+        name: frame_entry
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x4c
+        name: flags
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x50
+        name: anim_speed
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+
+  - name: RuntimeBitGPolyline
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CGPolyLineBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x3c
+        name: trans_decay
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x40
+        name: colour
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x44
+        name: anim
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x48
+        name: frame_entry
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x4c
+        name: flags
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x50
+        name: anim_speed
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x51
+        name: field_51
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x52
+        name: scale
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x53
+        name: field_53
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGPolyline; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+
+  - name: RuntimeBitSmokeGenerator
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CSmokeGenerator. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0xc
+        name: age
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0xe
+        name: lifetime
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x3c
+        name: trans_decay
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x40
+        name: colour
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x41
+        name: field_41
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x42
+        name: field_42
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x44
+        name: anim
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x48
+        name: frame_entry
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x4c
+        name: flags
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x50
+        name: anim_speed
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitSmokeGenerator; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+
+  - name: RuntimeBitGLineBit
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CGLineBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0xc
+        name: age
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0xe
+        name: lifetime
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x10
+        name: field_10
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x14
+        name: field_14
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x18
+        name: field_18
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x1c
+        name: field_1c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x20
+        name: field_20
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x24
+        name: field_24
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x28
+        name: field_28
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x2c
+        name: field_2c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x30
+        name: field_30
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x3c
+        name: trans_decay
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x40
+        name: colour
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x44
+        name: anim
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x48
+        name: frame_entry
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x4c
+        name: flags
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x50
+        name: anim_speed
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x54
+        name: field_54
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x58
+        name: field_58
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x5c
+        name: field_5c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x60
+        name: field_60
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x64
+        name: field_64
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x68
+        name: field_68
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLineBit; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+
+  - name: RuntimeBitGLine
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CGLine. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLine; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x3c
+        name: trans_decay
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLine; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x40
+        name: colour
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGLine; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+
+  - name: RuntimeBitBlood
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CBloodBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitBlood; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x54
+        name: field_54
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitBlood; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+      - offset: 0x58
+        name: field_58
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitBlood; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-sweeps-and-lines.md
+
+  - name: RuntimeBitGlow
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CGlowBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitGlow; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+
+  - name: RuntimeBitWobbly
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CWobblyBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitWobbly; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x9c
+        name: field_9c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitWobbly; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0xa0
+        name: field_a0
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitWobbly; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+
+  - name: RuntimeBitFlat
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CFlatBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFlat; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x5a
+        name: field_5a
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFlat; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x5c
+        name: field_5c
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFlat; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+      - offset: 0x61
+        name: field_61
+        type: u8
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitFlat; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+
+  - name: RuntimeBitLinked
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CLinked2EndedBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitLinked; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+
+  - name: RuntimeBitPixel
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CPixelBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitPixel; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/bit-polygons-chunks-glow.md
+
+  - name: RuntimeBitEmitter
+    kind: fixed_layout
+    size: null
+    confidence: observed
+    description: "CEmitterBit. Only the words the Kit's methods read or write are named, by offset."
+    fields:
+      - offset: 0x0
+        name: vtable
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitEmitter; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/shatter-and-emitter.md
+      - offset: 0xe
+        name: lifetime
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitEmitter; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/shatter-and-emitter.md
+      - offset: 0x20
+        name: field_20
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitEmitter; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/shatter-and-emitter.md
+      - offset: 0xb8
+        name: field_b8
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitEmitter; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/shatter-and-emitter.md
+      - offset: 0xba
+        name: field_ba
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitEmitter; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/shatter-and-emitter.md
+      - offset: 0xbc
+        name: field_bc
+        type: u16
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitEmitter; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/shatter-and-emitter.md
+      - offset: 0xc0
+        name: field_c0
+        type: u32
+        confidence: observed
+        description: "Read or written by the bit Kit's methods of RuntimeBitEmitter; the meaning is not recovered."
+        evidence:
+          - re/evidence/functions/shatter-and-emitter.md

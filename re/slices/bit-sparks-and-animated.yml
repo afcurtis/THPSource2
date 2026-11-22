@@ -1,0 +1,83 @@
+version: 1
+id: bit-sparks-and-animated
+subsystem: effects
+status: complete
+scope:
+  functions:
+  - 0x00406070
+  - 0x00406090
+  - 0x004060b0
+  - 0x00406160
+  - 0x004061c0
+  - 0x004061e0
+  - 0x00406200
+  - 0x00406300
+  - 0x00406320
+  - 0x00406330
+  - 0x004063e0
+  - 0x00406490
+  - 0x004064b0
+  - 0x00406560
+  - 0x00406570
+  - 0x004065c0
+  - 0x00406660
+  - 0x00406680
+  - 0x00406690
+  - 0x00406710
+  - 0x00406730
+  - 0x00406740
+  - 0x00406780
+  - 0x00406870
+  - 0x004068a0
+  - 0x00406890
+  - 0x00406940
+  - 0x00406960
+  - 0x00406990
+  - 0x00406980
+  - 0x004069a0
+  - 0x00406b10
+  - 0x00406b30
+  - 0x00406bf0
+  - 0x00406c30
+  - 0x00406c60
+  - 0x00406d00
+  - 0x00406db0
+  - 0x00406dd0
+  - 0x00406de0
+  - 0x00406e30
+  - 0x00407010
+  - 0x00407030
+  - 0x00407050
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/fixtures/bit-calls-bit1B.txt
+  - re/evidence/functions/bit-sparks-and-animated.md
+  - re/evidence/fixtures/bit-calls-bit4A.txt
+  - re/evidence/fixtures/bit-calls-bit4B.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/core_kit.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/m3d_kit.hpp
+  - src/runtime/bit_kit.hpp
+  - src/runtime/bit_spark.cpp
+  - re/gdb/probes/bit_specs2.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  - re/gdb/probes/bit_specs.py
+  tests:
+  - src/runtime/bit_retail_calls_test.cpp
+  - tests/test_bit_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups bit4): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (bit_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 42 of the 42 functions (the spark settings (trajectory, cone, size, colours), the spark pixel and its Move, the animated flat bits (simple animation, motion blur and its immortal form, fragment), the ribbon of linked bits with its setters and ring buffer, the smoke trail and the glass shard with its Move) are replayed over 8400 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 1260 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the allocator, the block-size query, the random numbers and the bits' virtual deleting destructors are services.

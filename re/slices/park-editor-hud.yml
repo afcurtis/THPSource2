@@ -1,0 +1,44 @@
+version: 1
+id: park-editor-hud
+subsystem: frontend
+status: complete
+scope:
+  functions:
+  - 0x00436520
+  - 0x004365e0
+  - 0x004369d0
+  - 0x00436c60
+  - 0x00436da0
+  - 0x00436e00
+  - 0x00436e30
+  - 0x00436fa0
+  - 0x00436fd0
+  - 0x004371d0
+  - 0x004371f0
+  - 0x00437220
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/park-editor.md
+  - re/evidence/fixtures/leveleditor-calls-edu.txt
+  - re/evidence/fixtures/leveleditor-calls-edu2.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/level_editor.hpp
+  - src/runtime/level_editor_ui.cpp
+  - re/gdb/probes/editor_specs.py
+  - re/gdb/probes/editor_specs_view.py
+  - re/gdb/probes/editor_specs_cursor.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/level_editor_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_park_editor.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups of editor_specs*.py): the probe makes a legal state in a scratch slab and the game''s own globals, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`level_editor_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 12 of the 12 functions (the editor''s interface object: destruct, draw (panel, lines, budget bars, message), update, the layouts and the piece library''s selection) are replayed over 3300 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 360 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the fonts, the rectangle and polygon calls and the panel elements' virtual methods are reported services; the text widths are scripted.

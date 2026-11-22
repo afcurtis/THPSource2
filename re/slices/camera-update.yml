@@ -1,0 +1,43 @@
+version: 1
+id: camera-update
+subsystem: camera
+status: complete
+
+scope:
+  functions:
+    - 0x0040f850
+    - 0x0040c370
+  types:
+    - CCamera
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/camera-system.md
+    - re/evidence/fixtures/camera-calls-cmmD.txt
+    - re/evidence/fixtures/camera-calls-cmaE.txt
+  native:
+    - src/camera/camera_math.hpp
+    - src/camera/camera_update.hpp
+    - src/camera/camera_system.hpp
+    - src/runtime/camera_update.cpp
+    - src/runtime/camera_effects.cpp
+  tests:
+    - tests/test_camera_update.py
+    - tests/test_camera_system.py
+    - src/camera/camera_runtime_test.cpp
+    - src/camera/camera_retail_trace_test.cpp
+    - src/runtime/camera_retail_calls_test.cpp
+
+open_questions: []
+
+completion:
+  - Documented exclusion, not a blocker - the 4.3 model does not include the Camera_ApplyEffects Y-lean raycast subsystem (0x0040c740..0x0040d1b1); retail updates where it is live are excluded from the trace comparison. The retail-memory form (src/runtime/camera_effects.cpp, milestone 10e) models it and replays word for word.
+  - Documented exclusion, not a blocker - tripod state 2 with follow preparation counter >= 4 (idle/straight Warehouse) produces a retail target transform the recovered basis does not reproduce; history, mode vector and counters do match.
+  - Documented exclusion, not a blocker - modes 2, 23 and 24 have never been live in a capture, and mode 25 is covered arithmetically only.
+  - The Camera_Update boundary, ABI, callers, and callees are evidence-backed.
+  - Every accessed CCamera field is recorded with conservative confidence.
+  - Important update modes and state transitions have a semantic model and tests.
+  - Native camera behavior has an explicit progress mapping or a documented exclusion.
+  - Exact matching work remains byte-identical where pursued.
+  - Five retail Warehouse traces (idle, straight, turn, turn-ollie, ollie-land) replay update by update from the retail entry image; 1017 of 1325 updates are compared and match on every modelled field, and the exclusions are counted and documented.

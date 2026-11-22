@@ -1,0 +1,65 @@
+# Proprietary game inputs
+/game/*
+!/game/README.md
+
+# Retail fixtures: they hold the retail game's memory and are captured from your own copy (re/evidence/fixtures/README.md)
+/re/evidence/fixtures/*
+!/re/evidence/fixtures/README.md
+# the four JSON notes are derived observations (addresses, policies, timings), not memory; re/types cites one as evidence
+!/re/evidence/fixtures/*.json
+
+# Tool installations and generated analysis
+/.tools/
+/build/
+/match/original
+/match/generated/
+
+# Ghidra local projects, if accidentally created elsewhere
+*.gpr
+*.rep/
+*.lock
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+*.egg-info/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Runtime files created by the Windows game
+/TH2_OPT.CFG
+/THPCERR.LOG
+# the game's own settings file; the code only reads it as a default path
+/THawk2.ini
+
+# A launcher install run from the repo root: settings, unpacked game data (proprietary), logs
+/Config/
+/Data/
+/Logs/
+/Saves/
+/Mods/
+/Screenshots/
+
+# Local, per-machine notes and settings for AI sessions
+/.claude/
+/AGENTS.local.md
+/CLAUDE.local.md
+
+# Release output kept outside build/
+/release/
+/dist/
+*.zip
+*.sha256
+
+# Crash leftovers: a Windows redirect to NUL, Linux core dumps from Wine/gdb runs, minidumps
+/nul
+/core
+/core.[0-9]*
+*.dmp

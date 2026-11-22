@@ -1,0 +1,45 @@
+version: 1
+id: custom-skaters-runtime
+subsystem: create
+status: complete
+scope:
+  functions:
+  - 0x004236d0
+  - 0x00423800
+  - 0x00423b50
+  - 0x0042f950
+  - 0x0042fa10
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/createobj-custom-skaters.md
+  - re/evidence/fixtures/createobj-calls-cdef11.txt
+  - re/evidence/fixtures/createobj-calls-cdef21.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/render_kit.hpp
+  - src/runtime/createobj_kit.hpp
+  - src/runtime/create_parts.hpp
+  - src/runtime/create_spool.hpp
+  - src/runtime/create_stitch.hpp
+  - src/runtime/createobj_def.cpp
+  - re/gdb/probes/cobj_specs8.py
+  - re/gdb/probes/cobj_world.py
+  - re/gdb/probes/cobj_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/createobj_retail_calls_test.cpp
+  - tests/test_createobj_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups cdef): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (createobj_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 5 of the 5 functions (the custom skaters (initialisation of every custom record, the creation of one skater object from its record, the freeing of their palette buffers, and the loading of the definition file into a region, singly or for all four)) are replayed over 492 cases with no mismatch (at least 95 cases each; the committed fixtures keep the first 30 of each capture per function, 300 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the file, the PSX relocation and parsing, the trick manager and the texture-set manager's loader are services.

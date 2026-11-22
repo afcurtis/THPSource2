@@ -1,0 +1,39 @@
+version: 1
+id: math-vector-helpers
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x004e83e0
+  - 0x004e8480
+  - 0x004e8580
+  - 0x004e85a0
+  - 0x004f3980
+  - 0x004f39b0
+  - 0x004f5f90
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/math-layer.md
+  - re/evidence/fixtures/math-calls-mathA.txt
+  - re/evidence/fixtures/math-calls-p24-mathrA.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/math_kit.hpp
+  - src/runtime/math_fixed.cpp
+  - re/gdb/probes/math_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/math_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_math_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mathk of math_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`math_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 7 of the 7 functions (the integer square root, the vector normaliser, the arctangent of a slope, the matrix-vector conversion (rows 1, 2, 0 with the retail rounding), the cosine and sine tables and the Q12 dot product) are replayed over 4200 cases with no mismatch (at least 600 cases each; the committed fixtures keep the first 30 of each capture per function, 420 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - `orig_ratan2` (0x004e8560), `Fixed_CrossSignQ12` (0x004f5f50) and `Fixed_MulQ12` (0x004f5fc0) were ported earlier and keep their mappings; the replay covers them here too.

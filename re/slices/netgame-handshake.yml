@@ -1,0 +1,41 @@
+version: 1
+id: netgame-handshake
+subsystem: netgame
+status: complete
+scope:
+  functions:
+  - 0x004deb00
+  - 0x004deb50
+  - 0x004dece0
+  - 0x004dee50
+  - 0x004defc0
+  - 0x004dfe50
+  - 0x004dffb0
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/network-layer.md
+  - re/evidence/fixtures/net-calls-netp1.txt
+  - re/evidence/fixtures/net-calls-netp3.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/net_game.hpp
+  - src/runtime/net_play.cpp
+  - re/gdb/probes/net_specs.py
+  - re/gdb/probes/net_specs_state.py
+  - re/gdb/probes/net_specs_play.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/net_retail_calls_test.cpp
+  - src/runtime/retail_calls_replay.hpp
+  - tests/test_net_game.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups netp of net_specs.py): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (`net_retail_calls_test.cpp`) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 7 of the 7 functions (the start and end of a network match and its waiting loops: the begin and end of the match, the pause agreement, the game over wait, the end of the run, the option and loading syncs) are replayed over 1400 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 210 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the frame tick, the keyboard poll, the event sender (0x004e00c0) and the DirectPlay calls are services; the loops are replayed with the clock and the Escape key scripted.

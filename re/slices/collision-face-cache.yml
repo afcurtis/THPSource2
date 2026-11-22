@@ -1,0 +1,37 @@
+version: 1
+id: collision-face-cache
+subsystem: collision
+status: complete
+scope:
+  functions:
+  - 0x00462490
+  - 0x00463580
+  - 0x00463690
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/collision-face-cache.md
+  - re/evidence/fixtures/rail-calls-rlcB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/collision_kit.hpp
+  - src/runtime/rail_kit.hpp
+  - src/runtime/collision_cache.cpp
+  - re/gdb/probes/rail_specs_build.py
+  - re/gdb/probes/rail_specs.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/rail_retail_calls_test.cpp
+  - tests/test_physics_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups rlc): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (rail_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 3 of the 3 functions (the collision query generation (the 16-bit stamp of the visited objects, restarted at 1 with the stamps of both object lists cleared when it wraps) and the model cache (the room test of the 500-face ring and the removal of the oldest of its 20 entries)) are replayed over 600 cases with no mismatch (at least 200 cases each; the committed fixtures keep the first 30 of each capture per function, 90 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - the assertion routine only logs; the object lists are chains in the slab, and an empty cache is never asked to remove its oldest entry with an index the retail code would read below the captured memory.

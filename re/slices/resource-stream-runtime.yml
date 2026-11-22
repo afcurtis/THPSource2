@@ -1,0 +1,75 @@
+version: 1
+id: resource-stream-runtime
+subsystem: asset-runtime
+status: complete
+
+scope:
+  functions:
+    - 0x00449030
+    - 0x004e75b0
+    - 0x004e79f0
+    - 0x004e7ad0
+    - 0x004e7bc0
+    - 0x004e9940
+    - 0x005013c8
+    - 0x0050229f
+    - 0x005022cb
+    - 0x00502358
+    - 0x00502387
+    - 0x00500e7b
+    - 0x0046f490
+    - 0x00449230
+    - 0x00449660
+    - 0x00448d00
+    - 0x00448d30
+    - 0x00448f50
+    - 0x00449460
+    - 0x004496f0
+    - 0x00449700
+    - 0x004e78e0
+    - 0x00501fd5
+    - 0x0050b7a0
+    - 0x004b82b0
+  types:
+    - RuntimeResourceStream
+    - RuntimePkrFileRecord
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/fileio-runtime.md
+    - re/evidence/functions/skater-asset-runtime.md
+    - re/evidence/fixtures/fileio-warehouse.txt
+    - re/evidence/fixtures/fileio-hangar.txt
+  native:
+    - src/assets/resource_runtime.hpp
+    - src/assets/resource_runtime.cpp
+    - src/assets/pkr_asset.hpp
+    - src/assets/pkr_asset.cpp
+    - src/runtime/player_resource_spool.hpp
+    - src/runtime/player_resource_spool.cpp
+    - src/trg/level_runtime.cpp
+    - re/native/functions.yml
+    - scripts/make_fileio_trace_fixture.py
+  tests:
+    - src/assets/resource_runtime_test.cpp
+    - src/assets/resource_retail_trace_test.cpp
+    - src/runtime/player_resource_spool_test.cpp
+    - src/trg/level_runtime_test.cpp
+    - tests/test_pkr_crosscheck.py
+
+open_questions: []
+
+completion:
+  - "Direct and PKR-backed resource handles expose bounded seek/read/close lifetime. Ten slots, lowest free first, and mode 0 as the only mode the game uses; 961 retail opens (Warehouse and Hangar) replay with the same success or failure, slot, size, path split and package record, and 13,546 reads return the same count and CRC-32."
+  - "PRE short-name lookup and package/file fallback share one caller-owned load buffer. The PRE path needs a name under 16 bytes without 'bmp'; the backend path is base directory + sub directory + name; 107 retail FileIO_OpenResource calls and 16 FileIO_Exists calls pick the same route and build the same path."
+  - "Stream element reads preserve checked multiplication and cursor advancement, and return fread's complete-element count (the stream is the MSVC CRT FILE; the 0x10c flag test is _IOMYBUF | _IONBF | _IOYOURBUF)."
+  - "Loaded bytes reach PSX and FNT parsers without retaining backend or PRE storage."
+  - "Player PSH/PSX requests use the common PKR/PRE handoff and retain one owned runtime result per queue entry."
+  - "Malformed PKR/PRE player payloads publish no partial result and leave the request retryable."
+  - "Completed player results have an explicit release boundary matching the observed entry cleanup path."
+  - "The package reader matches an independent extractor: thps2-tools' extract-pkr.py produces all 3,771 files of ALL.PKR byte for byte identical to ours (tests/test_pkr_crosscheck.py)."
+  - "Answered open questions: backend slot capacity is ten; paths go through the CRT _splitpath with backslashes turned into slashes and match case-insensitively, first hit wins; the allocator's 4-byte count word is the first word of the loaded buffer (FileIO_AllocLoadedBuffer returns the block minus 4); the stream flag bits are the CRT's; retail assertions only log."
+  - "Documented exclusion, not a blocker - backend modes 1 and 2 (direct CRT stream opens) and the BIBD, WIBD and ZLIB package transforms are implemented but never ran in either trace: all 3,771 shipped records are raw."
+  - "Documented exclusion, not a blocker - the type 1 seek with whence 2 subtracts its offset and retail does not bounds-check seeks or reads; every traced seek is whence 0 or 2 with offset 0, so native keeps its range checks."
+  - "Documented exclusion, not a blocker - platform file handles, the allocator's internals and asynchronous scheduling (Loading state, FileIO_Continue) remain explicit adapters; the player spool functions moved to the player-spool-trace slice (Phase 4.11a2), which replays them against retail on retail addresses."

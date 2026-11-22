@@ -1,0 +1,44 @@
+version: 1
+id: memory-card-operations
+subsystem: core
+status: complete
+scope:
+  functions:
+  - 0x00474d70
+  - 0x00475480
+  - 0x00475640
+  - 0x00475660
+  - 0x00475700
+  - 0x00475840
+  - 0x004758e0
+  - 0x00476200
+  types: []
+  globals: []
+artifacts:
+  evidence:
+  - re/evidence/functions/memory-card-layer.md
+  - re/evidence/fixtures/mmu-calls-mmuA2.txt
+  - re/evidence/fixtures/mmu-calls-mmuB.txt
+  native:
+  - src/runtime/retail_memory.hpp
+  - src/runtime/retail_services.hpp
+  - src/runtime/pc_platform.hpp
+  - src/runtime/retail_calls_replay.hpp
+  - src/runtime/heap_kit.hpp
+  - src/runtime/mmu_kit.hpp
+  - src/runtime/mmu_manager.cpp
+  - re/gdb/probes/mmu_specs.py
+  - re/gdb/probes/mmu_specs_mgr.py
+  - re/gdb/probes/mmu_specs_misc.py
+  - re/gdb/opentony/fcall.py
+  - re/gdb/probes/frontend_calls.py
+  - re/gdb/probes/create_specs.py
+  - re/gdb/probes/frontend_specs_common.py
+  - scripts/make_career_calls_fixture.py
+  tests:
+  - src/runtime/mmu_retail_calls_test.cpp
+  - tests/test_memory_card_layer.py
+open_questions: []
+completion:
+- 'Retail forced calls in the running game (a level loaded, `re/gdb/probes/frontend_calls.py` with the groups mmu): the probe makes a legal state in the game''s own globals and a scratch slab, calls the retail function, and records the return value, every written byte and the ordered service calls; the native replay (mmu_retail_calls_test.cpp) starts from the same bytes and compares all three, and a changed fixture value makes it fail. 8 of the 8 functions (the card operations: the directory scan with its type filter and header reads, the card library result mapping, the readiness check, the delete, the 0x200-byte SC header, the buffer registration and the save and load of a file through the backend) are replayed over 2100 cases with no mismatch (at least 120 cases each; the committed fixtures keep the first 30 of each capture per function, 240 cases, which replay with no mismatch too).'
+- Documented exclusion, not a blocker - `Mmu_SaveFile` with a type other than 1..3 builds its file name and description from uninitialised locals (the probe never asks), and `Mmu_SaveFile` / `Mmu_LoadFile` with no registered buffer return an uninitialised flag (neither is generated).

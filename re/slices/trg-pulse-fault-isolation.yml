@@ -1,0 +1,28 @@
+version: 1
+id: trg-pulse-fault-isolation
+subsystem: scripting
+status: complete
+
+scope:
+  functions:
+    - 0x004c58b0
+    - 0x004c5b00
+  types: []
+  globals: []
+
+artifacts:
+  evidence:
+    - re/evidence/functions/trg-command-table.md
+  native:
+    - src/trg/trg_runtime.hpp
+    - src/trg/trg_runtime.cpp
+    - src/trg/trg_inspect.cpp
+  tests:
+    - src/trg/trg_runtime_test.cpp
+
+open_questions: []
+
+completion:
+  - "A pulse that fans out along a link list survives a target the decoder cannot read: the pulse is dropped, counted and reported as a diagnostic, and the remaining targets still run."
+  - "SKATE_T and SKPARK_T nodes 27 and 42 (which link to the dead PlayStation-format nodes 49 and 50) now pulse cleanly with faulted_pulses=2; a direct pulse to a dead node is still a hard error for its caller."
+  - "Retail reads past the end of such a node into unrelated bytes; that behaviour is not reproducible and is deliberately not modelled."
