@@ -1,7 +1,8 @@
 # Third-party notices
 
 THPSource2's own code is under the MIT licence (`LICENSE`; `Licenses\THPSource2-LICENSE.txt` in a release). It is based on
-**OpenTony** by Joao Matos (tritao), https://github.com/tritao/OpenTony, whose repository states no licence. The components
+**OpenTony** by Joao Matos (tritao), https://github.com/tritao/OpenTony, whose repository states no licence. The MIT licence gives no right to Tony Hawk's Pro Skater 2, its data or its
+trademarks, and no game files are included. The components
 below are used by the platform HAL (`src/hal/`, docs/HAL.md) and the hook
 DLLs; their licenses follow.
 
