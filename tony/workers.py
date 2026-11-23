@@ -240,4 +240,7 @@ def kill_prefix(worker: str) -> None:
 
     env = dict(os.environ)
     env["WINEPREFIX"] = str(prefix_dir(worker))
-    subprocess.run(["wineserver", "-k"], env=env, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        subprocess.run(["wineserver", "-k"], env=env, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except FileNotFoundError:
+        pass  # Wine is not installed, so nothing can be running in a prefix

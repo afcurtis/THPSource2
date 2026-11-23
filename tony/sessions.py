@@ -405,15 +405,15 @@ def terminate_session_runtime(session: DebugSession, timeout: float = 2.0) -> No
         environment = os.environ.copy()
         environment["WINEPREFIX"] = str(session.prefix)
         environment["TONY_SESSION_ID"] = session.session_id
-        subprocess.run(
-            ["wineserver", "-k"],
-            cwd=ROOT,
-            env=environment,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
         try:
+            subprocess.run(
+                ["wineserver", "-k"],
+                cwd=ROOT,
+                env=environment,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
             subprocess.run(
                 ["wineserver", "-w"],
                 cwd=ROOT,
@@ -423,8 +423,8 @@ def terminate_session_runtime(session: DebugSession, timeout: float = 2.0) -> No
                 timeout=timeout,
                 check=False,
             )
-        except subprocess.TimeoutExpired:
-            pass
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass  # no Wine installed, or the prefix did not shut down in time
 
     current_pid = os.getpid()
     for pid in sorted(_session_process_ids(session)):
