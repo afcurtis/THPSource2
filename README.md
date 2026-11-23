@@ -1,7 +1,7 @@
 # THPSource2
 
 [![Latest release](https://img.shields.io/github/v/release/afcurtis/THPSource2)](https://github.com/afcurtis/THPSource2/releases/latest)
-[![Licence: MIT](https://img.shields.io/github/license/afcurtis/THPSource2)](LICENSE)
+[![Licence: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 ![Platform: Windows 10/11 64-bit](https://img.shields.io/badge/platform-Windows%2010%2F11%20(64--bit)-blue)
 
 **A Tony Hawk's Pro Skater 2 PC decompilation, rebuilt as a native modern game.** Up to 120 fps, any resolution or aspect ratio, the whole
