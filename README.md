@@ -8,11 +8,11 @@
 
 <img src="docs/images/enhanced.jpg" alt="THPSource2 Enhanced: New York City in ultrawide, no fog, the skyline in full view">
 
-*Enhanced preset: 4K, up to 120 fps, upscaled textures, 21:9 ultrawide, no fog, unlimited draw distance, and a matching field of view and HUD scale.*
+*Enhanced: 4K, 21:9, 120 fps, upscaled textures, unlimited draw distance, and scaled FOV and HUD.*
 
-<img src="docs/images/gameplay.gif" alt="Gameplay with the free camera swinging around the skater in New York City at night" width="640">
+<img src="docs/images/gameplay.gif" alt="New free camera control like later games in the series" width="640">
 
-*Free camera in action: swing the view around your skater with the second stick, mid-run. Recorded in the Enhanced preset 16:10, then shrunk to 640 px and 15 fps for this page.*
+*New free camera control like later games in the series.*
 
 **[Download the latest release](https://github.com/afcurtis/THPSource2/releases/latest)** · Windows 10/11, 64-bit
 
@@ -27,13 +27,13 @@
 <td width="50%"><img src="docs/images/original-ps1.jpg" alt="The original PlayStation look: low resolution, dither, a curved CRT screen"></td>
 </tr>
 <tr>
-<td><em>Original PC preset: 640×480, 30 fps, fog, 4:3.</em></td>
-<td><em>Original PlayStation preset: 512×240, 30 fps, fog, 4:3 with a curved CRT filter.</em></td>
+<td><em>PC preset: 640×480, 30 fps, fog, 4:3.</em></td>
+<td><em>PSX preset: 512×240, 30 fps, fog, 4:3 with a curved CRT filter.</em></td>
 </tr>
 </table>
 
-Same spot, same skater. Both originals are presets in the launcher, so you can still play it exactly the way it was. Every setting can be tweaked, so
-you can also keep the look you love and add what you want: a higher frame rate, widescreen, the PlayStation's CRT screen on its own, or anything in between.
+Both originals are presets in the launcher, so you can still play it exactly the way it was. Every setting can be tweaked, so
+you can also keep the look you love and add what you want: a higher frame rate, widescreen, a CRT filter, or anything in between.
 
 ## What you get
 
