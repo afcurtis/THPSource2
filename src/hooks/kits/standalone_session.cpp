@@ -15,11 +15,16 @@
 // counts them as the lockstep clock of src/hooks/clock.cpp does); a poll is one keyboard device update of PCInput_Poll and the keys are written after
 // it, before the bindings read them; the image is the canonical build's .data (one region, 0x00524000 + 0x024b7e3c), hashed in 64 KB blocks with
 // session_hash.h, a word that points into the game's two memory zones hashed as an offset from the lowest zone.
+#include "../../platform/path_separator.h"
 #include "kit_bridge.hpp"
 
 #include "../session_hash.h"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <algorithm>
 #include <cstdint>
@@ -71,7 +76,7 @@ struct Recorder {
     std::vector<std::uint32_t> scratch;
 } g_session;
 
-std::string path_in(const std::string& name) { return g_session.directory.empty() ? name : g_session.directory + "\\" + name; }
+std::string path_in(const std::string& name) { return g_session.directory.empty() ? name : g_session.directory + OT_PATH_SEPARATOR + name; }
 
 std::uint32_t number(const char* name, std::uint32_t fallback) {
     const char* text = std::getenv(name);

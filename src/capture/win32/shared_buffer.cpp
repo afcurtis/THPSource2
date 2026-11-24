@@ -1,5 +1,9 @@
 #define WIN32_LEAN_AND_MEAN
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include "shared_buffer.h"
 

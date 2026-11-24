@@ -1,7 +1,11 @@
 #ifndef OPENTONY_HOOK_RUNTIME_H
 #define OPENTONY_HOOK_RUNTIME_H
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include "hook_types.h"
 

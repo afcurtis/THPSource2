@@ -1,12 +1,16 @@
 // THPSource2 launcher: the "Upscale textures" button's work (upscale_task.hpp).
 #include "upscale_task.hpp"
+#include "launcher/layout.hpp"
 
 #include "platform.hpp"
 #include "true_colour.hpp"
 #include "upscale_setup.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
@@ -40,11 +44,24 @@ bool download_all(const opentony::layout::Layout& where, const upscale::Options&
     std::error_code ec;
     fs::create_directories(folder / "models", ec);
     const fs::path curl = system_program("curl.exe");
+#ifdef _WIN32
     const fs::path tar = system_program("tar.exe");
     if (!fs::is_regular_file(curl, ec) || !fs::is_regular_file(tar, ec)) {
         error = "curl.exe or tar.exe is missing from Windows (both come with Windows 10 1803 and later).";
         return false;
     }
+#else
+    // GNU tar does not read a zip: unzip, or bsdtar (libarchive), whichever the system has
+    fs::path tar = system_program("unzip");
+    const bool use_unzip = fs::is_regular_file(tar, ec);
+    if (!use_unzip) {
+        tar = system_program("bsdtar");
+    }
+    if (!fs::is_regular_file(curl, ec) || !fs::is_regular_file(tar, ec)) {
+        error = "curl and unzip (or bsdtar) are needed to download the upscaler: install them with the system's package manager.";
+        return false;
+    }
+#endif
     for (const us::Fetch& fetch : plan) {
         if (progress.cancel) {
             error = "Cancelled. Start continues where it stopped.";
@@ -68,13 +85,22 @@ bool download_all(const opentony::layout::Layout& where, const upscale::Options&
             const fs::path unpack = folder / "unpack";
             fs::remove_all(unpack, ec);
             fs::create_directories(unpack, ec);
+#ifdef _WIN32
             const long unzip = run_process(tar, {"-xf", utf8_of(fetch.to), "-C", utf8_of(unpack)}, folder, {}, nullptr, nullptr, run_error);
+#else
+            const std::vector<std::string> unzip_arguments = use_unzip ? std::vector<std::string>{"-q", "-o", utf8_of(fetch.to), "-d", utf8_of(unpack)}
+                                                                       : std::vector<std::string>{"-xf", utf8_of(fetch.to), "-C", utf8_of(unpack)};
+            const long unzip = run_process(tar, unzip_arguments, folder, {}, nullptr, nullptr, run_error);
+#endif
             const fs::path member = unpack / fs::path(fetch.member).make_preferred();
             if (unzip != 0 || !fs::is_regular_file(member, ec)) {
                 error = fetch.what + ": the zip could not be unpacked (" + (run_error.empty() ? "tar exit " + std::to_string(unzip) : run_error) + ")";
                 return false;
             }
             fs::rename(member, fetch.program, ec);
+#ifndef _WIN32
+            fs::permissions(fetch.program, fs::perms::owner_exec | fs::perms::group_exec | fs::perms::others_exec, fs::perm_options::add, ec);
+#endif
             const fs::path licence = member.parent_path() / "LICENSE";
             if (fs::is_regular_file(licence, ec)) {
                 fs::copy_file(licence, folder / "LICENSE-upscayl-bin.txt", fs::copy_options::overwrite_existing, ec);
@@ -104,13 +130,13 @@ bool run_census(const opentony::layout::Layout& where, const fs::path& game, int
     std::error_code ec;
     const fs::path dump = where.texture_dump();
     const fs::path runs_root = dump / "runs";
-    const fs::path spike = where.build() / "opentony_spike.exe";
-    const fs::path standalone = where.build() / "opentony_standalone.dll";
+    const fs::path spike = where.build() / opentony::layout::program_file("opentony_spike");
+    const fs::path standalone = where.build() / opentony::layout::module_file("opentony_standalone");
     const fs::path image = where.static_image();
     const fs::path empty = where.unpacked() / "empty.tsv";
     const fs::path pkr = fs::is_regular_file(game / "ALL.PKR", ec) ? game / "ALL.PKR" : game / "all.pkr";
     if (!fs::is_regular_file(spike, ec) || !fs::is_regular_file(standalone, ec)) {
-        error = "opentony_spike.exe or opentony_standalone.dll is missing from " + utf8_of(where.build());
+        error = utf8_of(spike.filename()) + " or " + utf8_of(standalone.filename()) + " is missing from " + utf8_of(where.build());
         return false;
     }
     if (!fs::is_regular_file(image, ec) || !fs::is_directory(where.package_data(), ec)) {
@@ -222,8 +248,9 @@ bool run_census(const opentony::layout::Layout& where, const fs::path& game, int
 
 }  // namespace
 
-upscale::ModelRunner upscaler_model_runner(const fs::path& tool, const fs::path& models) {
-    return [tool, models](const std::string& name, const fs::path& input, const fs::path& output, std::string& error) {
+upscale::ModelRunner upscaler_model_runner(const fs::path& tool, const fs::path& models, const std::atomic<bool>* cancel,
+                                           std::function<void(std::size_t, std::size_t)> on_files) {
+    return [tool, models, cancel, on_files](const std::string& name, const fs::path& input, const fs::path& output, std::string& error) {
         std::error_code ec;
         if (!fs::is_regular_file(tool, ec)) {
             error = "no upscaler at " + utf8_of(tool);
@@ -233,17 +260,48 @@ upscale::ModelRunner upscaler_model_runner(const fs::path& tool, const fs::path&
             error = "no model " + name + " in " + utf8_of(models);
             return false;
         }
+        // the pictures of the input folder, and how many of them are in the output folder yet (counted twice a second while the tool runs)
+        const auto count_pngs = [](const fs::path& folder) {
+            std::error_code e;
+            std::size_t n = 0;
+            for (const auto& entry : fs::directory_iterator(folder, e)) {
+                n += entry.path().extension() == ".png" ? 1 : 0;
+            }
+            return n;
+        };
+        const std::size_t inputs = count_pngs(input);
+        if (on_files) {
+            on_files(0, inputs);
+        }
+        // the tool's own output goes to a file beside the folders (its per-file progress lines are many): its last lines say why it stopped
+        const fs::path log = output.parent_path() / "upscaler.txt";
+        const auto keep_going = [&]() {
+            if (on_files) {
+                on_files(count_pngs(output), inputs);
+            }
+            return cancel == nullptr || !cancel->load();
+        };
+        const long code = run_isolated(tool, {"-i", utf8_of(input), "-o", utf8_of(output), "-m", utf8_of(models), "-n", name, "-s", "4", "-f", "png"},
+                                       tool.parent_path(), {}, log, keep_going, error);
+        if (cancel != nullptr && cancel->load()) {
+            error = "cancelled";
+            return false;
+        }
         std::vector<std::string> tail;
-        const long code = run_process(tool, {"-i", utf8_of(input), "-o", utf8_of(output), "-m", utf8_of(models), "-n", name, "-s", "4", "-f", "png"},
-                                      tool.parent_path(), {}, [&tail](const std::string& line) {
-                                          if (!line.empty() && line.find('%') == std::string::npos) {   // not its per-file progress
-                                              tail.push_back(line);
-                                              if (tail.size() > 6) {
-                                                  tail.erase(tail.begin());
-                                              }
-                                          }
-                                      },
-                                      nullptr, error);
+        {
+            std::ifstream said_file(log);
+            for (std::string line; std::getline(said_file, line);) {
+                if (!line.empty() && line.back() == '\r') {
+                    line.pop_back();
+                }
+                if (!line.empty() && line.find('%') == std::string::npos) {   // not its per-file progress
+                    tail.push_back(line);
+                    if (tail.size() > 6) {
+                        tail.erase(tail.begin());
+                    }
+                }
+            }
+        }
         if (code != 0) {
             std::string said;
             for (const std::string& line : tail) {
@@ -317,10 +375,25 @@ bool run_upscale_task(const opentony::layout::Layout& where, const fs::path& gam
             options.originals = where.true_colour();
         }
     }
-    const fs::path tool = where.upscaler() / "upscayl-bin.exe";
+    const fs::path tool = where.upscaler() / opentony::layout::program_file("upscayl-bin");
+    // inside a batch (the tool's run over up to `batch` textures, many minutes on a small GPU): the share of the folder's pictures written so far, on top of
+    // the textures done before the batch; the pipeline sets the exact count when the batch ends
+    std::uint64_t batch_base = 0;
+    const auto batch_progress = [&progress, &batch_base, &options](std::size_t done, std::size_t of) {
+        if (done == 0) {
+            batch_base = progress.done.load();
+        }
+        const std::uint64_t total = progress.total.load();
+        const std::uint64_t left = total > batch_base ? total - batch_base : 0;
+        const std::uint64_t span = std::min<std::uint64_t>({static_cast<std::uint64_t>(std::max(options.batch, 1)), left, static_cast<std::uint64_t>(of)});
+        if (of != 0) {
+            progress.done = batch_base + std::min<std::uint64_t>(span, static_cast<std::uint64_t>(done) * span / of);
+        }
+    };
     say("upscale: world " + options.model_world + ", 2d " + options.model_2d + ", scale " + std::to_string(options.scale) + " into " + utf8_of(where.upscaled()));
     const upscale::Report report = upscale::run(where.texture_dump(), table, where.upscaled(), options, upscaler_stamp_name(tool),
-                                                upscaler_model_runner(tool, where.upscaler() / "models"), say, &progress.cancel, [&progress](int done, int total) {
+                                                upscaler_model_runner(tool, where.upscaler() / "models", &progress.cancel, batch_progress), say, &progress.cancel,
+                                                [&progress](int done, int total) {
                                                     progress.total = static_cast<std::uint64_t>(total);
                                                     progress.done = static_cast<std::uint64_t>(done);
                                                 });

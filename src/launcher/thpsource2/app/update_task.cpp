@@ -28,7 +28,13 @@ std::shared_ptr<UpdateCheck> UpdateCheck::start(const std::string& repository_ur
         // revocation lookup fails behind some proxies and antivirus filters, and a check that silently never works is worse than one that skips it; the answer
         // only ever decides whether a notice shows, and the notice opens an address of the launcher's own, never one from the network.
         const std::vector<std::string> arguments = {"--silent", "--head", "--ssl-no-revoke", "--proto", "=https", "--connect-timeout", "5", "--max-time", "10",
-                                                    "--user-agent", "THPSource2/" + running_tag, "--output", "NUL", "--write-out", "%{redirect_url}",
+                                                    "--user-agent", "THPSource2/" + running_tag, "--output",
+#ifdef _WIN32
+                                                    "NUL",
+#else
+                                                    "/dev/null",
+#endif
+ "--write-out", "%{redirect_url}",
                                                     repository_url + "/releases/latest"};
         std::string location, error;
         const long code = run_process(curl, arguments, curl.parent_path(), {},

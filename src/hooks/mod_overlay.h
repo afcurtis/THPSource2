@@ -1,7 +1,11 @@
 #ifndef OPENTONY_HOOKS_MOD_OVERLAY_H
 #define OPENTONY_HOOKS_MOD_OVERLAY_H
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include "mod_overlay_core.h"
 

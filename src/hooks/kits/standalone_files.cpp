@@ -10,7 +10,11 @@
 #include "standalone_options.hpp"
 #include "standalone_userdata.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <cstdint>
 #include <cerrno>
@@ -105,7 +109,7 @@ std::uint32_t open_stream(const std::string& path, const char* mode) {
     if (index == kSlots) {
         return kFailed;
     }
-    std::FILE* file = std::fopen(path.c_str(), mode);
+    std::FILE* file = host_fopen(path, mode);
     if (log_files()) {
         std::fprintf(stderr, "files: %s %s (%s) -> %s\n", mode[0] == 'r' && mode[1] != '+' ? "read" : "write", path.c_str(), mode, file != nullptr ? "ok" : "FAILED");
     }
@@ -159,7 +163,7 @@ std::uint32_t backend_open(const Args& args) {
     std::string full = data_root() + "/" + path;
     std::FILE* file = nullptr;
     if (replacement != nullptr) {
-        file = std::fopen(replacement->path, "rb");
+        file = host_fopen(replacement->path, "rb");
         if (file != nullptr) {
             full = replacement->path;
             if (ot_overlay_trace() != 0) {
@@ -172,7 +176,7 @@ std::uint32_t backend_open(const Args& args) {
         ot_log("mods: open %s (not replaced)", key);
     }
     if (file == nullptr) {
-        file = std::fopen(full.c_str(), "rb");
+        file = host_fopen(full, "rb");
     }
     if (log_files()) {
         // (errno 22 with a name that looks right is a control byte in it: the log prints it as nothing)

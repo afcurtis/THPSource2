@@ -26,7 +26,11 @@
 #include "movie.h"
 #include "video.h"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <algorithm>
 #include <atomic>

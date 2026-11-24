@@ -11,11 +11,17 @@
 #include "standalone_userdata.hpp"
 #include "seam_addresses_generated.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 #include <zlib.h>
 
+#ifdef _WIN32
 #include <direct.h>
 #include <io.h>
+#endif
 #include <sys/stat.h>
 
 #include <cctype>
@@ -239,7 +245,7 @@ std::FILE* open_package(const std::string& name, const char* mode) {
         if (user_file_locked(candidates.front())) {
             return nullptr;   // a quick start never writes a save or a park
         }
-        std::FILE* file = std::fopen(candidates.front().c_str(), mode);
+        std::FILE* file = host_fopen(candidates.front(), mode);
         if (std::getenv("OT_FILES_LOG") != nullptr) {
             std::fprintf(stderr, "files: write %s (%s) -> %s\n", candidates.front().c_str(), mode, file != nullptr ? "ok" : "FAILED");
         }
@@ -251,7 +257,7 @@ std::FILE* open_package(const std::string& name, const char* mode) {
     const std::size_t slash = candidates.front().find_last_of('/');
     candidates.push_back(slash == std::string::npos ? candidates.front() : candidates.front().substr(slash + 1));
     for (const std::string& path : candidates) {
-        if (std::FILE* file = std::fopen(path.c_str(), mode)) {
+        if (std::FILE* file = host_fopen(path, mode)) {
             if (std::getenv("OT_FILES_LOG") != nullptr) {
                 std::fprintf(stderr, "files: package %s -> ok\n", path.c_str());
             }

@@ -17,7 +17,11 @@
 #include "standalone_options.hpp"
 #include "standalone_static_init.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <cstdint>
 #include <cstdio>

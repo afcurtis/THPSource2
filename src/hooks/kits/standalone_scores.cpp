@@ -10,7 +10,11 @@
 #include "guest_arena.hpp"
 #include "standalone_options.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <cstdio>
 #include <cstdlib>

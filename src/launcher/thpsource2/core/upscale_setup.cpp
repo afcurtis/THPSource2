@@ -1,5 +1,6 @@
 // THPSource2 launcher: the "Upscale textures" button's portable half (upscale_setup.hpp).
 #include "upscale_setup.hpp"
+#include "launcher/layout.hpp"
 
 #include "game_files.hpp"
 
@@ -164,7 +165,7 @@ bool write_class_table(const fs::path& file, std::string& error) {
 std::vector<Fetch> download_plan(const fs::path& folder, const upscale::Options& options) {
     std::vector<Fetch> plan;
     std::error_code ec;
-    if (!fs::is_regular_file(folder / "upscayl-bin.exe", ec)) {
+    if (!fs::is_regular_file(folder / opentony::layout::program_file("upscayl-bin"), ec)) {
         Fetch f;
         f.what = std::string("the upscaler (") + kTool.name + ", " + kTool.licence + ")";
         f.url = kTool.url;
@@ -173,7 +174,7 @@ std::vector<Fetch> download_plan(const fs::path& folder, const upscale::Options&
         f.sha256 = kTool.sha256;
         f.zip = true;
         f.member = kTool.member;
-        f.program = folder / "upscayl-bin.exe";
+        f.program = folder / opentony::layout::program_file("upscayl-bin");
         plan.push_back(f);
     }
     std::vector<std::string> names;
@@ -357,7 +358,7 @@ int merge_dumps(const std::vector<fs::path>& runs, const fs::path& out, std::str
 State state(const fs::path& upscaler, const fs::path& dump, const fs::path& upscaled, const upscale::Options& options) {
     State s;
     std::error_code ec;
-    s.tool = fs::is_regular_file(upscaler / "upscayl-bin.exe", ec);
+    s.tool = fs::is_regular_file(upscaler / opentony::layout::program_file("upscayl-bin"), ec);
     s.models = true;
     for (const Fetch& f : download_plan(upscaler, options)) {
         s.models = s.models && f.zip;   // only the tool is missing (or nothing)

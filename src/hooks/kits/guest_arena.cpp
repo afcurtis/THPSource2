@@ -4,7 +4,11 @@
 #include "guest_heap.hpp"
 #include "kit_bridge.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "ot_os.hpp"
+#endif
 
 #include <algorithm>
 #include <cstdio>
@@ -16,6 +20,9 @@
 #include <string>
 
 namespace opentony::kitdll::arena {
+#ifndef _WIN32
+namespace os = opentony::os;
+#endif
 namespace {
 
 #if !(UINTPTR_MAX == 0xffffffffu)
@@ -35,7 +42,11 @@ std::unique_ptr<runtime::guest::GuestHeap> g_heap;
 runtime::guest::GuestHeap& make_heap() {
     if (kFlat) {
         for (const std::uint32_t size : {0x20000000u, 0x10000000u, 0x08000000u}) {
+#ifdef _WIN32
             void* reserved = VirtualAlloc(nullptr, size, MEM_RESERVE, PAGE_NOACCESS);
+#else
+            void* reserved = nullptr;   // kFlat is a 32-bit process only, which the Linux build is not
+#endif
             if (reserved == nullptr) {
                 continue;
             }
@@ -86,12 +97,19 @@ const char* readable_text(std::uint32_t address) {
     auto at = reinterpret_cast<std::uintptr_t>(start);
     constexpr std::size_t kLimit = 0x10000;
     for (std::size_t scanned = 0; scanned < kLimit;) {
+#ifdef _WIN32
         MEMORY_BASIC_INFORMATION info;
         if (VirtualQuery(reinterpret_cast<const void*>(at), &info, sizeof info) != sizeof info || info.State != MEM_COMMIT ||
             (info.Protect & (PAGE_GUARD | PAGE_NOACCESS)) != 0) {
             return nullptr;
         }
         const std::uintptr_t end = reinterpret_cast<std::uintptr_t>(info.BaseAddress) + info.RegionSize;
+#else
+        std::uintptr_t span_begin = 0, end = 0;
+        if (!os::accessible(reinterpret_cast<const void*>(at), 1, false, &span_begin, &end) || end <= at) {
+            return nullptr;
+        }
+#endif
         const std::size_t span = std::min<std::size_t>(end - at, kLimit - scanned);
         if (std::memchr(reinterpret_cast<const void*>(at), 0, span) != nullptr) {
             return start;
@@ -103,7 +121,11 @@ const char* readable_text(std::uint32_t address) {
 }
 
 bool commit(std::uint32_t address, std::uint32_t size) {
+#ifdef _WIN32
     return VirtualAlloc(host(address), size, MEM_COMMIT, PAGE_READWRITE) != nullptr;
+#else
+    return os::commit(host(address), size);
+#endif
 }
 
 std::uint32_t heap_allocate(std::uint32_t size) { return heap().allocate(size); }

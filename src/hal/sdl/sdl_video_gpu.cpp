@@ -5,6 +5,7 @@
 #include "../oracle/video_gpu.h"
 #include "sdl_video_gpu_shaders.h"
 
+#include <cstddef>
 #include <string.h>
 
 // Video service on SDL3 + SDL_GPU (docs/HAL.md, "Video", 3.4d). Vulkan on

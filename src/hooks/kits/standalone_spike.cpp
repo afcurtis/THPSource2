@@ -20,7 +20,17 @@
 #include "../kit_abi.h"
 #include "../oracle_script.h"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "ot_os.hpp"
+#include "win32_posix.h"
+
+#include <csignal>
+#include <pthread.h>
+#include <ucontext.h>
+#include <unistd.h>
+#endif
 
 #include <cstdint>
 #include <cstdio>
@@ -33,6 +43,7 @@
 #include "guest_arena.hpp"
 
 namespace arena = opentony::kitdll::arena;
+
 
 namespace {
 
@@ -90,11 +101,20 @@ private:
     std::uint32_t address_;
 };
 
+std::string system_error() {
+#ifdef _WIN32
+    return "error " + std::to_string(GetLastError());
+#else
+    return opentony::os::last_error();
+#endif
+}
+
 void log_line(const char* line) {
     std::printf("kit: %s\n", line);
     std::fflush(stdout);  // a fault ends the process: the last line must already be out
 }
 
+#ifdef _WIN32
 // A fault in a native ends the run with the address and the module, not in Wine's debugger
 LONG WINAPI crash_filter(EXCEPTION_POINTERS* info) {
     HMODULE module = nullptr;
@@ -181,6 +201,99 @@ DWORD WINAPI hang_watchdog(LPVOID seconds) {
     std::printf("HANG: the main thread did not finish in %lu s\n", static_cast<unsigned long>(reinterpret_cast<std::uintptr_t>(seconds)));
     return static_cast<DWORD>(crash_filter(&pointers));
 }
+#else
+// Linux: the same reports from signal handlers. A fault prints the CRASH line (opentony_launcher.cpp reads lines that start with it), the guest address
+// when the fault is in the arena, and the words of the stack that point into the standalone's code (`nm --numeric-sort` on opentony_standalone.so names
+// them: the offsets are from its load base). The handler runs on its own stack, so a stack overflow is reported too.
+std::uintptr_t g_standalone_base = 0;   // where opentony_standalone.so was loaded (set after dlopen)
+std::uintptr_t g_stack_low = 0, g_stack_high = 0;   // the main thread's stack, for the scan
+pthread_t g_main_thread{};
+unsigned g_hang_seconds = 0;
+
+void report(int code, const void* pc, const void* fault, bool write, std::uintptr_t sp) {
+    const std::string name = opentony::os::module_file_of(pc);
+    const std::uintptr_t module = opentony::os::module_base_of(pc);
+    std::printf("CRASH %08x at %p (%s +%lx), %s %p\n", static_cast<unsigned>(code), pc, name.empty() ? "?" : name.c_str(),
+                static_cast<unsigned long>(reinterpret_cast<std::uintptr_t>(pc) - module), write ? "write to" : "access of", fault);
+    const auto at = reinterpret_cast<std::uintptr_t>(fault);
+    if (g_arena_base != 0 && at >= g_arena_base && at - g_arena_base <= 0xffffffffull) {
+        std::printf("  guest address %08x (arena at %p)\n", static_cast<unsigned>(at - g_arena_base), reinterpret_cast<void*>(g_arena_base));
+    }
+    if (g_standalone_base != 0 && sp >= g_stack_low && sp < g_stack_high) {
+        int printed = 0;
+        for (auto word = reinterpret_cast<const std::uintptr_t*>(sp); reinterpret_cast<std::uintptr_t>(word + 1) <= g_stack_high && printed < 40; ++word) {
+            if (*word > g_standalone_base + 0x1000 && opentony::os::module_base_of(reinterpret_cast<const void*>(*word)) == g_standalone_base) {
+                std::printf("  caller 0x%08lx\n", static_cast<unsigned long>(*word - g_standalone_base));
+                ++printed;
+            }
+        }
+    }
+    std::fflush(stdout);
+}
+
+void crash_signal(int signal, siginfo_t* info, void* context) {
+    const auto* machine = &static_cast<const ucontext_t*>(context)->uc_mcontext;
+    const bool write = signal == SIGSEGV && (machine->gregs[REG_ERR] & 2) != 0;   // the page fault's error code: bit 1 is a write
+    // the Windows exception code of the same fault, so a log reads the same on both systems
+    const int code = signal == SIGSEGV || signal == SIGBUS ? 0xc0000005 : signal == SIGFPE ? 0xc0000094 : signal == SIGILL ? 0xc000001d : 0xc0000000 + signal;
+    report(code, reinterpret_cast<const void*>(machine->gregs[REG_RIP]), info->si_addr, write, static_cast<std::uintptr_t>(machine->gregs[REG_RSP]));
+    std::_Exit(0xc0);
+}
+
+// OT_HANG_DUMP=SECONDS: the watchdog stops the main thread with SIGUSR2; its handler reports where it was, as a crash
+void hang_signal(int, siginfo_t*, void* context) {
+    const auto* machine = &static_cast<const ucontext_t*>(context)->uc_mcontext;
+    const auto sp = static_cast<std::uintptr_t>(machine->gregs[REG_RSP]);
+    if (sp >= g_stack_low && sp < g_stack_high) {   // every module on the stack, nearest first
+        int printed = 0;
+        for (auto word = reinterpret_cast<const std::uintptr_t*>(sp); reinterpret_cast<std::uintptr_t>(word + 1) <= g_stack_high && printed < 30; ++word) {
+            const std::uintptr_t base = opentony::os::module_base_of(reinterpret_cast<const void*>(*word));
+            if (base != 0) {
+                std::printf("  frame %s +%lx\n", opentony::os::module_file_of(reinterpret_cast<const void*>(*word)).c_str(), static_cast<unsigned long>(*word - base));
+                ++printed;
+            }
+        }
+    }
+    std::printf("HANG: the main thread did not finish in %u s\n", g_hang_seconds);
+    report(0x00004854, reinterpret_cast<const void*>(machine->gregs[REG_RIP]), nullptr, false, sp);
+    std::_Exit(0xc0);
+}
+
+void* hang_watchdog(void*) {
+    opentony::os::sleep_ms(g_hang_seconds * 1000);
+    pthread_kill(g_main_thread, SIGUSR2);
+    return nullptr;
+}
+
+void install_crash_handlers() {
+    static std::uint8_t alternate[1 << 16];
+    stack_t stack{};
+    stack.ss_sp = alternate;
+    stack.ss_size = sizeof alternate;
+    sigaltstack(&stack, nullptr);
+    struct sigaction action{};
+    action.sa_sigaction = &crash_signal;
+    action.sa_flags = SA_SIGINFO | SA_ONSTACK;
+    sigemptyset(&action.sa_mask);
+    for (const int signal : {SIGSEGV, SIGBUS, SIGFPE, SIGILL}) {
+        sigaction(signal, &action, nullptr);
+    }
+    action.sa_sigaction = &hang_signal;
+    sigaction(SIGUSR2, &action, nullptr);
+    // the main thread's stack, so a scan never reads past it
+    pthread_attr_t attributes;
+    if (pthread_getattr_np(pthread_self(), &attributes) == 0) {
+        void* low = nullptr;
+        std::size_t size = 0;
+        if (pthread_attr_getstack(&attributes, &low, &size) == 0) {
+            g_stack_low = reinterpret_cast<std::uintptr_t>(low);
+            g_stack_high = g_stack_low + size;
+        }
+        pthread_attr_destroy(&attributes);
+    }
+    g_main_thread = pthread_self();
+}
+#endif
 
 }  // namespace
 
@@ -196,11 +309,22 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "usage: opentony_spike <THawk2.exe> <opentony_native.dll> <session image | -> <expected.tsv>\n");
         return 64;
     }
+#ifdef _WIN32
     SetUnhandledExceptionFilter(&crash_filter);
     if (const char* hang = std::getenv("OT_HANG_DUMP")) {
         DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &g_main_thread, 0, FALSE, DUPLICATE_SAME_ACCESS);
         CreateThread(nullptr, 0, &hang_watchdog, reinterpret_cast<LPVOID>(static_cast<std::uintptr_t>(std::atoi(hang))), 0, nullptr);
     }
+#else
+    install_crash_handlers();
+    if (const char* hang = std::getenv("OT_HANG_DUMP")) {
+        g_hang_seconds = static_cast<unsigned>(std::atoi(hang));
+        pthread_t watchdog;
+        if (pthread_create(&watchdog, nullptr, &hang_watchdog, nullptr) == 0) {
+            pthread_detach(watchdog);
+        }
+    }
+#endif
     const std::vector<std::uint8_t> exe = read_file(argv[1]);
     if (exe.size() < sizeof(IMAGE_DOS_HEADER)) {
         std::fprintf(stderr, "rejected: %s is not readable\n", argv[1]);
@@ -284,14 +408,26 @@ int main(int argc, char** argv) {
 #else
     // 11b: one reservation of 4 GiB and a guard, at a 4 GiB-aligned address where one is free (the low 32 bits of a host address are then the guest address:
     // a crash line and a debugger read it directly), else anywhere; the image's span and the zone block's are committed, the heap commits itself on demand
+#ifdef _WIN32
     for (std::uintptr_t k = 1; k < 0x7000 && g_arena_base == 0; ++k) {
         g_arena_base = reinterpret_cast<std::uintptr_t>(VirtualAlloc(reinterpret_cast<void*>(k << 32), arena::kArenaBytes, MEM_RESERVE, PAGE_NOACCESS));
     }
     if (g_arena_base == 0) {
         g_arena_base = reinterpret_cast<std::uintptr_t>(VirtualAlloc(nullptr, arena::kArenaBytes, MEM_RESERVE, PAGE_NOACCESS));
     }
-    if (g_arena_base == 0 || VirtualAlloc(arena::host<void>(arena::kImageBase), arena::kZonesEnd - arena::kImageBase, MEM_COMMIT, PAGE_READWRITE) == nullptr) {
-        std::fprintf(stderr, "cannot reserve and commit the guest arena (error %lu)\n", GetLastError());
+    const bool committed = g_arena_base != 0 &&
+                           VirtualAlloc(arena::host<void>(arena::kImageBase), arena::kZonesEnd - arena::kImageBase, MEM_COMMIT, PAGE_READWRITE) != nullptr;
+#else
+    for (std::uintptr_t k = 1; k < 0x7000 && g_arena_base == 0; ++k) {
+        g_arena_base = reinterpret_cast<std::uintptr_t>(opentony::os::reserve(arena::kArenaBytes, reinterpret_cast<void*>(k << 32)));
+    }
+    if (g_arena_base == 0) {
+        g_arena_base = reinterpret_cast<std::uintptr_t>(opentony::os::reserve(arena::kArenaBytes));
+    }
+    const bool committed = g_arena_base != 0 && opentony::os::commit(arena::host<void>(arena::kImageBase), arena::kZonesEnd - arena::kImageBase);
+#endif
+    if (!committed) {
+        std::fprintf(stderr, "cannot reserve and commit the guest arena (%s)\n", system_error().c_str());
         return 3;
     }
     const std::uint64_t reserve_begin = arena::kImageBase;   // guest addresses: the span committed above
@@ -305,7 +441,12 @@ int main(int argc, char** argv) {
         return 3;
     }
     std::printf("this process's own image is %p..; the retail range %08x..%08x is inside its zero-filled section / committed arena span %08lx..%08lx\n",
-                static_cast<void*>(GetModuleHandleA(nullptr)), kExpectedImageBase, kExpectedImageBase + kExpectedSizeOfImage,
+#ifdef _WIN32
+                static_cast<void*>(GetModuleHandleA(nullptr)),
+#else
+                reinterpret_cast<void*>(opentony::os::module_base_of(reinterpret_cast<const void*>(&read_file))),
+#endif
+                kExpectedImageBase, kExpectedImageBase + kExpectedSizeOfImage,
                 static_cast<unsigned long>(reserve_begin), static_cast<unsigned long>(reserve_end));
     std::size_t copied = 0;
     for (const Part& part : parts) {
@@ -352,10 +493,15 @@ int main(int argc, char** argv) {
             if (where >= reserve_begin && static_cast<std::uint64_t>(where) + size <= reserve_end) {
                 // inside the zero-filled section: it is already there, read/write
             } else {
+#ifdef _WIN32
                 got = VirtualAlloc(got, size, arena::kFlat ? (MEM_RESERVE | MEM_COMMIT) : MEM_COMMIT, PAGE_READWRITE);   // 64-bit: inside the reservation
+#else
+                got = opentony::os::commit(got, size) ? got : nullptr;   // inside the reservation
+#endif
             }
             if (got != arena::host<void>(where)) {
-                std::printf("heap region %08x +%08x: cannot be placed at its address (error %lu)\n", where, size, GetLastError());
+                std::printf("heap region %08x +%08x: cannot be placed at its address (%s)\n", where, size, system_error().c_str());
+#ifdef _WIN32
                 MEMORY_BASIC_INFORMATION occupant{};
                 const auto first = reinterpret_cast<std::uintptr_t>(arena::host<void>(where));
                 for (std::uintptr_t probe = first; probe < first + size;) {  // what is in the way
@@ -369,6 +515,7 @@ int main(int argc, char** argv) {
                     }
                     probe = reinterpret_cast<std::uintptr_t>(occupant.BaseAddress) + occupant.RegionSize;
                 }
+#endif
                 ++refused;
             } else {
                 std::memcpy(got, heap.data() + at, size);
@@ -383,9 +530,12 @@ int main(int argc, char** argv) {
     // the Kits, over this memory, the way opentony.dll attaches them
     const HMODULE kits = LoadLibraryA(argv[2]);
     if (kits == nullptr) {
-        std::fprintf(stderr, "cannot load %s (error %lu)\n", argv[2], GetLastError());
+        std::fprintf(stderr, "cannot load %s (%s)\n", argv[2], system_error().c_str());
         return 5;
     }
+#ifndef _WIN32
+    g_standalone_base = opentony::os::module_base_of(GetProcAddress(kits, OT_KIT_ATTACH_STANDALONE));
+#endif
     const auto attach = reinterpret_cast<OtKitAttach>(GetProcAddress(kits, OT_KIT_ATTACH_STANDALONE));
     const auto call_native = reinterpret_cast<std::uint32_t(__cdecl*)(std::uint32_t, const std::uint32_t*, std::uint32_t)>(
         GetProcAddress(kits, OT_STANDALONE_CALL));
@@ -466,14 +616,19 @@ int main(int argc, char** argv) {
     // 7c: the video the draw path draws into (standalone_video.cpp in opentony_spike_video.dll, beside this executable; OT_VIDEO_DIR). 8a: the same DLL is the window, the
     // input devices and the sound (OT_VIDEO_SDL, OT_VIDEO_SHOW)
     if (std::getenv("OT_VIDEO_DIR") != nullptr || std::getenv("OT_VIDEO_SDL") != nullptr || std::getenv("OT_VIDEO_SHOW") != nullptr || std::getenv("OT_TEXTURE_DUMP") != nullptr) {
+#ifdef _WIN32
         char path[MAX_PATH];
         const DWORD length = GetModuleFileNameA(nullptr, path, sizeof path);
         std::string video = std::string(path, length);
         video = video.substr(0, video.find_last_of("\\/") + 1) + "opentony_spike_video.dll";
+#else
+        std::string video = opentony::os::executable_path();
+        video = video.substr(0, video.find_last_of('/') + 1) + "opentony_spike_video.so";
+#endif
         const HMODULE module = LoadLibraryA(video.c_str());
         const auto start = module != nullptr ? reinterpret_cast<bool(__cdecl*)(HMODULE)>(GetProcAddress(module, "standalone_video_start")) : nullptr;
         if (start == nullptr || !start(kits)) {
-            std::fprintf(stderr, "video: %s could not start (error %lu)\n", video.c_str(), GetLastError());
+            std::fprintf(stderr, "video: %s could not start (%s)\n", video.c_str(), system_error().c_str());
             return 8;
         }
     }

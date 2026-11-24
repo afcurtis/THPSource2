@@ -9,9 +9,14 @@
 #include "kit_bridge.hpp"
 #include "seam_addresses_generated.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <algorithm>
+#include <ctime>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -60,6 +65,20 @@ std::uint64_t now_micros() { return platform_realtime() ? wall_micros() : g_cloc
 // Realtime with a frame rate set: wait until the wall clock reaches `deadline` (microseconds of wall_micros). A high-resolution waitable timer to 1 ms before it (about 0.5 ms
 // accurate), then a yield to it; measured 0 to 1 us late. CREATE_WAITABLE_TIMER_HIGH_RESOLUTION (0x2) is Windows 10 1803: without it, Sleep(1) while more than 4 ms remain, then
 // the yield.
+#ifndef _WIN32
+// Linux: nanosleep is accurate to tens of microseconds, so a sleep to 1 ms before the deadline, then the yield, does what the timer does on Windows
+void wait_until(std::uint64_t deadline) {
+    for (std::uint64_t at = wall_micros(); at < deadline; at = wall_micros()) {
+        if (deadline - at > 1500) {
+            const std::uint64_t sleep = deadline - at - 1000;
+            timespec time{static_cast<time_t>(sleep / 1000000), static_cast<long>(sleep % 1000000) * 1000L};
+            nanosleep(&time, nullptr);
+        } else {
+            SwitchToThread();
+        }
+    }
+}
+#else
 void wait_until(std::uint64_t deadline) {
     static HANDLE timer = CreateWaitableTimerExW(nullptr, nullptr, 0x2, TIMER_ALL_ACCESS);
     for (std::uint64_t at = wall_micros(); at < deadline; at = wall_micros()) {
@@ -78,6 +97,7 @@ void wait_until(std::uint64_t deadline) {
         }
     }
 }
+#endif
 
 std::uint32_t g_frames = 0;
 
@@ -208,11 +228,13 @@ std::uint32_t deliver_tick(const char* site) {
         static bool timer_period_raised = false;
         if (!timer_period_raised) {
             timer_period_raised = true;
+#ifdef _WIN32
             if (HMODULE winmm = LoadLibraryA("winmm.dll")) {   // Sleep(1) lasts a whole 15.6 ms timer period otherwise
                 if (auto begin = reinterpret_cast<UINT(WINAPI*)(UINT)>(GetProcAddress(winmm, "timeBeginPeriod"))) {
                     begin(1);
                 }
             }
+#endif   // (Linux sleeps are already as fine as a millisecond)
         }
         const std::uint64_t now = wall_micros();
         if (arena::at<std::uint32_t>(kTimerState) != 0) {

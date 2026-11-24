@@ -26,7 +26,11 @@
 
 #include "shared_buffer.h"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <cstdint>
 #include <cstdio>
