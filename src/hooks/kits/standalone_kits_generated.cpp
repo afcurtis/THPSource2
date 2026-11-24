@@ -6693,6 +6693,15 @@ std::uint32_t __cdecl ot_kit_Career_IsTrickPurchased(std::uint32_t a0, std::uint
     });
 }
 
+std::uint32_t __cdecl ot_kit_TrickConfig_ConsumePointsAndSetBit(std::uint32_t a0, std::uint32_t a1, std::uint32_t a2) {
+    const std::uint32_t a[] = {a0, a1, a2};
+    return run("TrickConfig_ConsumePointsAndSetBit", [&](Precision precision) -> std::uint32_t {
+        g_kits->set_precision(precision);
+        auto& kit = g_kits->career;
+        return U(kit.career.consume_points_and_set_bit(a[0], S(a[1]), S(a[2])));
+    });
+}
+
 std::uint32_t __cdecl ot_kit_Career_CountGoldMedals(std::uint32_t a0) {
     const std::uint32_t a[] = {a0};
     return run("Career_CountGoldMedals", [&](Precision precision) -> std::uint32_t {
@@ -30296,6 +30305,7 @@ extern const OtKitEntry kEntries[] = {
     {"Career_HighestOpenLevel", reinterpret_cast<void*>(&ot_kit_Career_HighestOpenLevel)},
     {"Career_LevelNeeds", reinterpret_cast<void*>(&ot_kit_Career_LevelNeeds)},
     {"Career_IsTrickPurchased", reinterpret_cast<void*>(&ot_kit_Career_IsTrickPurchased)},
+    {"TrickConfig_ConsumePointsAndSetBit", reinterpret_cast<void*>(&ot_kit_TrickConfig_ConsumePointsAndSetBit)},
     {"Career_CountGoldMedals", reinterpret_cast<void*>(&ot_kit_Career_CountGoldMedals)},
     {"Career_CountMedals", reinterpret_cast<void*>(&ot_kit_Career_CountMedals)},
     {"Career_GameCleared", reinterpret_cast<void*>(&ot_kit_Career_GameCleared)},
@@ -30822,7 +30832,7 @@ extern const OtKitEntry kEntries[] = {
     {"D3D_DumpDeviceCaps", reinterpret_cast<void*>(&ot_kit_D3D_DumpDeviceCaps)},
     {"WINMAIN_Nothing", reinterpret_cast<void*>(&ot_kit_WINMAIN_Nothing)},
 };
-extern const std::size_t kEntryCount = 1235;
+extern const std::size_t kEntryCount = 1236;
 
 const ServiceAddress kServices[] = {
     {"atexit", 0x00500260u},
@@ -31262,6 +31272,7 @@ const NativeEntry kNatives[] = {
     {0x00415b30u, "Career_LoadingScreen", Convention::Cdecl, 1, reinterpret_cast<void*>(&ot_native_Career_LoadingScreen)},
     {0x00416050u, "TrickConfig_FindByCharacter", Convention::Cdecl, 1, reinterpret_cast<void*>(&ot_kit_TrickConfig_FindByCharacter)},
     {0x00416070u, "Career_IsTrickPurchased", Convention::Cdecl, 2, reinterpret_cast<void*>(&ot_kit_Career_IsTrickPurchased)},
+    {0x00416140u, "TrickConfig_ConsumePointsAndSetBit", Convention::Cdecl, 3, reinterpret_cast<void*>(&ot_kit_TrickConfig_ConsumePointsAndSetBit)},
     {0x004164b0u, "Career_CountGoldMedals", Convention::Cdecl, 1, reinterpret_cast<void*>(&ot_kit_Career_CountGoldMedals)},
     {0x00416530u, "Career_CountMedals", Convention::Cdecl, 1, reinterpret_cast<void*>(&ot_kit_Career_CountMedals)},
     {0x004165d0u, "Career_ApplyLoadedSave", Convention::Cdecl, 0, reinterpret_cast<void*>(&ot_native_Career_ApplyLoadedSave)},
@@ -34097,6 +34108,6 @@ const NativeEntry kNatives[] = {
     {0x004f7d80u, "WINMAIN_Nothing", Convention::Cdecl, 0, reinterpret_cast<void*>(&ot_kit_WINMAIN_Nothing)},
     {0x004f86f0u, "WINMAIN_ShutDown", Convention::Cdecl, 0, reinterpret_cast<void*>(&ot_native_WINMAIN_ShutDown)},
 };
-const std::size_t kNativeCount = 3193;
+const std::size_t kNativeCount = 3194;
 
 }  // namespace opentony::kitdll

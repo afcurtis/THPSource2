@@ -258,6 +258,19 @@ def gen_is_trick_purchased(env, n):
     return [pick_record(env, s), rng.choice([rng.randrange(0, 128)] * 5 + [-1, 128, 200])], s.pokes
 
 
+@spec(0x00416140, "TrickConfig_ConsumePointsAndSetBit", "records")
+def gen_consume_points(env, n):
+    s, _ = base_state(env, all_characters=True)
+    rng = env.rng
+    rec = pick_record(env, s)
+    cash = rng.choice([0, rng.randrange(0, 5000), rng.randrange(0, 5000), rng.randrange(-100, 100), rng.getrandbits(32) - (1 << 31)])
+    s.put(rec + 0x08, u32(cash & 0xFFFFFFFF))
+    s.put(rec + 0xAC, b"".join(u32(rng.getrandbits(32) & rng.getrandbits(32)) for _ in range(4)))
+    cost = rng.choice([0, 0, 500, 250, 1000, rng.randrange(0, 5000), cash, cash + 1, cash - 1, -5])
+    trick = rng.choice([rng.randrange(0, 128)] * 6 + [-1, 128, 200])
+    return [rec, trick & 0xFFFFFFFF, cost & 0xFFFFFFFF], s.pokes
+
+
 @spec(0x004164B0, "Career_CountGoldMedals", "records")
 def gen_count_gold(env, n):
     s, _ = base_state(env, all_characters=True)

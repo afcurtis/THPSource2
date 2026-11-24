@@ -663,6 +663,20 @@ bool Career::is_trick_purchased(std::uint32_t rec, int trick) {
     return (word_at(m_, rec + kRecUnlocks + static_cast<std::uint32_t>(biased >> 5) * 4) & (1u << (trick & 31))) != 0;
 }
 
+bool Career::consume_points_and_set_bit(std::uint32_t rec, int trick, int cost) {
+    s_.check(rec != 0, kMsgNoProgress);
+    s_.check(trick >= 0 && trick < 0x80, kMsgBadTrickIndexPlain);
+    const int cash = int_at(m_, rec + kRecCash);
+    if (cash < cost) {
+        return false;
+    }
+    set_word_at(m_, rec + kRecCash, static_cast<std::uint32_t>(cash) - static_cast<std::uint32_t>(cost));
+    const int biased = trick + ((trick >> 31) & 0x1f);
+    const std::uint32_t word = rec + kRecUnlocks + static_cast<std::uint32_t>(biased >> 5) * 4;
+    set_word_at(m_, word, word_at(m_, word) | (1u << (trick & 31)));
+    return true;
+}
+
 int Career::count_gold_medals(std::uint32_t rec) {
     s_.check(rec != 0, kMsgNoProgress);
     int count = 0;

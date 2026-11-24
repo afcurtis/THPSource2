@@ -8,6 +8,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 
 using namespace opentony::runtime;
 using namespace opentony::runtime::career;
@@ -239,6 +240,52 @@ void test_trick_unlock_state_on_retail_memory() {
     CHECK(w.memory.u32(record(1) + kConfigUnlocks) == 0);
 }
 
+// 0x00416140, the trick shop's buy: the Career form (retail memory) against the image form of trick_database.cpp, over random cash, costs and
+// indices, plus the plain cases. A cost above the cash writes nothing; otherwise the cash drops and the purchased bit is set.
+void test_buying_a_trick_spends_cash_and_marks_it_purchased() {
+    Setup w;
+    const TrickDatabase db;
+    const std::uint32_t rec = record(3);
+    w.memory.set32(rec + kRecCash, 500);
+    CHECK(!w.career.consume_points_and_set_bit(rec, 40, 501));
+    CHECK(w.memory.s32(rec + kRecCash) == 500);
+    CHECK(!w.career.is_trick_purchased(rec, 40));
+    CHECK(w.career.consume_points_and_set_bit(rec, 40, 500));
+    CHECK(w.memory.s32(rec + kRecCash) == 0);
+    CHECK(w.career.is_trick_purchased(rec, 40));
+    CHECK(w.memory.u32(rec + kRecUnlocks + 4) == (1u << 8));
+    CHECK(w.services.calls().empty());
+
+    std::uint32_t seed = 0x2468ace1u;
+    auto next = [&] {
+        seed = seed * 1664525u + 1013904223u;
+        return seed >> 8;
+    };
+    for (int i = 0; i < 2000; ++i) {
+        const std::int32_t cash = static_cast<std::int32_t>(next() % 4000) - 500;
+        const int pick = static_cast<int>(next() % 5);
+        const std::int32_t cost = pick == 0 ? 0 : pick == 1 ? cash : pick == 2 ? cash + 1 : static_cast<std::int32_t>(next() % 3000) - 100;
+        const int trick = static_cast<int>(next() % 0x80);
+        w.memory.set32(rec + kRecCash, static_cast<std::uint32_t>(cash));
+        RetailImage image(kTrickConfigSize);
+        for (std::uint32_t k = 0; k < 4; ++k) {
+            const std::uint32_t bits = next() ^ (next() << 16);
+            w.memory.set32(rec + kRecUnlocks + 4 * k, bits);
+            image.set32(kConfigUnlocks + 4 * k, bits);
+        }
+        image.set32(kConfigPoints, static_cast<std::uint32_t>(cash));
+        const bool expected = trick_config_consume_points_and_set_bit(image, db, trick, cost);
+        CHECK(w.career.consume_points_and_set_bit(rec, trick, cost) == expected);
+        CHECK(w.memory.s32(rec + kRecCash) == image.s32(kConfigPoints));
+        for (std::uint32_t k = 0; k < 4; ++k) {
+            CHECK(w.memory.u32(rec + kRecUnlocks + 4 * k) == image.u32(kConfigUnlocks + 4 * k));
+        }
+    }
+    CHECK(w.services.calls().empty());
+    w.career.consume_points_and_set_bit(rec, 0x80, 0);  // retail asserts "Bad trick index" and carries on
+    CHECK(!w.services.calls().empty() && w.services.calls().back().args == std::vector<std::uint32_t>{kMsgBadTrickIndexPlain});
+}
+
 }  // namespace
 
 int main() {
@@ -252,6 +299,7 @@ int main() {
     test_skater_manager_selects_characters_and_costumes();
     test_save_image_round_trip();
     test_trick_unlock_state_on_retail_memory();
+    test_buying_a_trick_spends_cash_and_marks_it_purchased();
     if (failures != 0) {
         std::cerr << failures << " check(s) failed\n";
         return EXIT_FAILURE;

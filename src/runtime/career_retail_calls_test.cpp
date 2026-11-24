@@ -94,6 +94,7 @@ const std::map<std::uint32_t, CareerAdapter>& adapters() {
         {0x00415ae0, {"Career_LevelNeeds", 0xffffffff, false, A(c.career.level_needs(S(a[0])))}},
         // ---- records ----
         {0x00416070, {"Career_IsTrickPurchased", 0xff, false, A(c.career.is_trick_purchased(a[0], S(a[1])))}},
+        {0x00416140, {"TrickConfig_ConsumePointsAndSetBit", 0xff, false, A(c.career.consume_points_and_set_bit(a[0], S(a[1]), S(a[2])))}},
         {0x004164b0, {"Career_CountGoldMedals", 0xffffffff, false, A(c.career.count_gold_medals(a[0]))}},
         {0x00416530, {"Career_CountMedals", 0xffffffff, false, A(c.career.count_medals(a[0]))}},
         {0x00416740, {"Career_GameCleared", 0xff, false, A(c.career.game_cleared(S(a[0])))}},

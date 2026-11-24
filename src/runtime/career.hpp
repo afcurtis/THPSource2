@@ -150,6 +150,7 @@ constexpr std::uint32_t kMsgBadNode = 0x00525284;
 constexpr std::uint32_t kMsgTooManyGaps = 0x00525298;
 constexpr std::uint32_t kMsgStatRange = 0x005252ac;
 constexpr std::uint32_t kMsgBadTrickIndex = 0x0052531c;
+constexpr std::uint32_t kMsgBadTrickIndexPlain = 0x00525330;   // "Bad trick index" (no number): TrickConfig_ConsumePointsAndSetBit
 constexpr std::uint32_t kMsgCheatRange = 0x005253d4;
 constexpr std::uint32_t kMsgUnknownCheat = 0x005253f0;
 
@@ -218,6 +219,9 @@ public:
 
     // ---- records -------------------------------------------------------------------------
     [[nodiscard]] bool is_trick_purchased(std::uint32_t rec, int trick);   // 0x00416070
+    // 0x00416140 TrickConfig_ConsumePointsAndSetBit: false (nothing written) when the record has less than `cost` cash to spend;
+    // otherwise the cash drops by `cost` and the trick's purchased bit is set. The memory form of trick_config_consume_points_and_set_bit.
+    bool consume_points_and_set_bit(std::uint32_t rec, int trick, int cost);
     [[nodiscard]] int count_gold_medals(std::uint32_t rec);           // 0x004164b0
     [[nodiscard]] int count_medals(std::uint32_t rec);                // 0x00416530
     [[nodiscard]] bool game_cleared(int character);                   // 0x00416740

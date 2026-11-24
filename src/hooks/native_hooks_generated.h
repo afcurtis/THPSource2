@@ -6,7 +6,7 @@
 #include "hook_types.h"
 
 #define OT_BUILD_COUNT 2u
-#define OT_HOOK_COUNT 1254u
+#define OT_HOOK_COUNT 1255u
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,7 +41,7 @@ extern void *const ot_native_FileIO_BackendOpen;
 #endif
 
 /* Kit hooks: the entry points come from opentony_native.dll at startup (src/hooks/kit_abi.h). */
-#define OT_KIT_HOOK_COUNT 1235u
+#define OT_KIT_HOOK_COUNT 1236u
 static void *ot_kit_CBruce__FRUVectorsFromRotMatrix = 0;
 static void *ot_kit_Skater_PublishOrientationBasis = 0;
 static void *ot_kit_CBruce__HandleFlips = 0;
@@ -752,6 +752,7 @@ static void *ot_kit_Career_LevelOpen = 0;
 static void *ot_kit_Career_HighestOpenLevel = 0;
 static void *ot_kit_Career_LevelNeeds = 0;
 static void *ot_kit_Career_IsTrickPurchased = 0;
+static void *ot_kit_TrickConfig_ConsumePointsAndSetBit = 0;
 static void *ot_kit_Career_CountGoldMedals = 0;
 static void *ot_kit_Career_CountMedals = 0;
 static void *ot_kit_Career_GameCleared = 0;
@@ -4929,6 +4930,11 @@ static const OtHookSpec ot_hooks[OT_HOOK_COUNT] = {
      {0x53, 0x56, 0x57, 0xbf, 0x38, 0x50, 0x52, 0x00},
      OT_NATIVE_TRACE_VALIDATED, 0u, &ot_kit_Career_IsTrickPurchased, 0,
      {0x00416070u, 0x00000000u}, 2u, 0u, 1u},
+    /* TrickConfig_ConsumePointsAndSetBit: native status trace-validated -> default off (Kit career) */
+    {"TrickConfig_ConsumePointsAndSetBit", OT_ABI_KIT, 8u,
+     {0x53, 0x56, 0x57, 0xbf, 0x38, 0x50, 0x52, 0x00},
+     OT_NATIVE_TRACE_VALIDATED, 0u, &ot_kit_TrickConfig_ConsumePointsAndSetBit, 0,
+     {0x00416140u, 0x00000000u}, 3u, 0u, 1u},
     /* Career_CountGoldMedals: native status trace-validated -> default off (Kit career) */
     {"Career_CountGoldMedals", OT_ABI_KIT, 7u,
      {0x56, 0x57, 0xbf, 0x38, 0x50, 0x52, 0x00},

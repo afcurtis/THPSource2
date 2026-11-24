@@ -4236,15 +4236,18 @@ functions:
       - src/runtime/trick_database.cpp
       - src/runtime/trick_database.hpp
       - src/runtime/trick_combo_tables.cpp
+      - src/runtime/career.cpp
+      - src/runtime/career.hpp
     tests:
       - src/runtime/trick_database_retail_trace_test.cpp
       - src/runtime/trick_database_test.cpp
+      - src/runtime/career_test.cpp
       - tests/test_trick_database.py
       - tests/test_trick_combo_tables.py
     evidence:
       - re/evidence/functions/trick-database-runtime.md
       - re/evidence/fixtures/trickdb-warehouse.txt
-    notes: 'trick_config_consume_points_and_set_bit: the zero-cost unlock path is replayed (20 character bitmaps); paying a non-zero cost is unit tested only.'
+    notes: 'trick_config_consume_points_and_set_bit: the zero-cost unlock path is replayed (20 character bitmaps); paying a non-zero cost is unit tested only. Career::consume_points_and_set_bit is the retail-memory form the standalone calls (the trick shop buy, hook row TrickConfig_ConsumePointsAndSetBit), checked against the image form over 2000 random cases in career_test; the forced-call spec (career_specs_more.py, group records) is written but not captured (the GDB probe harness is not on this machine).'
 
   - address: 0x00416230
     name: TrickConfig_AssignButtonSlot

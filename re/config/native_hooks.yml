@@ -9638,6 +9638,19 @@ hooks:
     builds:
       canonical: 0x00416070
 
+  - name: TrickConfig_ConsumePointsAndSetBit
+    kit: career
+    call: "career.consume_points_and_set_bit(a[0], S(a[1]), S(a[2]))"
+    returns: true
+    convention: cdecl
+    stack_args: 3
+    reaches: [assert]
+    default: "off"                    # the trick shop's buy (the standalone needs it: 6, cash trick purchase FATAL)
+    overwrite: 8
+    expected: "53 56 57 bf 38 50 52 00"
+    builds:
+      canonical: 0x00416140
+
   - name: Career_CountGoldMedals
     kit: career
     call: "career.count_gold_medals(a[0])"
