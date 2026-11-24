@@ -57,7 +57,7 @@ using namespace thpsource2;
 namespace {
 
 constexpr const char* kTitle = "THPSource2";
-constexpr const char* kVersion = "v0.7";
+constexpr const char* kVersion = "v0.7.1";
 constexpr const char* kRepoUrl = "https://github.com/afcurtis/THPSource2";
 // the pages the launcher sends the player to, all under kRepoUrl (tests/test_launcher.py checks that): the bug report form (.github/ISSUE_TEMPLATE/bug.md) and
 // the newest release. The update notice opens the second and never an address that came over the network (core/update_check.hpp)
