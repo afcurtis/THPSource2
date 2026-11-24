@@ -4,7 +4,7 @@
 [![Licence: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 ![Platform: Windows 10/11 64-bit](https://img.shields.io/badge/platform-Windows%2010%2F11%20(64--bit)-blue)
 
-**A full decompilation of Tony Hawk's Pro Skater 2** [PC|2000] **rebuilt into a native modern game** [x64|Portable]. Any resolution or aspect ratio, up to 120fps, unlimited draw distance, texture upscaling, new game modes and much more. Bring your own copy of the game.
+**A full decompilation of Tony Hawk's Pro Skater 2 rebuilt into a native modern game** [x32|PC|2000] → [x64|PC|Portable]. Any resolution or aspect ratio, up to 120fps, unlimited draw distance, texture upscaling, new game modes and much more. Bring your own copy of the game.
 
 <img src="docs/images/enhanced.jpg" alt="THPSource2 Enhanced: New York City in ultrawide, no fog, the skyline in full view">
 
