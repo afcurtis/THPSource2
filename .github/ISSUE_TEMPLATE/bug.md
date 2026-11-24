@@ -4,18 +4,13 @@ about: Something in the launcher or the game does not work
 labels: bug
 ---
 
-**Launcher version** (System tab > About, or the zip name):
+**Launcher version** (System tab > About):
 
-**Game release** (Activision Value re-release, or original 2000 CD / patched):
+**Operating system** (for example Windows 11):
 
-**Windows version** (for example Windows 11 23H2):
-
-**What happened, and what you expected:**
+**What happened:**
 
 **How to reproduce:**
 
-**Logs.** Drag the file into this box.
-- After a crash or hang: click **Report on GitHub** in the launcher's red panel. It selects a zip in Explorer; attach that zip.
-- Any other problem: turn on System > Debug logging, reproduce it, then zip the newest folder in `Logs\runs` (System > Open logs) and attach it.
-
-The logs hold file paths from your PC, such as the install folder. Please do not attach game files.
+**Logs:** zip the `Logs` folder (Launcher > System tab > Open logs) and drag the zip into this box.
+By default the last 2 runs and last 3 crashes are kept, so zip the logs soon after the problem if not crash related. Please don't attach game files.
