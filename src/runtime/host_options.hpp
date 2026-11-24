@@ -86,7 +86,8 @@ struct HostOptions {
     // through a trigger: with the game's fog they lie at or past the fog, with it pushed out or off a block of the city appears in one frame (NYC, 8 seconds from the start).
     // With draw_hidden_areas (set with the player's fog distance) the environment objects the boxes hid are drawn anyway (M3dKit::cull_objects_to_view, while the polygon
     // arena has room); `area_hidden` is each one's flag word as the boxes wrote it, so an object whose word another writer has changed since (a goal's crates and items share
-    // the bits) keeps the game's rule. Cleared at each level clean-up (CoreKit::init_cleanup).
+    // the bits) keeps the game's rule, and so does an object a box drawn tight round it hid (area_sized_box: Hangar's chopper debris, hidden until the chopper comes through
+    // the roof). Cleared at each level clean-up (CoreKit::init_cleanup).
     bool draw_hidden_areas = false;
     std::unordered_map<std::uint32_t, std::uint16_t> area_hidden;
     // The polygon arena (RenderKit::db_init): each of its two buffers is poly_buffer_scale times the game's size, so the far scenery the options above add does not reach
@@ -174,13 +175,25 @@ inline int poly_buffer_scale_for(const char* requested, bool beyond_retail) {
 // The bits of an object's flag word (+4) that hide it: 0x01 for the first skater's view, 0x40 for the second's (both in a one-player game).
 inline constexpr std::uint16_t kAreaHiddenBits = 0x41;
 
-// CoreKit::update_visibility_bounds has written `flags` to the environment object at `object`: remember it while it hides the object (HostOptions::draw_hidden_areas only).
-inline void note_area_visibility(std::uint32_t object, std::uint16_t flags) {
+// The same command (TRG 0x8d) also hides single objects until an event shows them: Hangar's chopper debris and roof pieces (boxes 166 and 372 units across) wait at the
+// start for the chopper to come through the roof, NYC's, Philadelphia's and the 34-unit cubes of Marseille, Venice and others hold one object each. Those boxes are drawn
+// tight round the object; an area's are the size of a room or a block. A box whose narrower side across the ground (x or z) is under kAreaBoxMinSide hides an object, and the
+// game's rule stays for it. Every level's boxes (2026-11): objects at most 373 across, areas at least 830 (Hangar's), nearly all over 1500.
+inline constexpr std::int32_t kAreaBoxMinSide = 512;
+inline bool area_sized_box(std::int32_t min_x, std::int32_t min_z, std::int32_t max_x, std::int32_t max_z) {
+    const std::int64_t x = static_cast<std::int64_t>(max_x) - min_x;
+    const std::int64_t z = static_cast<std::int64_t>(max_z) - min_z;
+    return x >= kAreaBoxMinSide && z >= kAreaBoxMinSide;
+}
+
+// CoreKit::update_visibility_bounds has written `flags` to the environment object at `object`: remember it while it hides the object (HostOptions::draw_hidden_areas only),
+// when the box that did is an area's (`area`: area_sized_box); a box round a single object makes it forgotten, so the game's rule decides.
+inline void note_area_visibility(std::uint32_t object, std::uint16_t flags, bool area = true) {
     HostOptions& o = host_options();
     if (!o.draw_hidden_areas) {
         return;
     }
-    if ((flags & kAreaHiddenBits) != 0) {
+    if (area && (flags & kAreaHiddenBits) != 0) {
         o.area_hidden[object] = static_cast<std::uint16_t>(flags & 0x7fff);
     } else {
         o.area_hidden.erase(object);

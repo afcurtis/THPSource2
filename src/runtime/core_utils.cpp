@@ -479,6 +479,8 @@ void CoreKit::update_visibility_bounds(Word low, Word high, Word show, Word insi
         return (x < min_x || x > max_x) && (z < min_z || z > max_z) && (y < min_y || y > max_y);
     };
     auto touch = [&](const RuntimeListObjectView& object) { object.set_visibility_flags(static_cast<std::uint16_t>((keep & object.visibility_flags()) | set_bits)); };
+    // host side only: a box round a single object (an event's, Hangar's chopper debris) is not an area's (HostOptions::draw_hidden_areas, area_sized_box; whole units)
+    const bool area_box = area_sized_box(min_x >> 12, min_z >> 12, max_x >> 12, max_z >> 12);
     for (Word at = global_word(m_, globals::kEnvironmentList); at != 0; at = next_object(m_, at)) {
         const RuntimeListObjectView object = object_at(m_, at);
         if (region_slot(m_, object.region()).region_type() == 0) {
@@ -486,7 +488,7 @@ void CoreKit::update_visibility_bounds(Word low, Word high, Word show, Word insi
         }
         if (inside_mode ? is_inside(object.position()) : is_outside(object.position())) {
             touch(object);
-            note_area_visibility(at, object.visibility_flags());   // host side only (HostOptions::draw_hidden_areas)
+            note_area_visibility(at, object.visibility_flags(), area_box);   // host side only (HostOptions::draw_hidden_areas)
         }
     }
     for (Word list : {globals::kPowerUpList, globals::kActiveList, globals::kGameList}) {

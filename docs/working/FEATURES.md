@@ -85,4 +85,5 @@ Read `docs/WORKING.md` first. Scripts named here are in `scripts/play/` (index: 
 | A standalone run that hits no FATAL prints nothing | normal | `build/m10e/spin.txt` (`session: N deliveries`) |
 | `draw: general polygon ... has no descriptor (skipped)` in `run.txt` | a textured 0xB0 polygon whose texture record has no descriptor (retail faults there) | expected; it is logged, not drawn |
 | A file opens from an ASCII path but not from `C:\Users\José\...` | a narrow-call path handed to a UTF-8 API | read it wide and convert (see above) |
+| With fog pushed out or off, an object that waits for an event is there from the start, with no collision (Hangar's chopper debris) | `draw_hidden_areas` drew what a TRG 0x8d box hid, and levels use the same box to hide single objects | only area-sized boxes count (`area_sized_box`: narrower ground side 512+; every level's object boxes are at most 373, areas at least 830); a new rule of this kind is checked against every level's boxes (`tony assets inspect-trg PATH --scripts`) |
 | The install stops half-way | the launcher is open and holds `Build\SDL3.dll` | close it, install again |

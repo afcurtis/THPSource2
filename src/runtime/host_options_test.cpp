@@ -85,6 +85,20 @@ int main() {
     CHECK(!rt::hidden_only_by_area(0x054ab750, 0x41, 0x01));               // an object the boxes never hid
     rt::note_area_visibility(0x054bf0d0, 0x00);                             // the boxes show it again: forgotten
     CHECK(rt::host_options().area_hidden.empty());
+    // a box round a single object (Hangar's chopper debris, hidden until the chopper comes through the roof) is not an area's: the game's rule stays
+    CHECK(!rt::area_sized_box(3230, -5336, 3500, -5170));                   // Hangar node 658/629: the debris, 270 x 166
+    CHECK(!rt::area_sized_box(2452, -8797, 2824, 1713));                    // Hangar node 497/498: a roof slab, 372 across, 10510 long
+    CHECK(!rt::area_sized_box(-69849, 17247, -69649, 17447));               // NYC node 784: 200 x 200
+    CHECK(rt::area_sized_box(1745, -9587, 2575, 3236));                     // Hangar node 618: the narrowest area, 830 across
+    CHECK(rt::area_sized_box(-60030, 17310, -42373, 34584));                // NYC node 682: a city block
+    CHECK(rt::area_sized_box(-2000000000, -2000000000, 2000000000, 2000000000));   // no overflow
+    rt::note_area_visibility(0x054c33ac, 0x41, false);                      // hidden by an object's box: not remembered
+    CHECK(rt::host_options().area_hidden.empty());
+    CHECK(!rt::hidden_only_by_area(0x054c33ac, 0x41, 0x01));
+    rt::note_area_visibility(0x054c33ac, 0x41);                             // an area's box hid it first, then an object's box hid it again: the game's rule
+    rt::note_area_visibility(0x054c33ac, 0x41, false);
+    CHECK(!rt::hidden_only_by_area(0x054c33ac, 0x41, 0x01));
+    CHECK(rt::host_options().area_hidden.empty());
     rt::host_options().draw_hidden_areas = false;
 
     // the polygon arena: retail's by default; 4x when an option draws beyond retail; OT_POLY_BUFFER overrides either way, held to 1..16; a bad value is as if unset
