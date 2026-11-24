@@ -89,6 +89,9 @@ The standalone's `FATAL` names it. A flat function needs no probe over a level.
 ## Lessons
 
 **Live versus replay (the main source of standalone failures)**
+- A named service that is really a virtual call (`<object>_v<slot>`, a probe stub on a fake vtable entry) must be listed in `kit_dll.cpp`
+  `kVirtualServices`: otherwise the resolver takes the stub's address from `kServices` and calls whatever lives there. `dialog_v1` called
+  Audio_OpenLevelVab, so the stat page's yes / no box never drew and the page looked stuck (6 f10; `tests/test_kit_hooks.py` guards `*_v<N>`).
 - A Kit that reads `s_.value(...)` after a real call is a live bug: live, the callee wrote memory itself and EAX is something else. Guard with
   `if (s_.live())` and read memory. `OT_SERVICE_AUDIT=1` prints every `RetailServices::value()` read live: a bug until proven otherwise.
 - Calls in the probe's form (a pointer-to-local passed as a value or not at all, the name as text, missing arguments) must be made in full live: put

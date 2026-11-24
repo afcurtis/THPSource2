@@ -166,3 +166,22 @@ def test_no_hook_of_the_manifest_sits_on_a_recorder_seam():
     from tony import hooks, kit_hooks
 
     assert kit_hooks.recorder_seam_errors(hooks.load_manifest()) == []
+
+
+def test_virtual_slot_services_are_routed_through_the_object_vtable():
+    # A probe names a virtual method `<object>_v<slot>` and stubs it at a fake vtable entry; kServices keeps that stub address, which is not the method.
+    # The standalone resolver must call such a name through the object's vtable (kit_dll.cpp kVirtualServices): `dialog_v1` once went to the fake
+    # entry 0x004ad180 (Audio_OpenLevelVab), so the stat page's yes / no box never drew and the page looked stuck.
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    generated = (root / "src/hooks/kits/standalone_kits_generated.cpp").read_text()
+    services = generated[generated.index("const ServiceAddress kServices[]"):]
+    services = services[:services.index("};")]
+    slot_named = set(re.findall(r'\{"(\w+_v\d+)", 0x', services))
+    resolver = (root / "src/hooks/kits/kit_dll.cpp").read_text()
+    table = resolver[resolver.index("kVirtualServices[] = {"):]
+    routed = set(re.findall(r'\{"(\w+)", \d+\}', table[:table.index("};")]))
+    assert "dialog_v1" in routed and "dialog_v2" in routed
+    assert slot_named <= routed, sorted(slot_named - routed)

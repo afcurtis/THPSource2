@@ -502,6 +502,10 @@ private:
             {"effect_bind", 1},    {"effect_unbind", 2},  {"effect_init", 3},      {"effect_update", 4},      {"effect_finished", 7},
             // 10g s23: the font's per-glyph effect methods (frontend_text.hpp: +0x14 position, +0x18 colour, +0x20 glyph done)
             {"font_effect_position", 5}, {"font_effect_colour", 6}, {"font_effect_glyph", 8},
+            // the yes / no box (ConfirmBox, vtable 0x00518784: slot 1 ConfirmBox_Draw 0x004262c0, slot 2 ConfirmBox_Update 0x00426300) of the stat page and the
+            // skate shop. The probes stubbed slot 1 at 0x004ad180 (Audio_OpenLevelVab), the address kServices took: the box never drew, and every frame it was
+            // up asked for a sound bank ("ATTEMPT TO OPEN VAB"), so a "spend the points?" box nobody could see swallowed the page's input
+            {"dialog_v1", 1},      {"dialog_v2", 2},
         };
         for (const auto& [service, slot] : kVirtualServices) {
             if (name == service && !args.empty()) {
