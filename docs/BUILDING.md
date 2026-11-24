@@ -14,7 +14,7 @@ The original 2000 release works too, with its unprotected `THawk2.exe` (SHA-256 
 
 ## 1. What you need
 
-The Windows program is cross-compiled with a pinned clang (llvm-mingw), so the *build* runs on Linux; on Windows, use **WSL2 with Ubuntu 22.04 or later**. The *game* runs on Windows 10/11, x86-64 (a 32-bit build exists too: `--arch 32` below).
+The Windows program is cross-compiled with a pinned clang (llvm-mingw), so the *build* runs on Linux; on Windows, use **WSL2 with Ubuntu 22.04 or later**. The *game* runs on Windows 10/11, x86-64 (a 32-bit build exists too: `--arch 32` below). To build and run the game natively on x86-64 Linux instead, see [LINUX.md](LINUX.md).
 
 ```bash
 sudo apt-get install -y git python3 python3-venv cmake ninja-build make xz-utils zlib1g-dev curl

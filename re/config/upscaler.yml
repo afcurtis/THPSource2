@@ -30,6 +30,17 @@ tool:
   source: https://github.com/upscayl/upscayl-ncnn
   usage: "-i IN_DIR -o OUT_DIR -m MODELS_DIR -n NAME -s 4 -f png (a whole folder in one process; a fork of xinntao's Real-ESRGAN-ncnn-vulkan)"
 
+# The same release's Linux build, for the native Linux launcher (docs/LINUX.md); measured on 2026-11-24 from the URL below.
+tool_linux:
+  name: upscayl-bin
+  version: "20251207-174704"
+  url: https://github.com/upscayl/upscayl-ncnn/releases/download/20251207-174704/upscayl-bin-20251207-174704-linux.zip
+  size: 3952825
+  sha256: a9fab3c770b62f2b7a35d8d6d61eb4e8b3aef79128b665c919d080b85a2292f2
+  member: upscayl-bin-20251207-174704-linux/upscayl-bin   # save as Data/Upscaler/upscayl-bin; LICENSE beside it
+  licence: AGPL-3.0
+  source: https://github.com/upscayl/upscayl-ncnn
+
 fallback_tool:
   name: realesrgan-ncnn-vulkan
   url: https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip

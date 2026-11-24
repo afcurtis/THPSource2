@@ -95,7 +95,7 @@ has the details.
 - **Weather and time of day**
 - **More levels**, and **custom levels**
 - **Later-series mechanics**, such as keeping a combo going through a revert
-- **Linux and Android builds**
+- **Android build** (a native x86-64 Linux build is in progress: [docs/LINUX.md](docs/LINUX.md))
 - **Tougher competitions**
 - **An in-game mod menu**
 
@@ -109,7 +109,7 @@ up to 100.
 ## For developers
 
 THPSource2 is the game's code reconstructed function by function from the retail executable, on a portable platform layer (SDL3). The
-build runs on Linux or WSL2. Start with [docs/BUILDING.md](docs/BUILDING.md), [docs/DEVELOPING.md](docs/DEVELOPING.md) and
+build runs on Linux or WSL2 (a native Linux build of the game: [docs/LINUX.md](docs/LINUX.md)). Start with [docs/BUILDING.md](docs/BUILDING.md), [docs/DEVELOPING.md](docs/DEVELOPING.md) and
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Credits

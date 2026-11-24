@@ -114,7 +114,7 @@ bool mapped(std::uint32_t address, std::size_t size, bool write) {
 #else
     // Linux: the mappings of /proc/self/maps (ot_os.hpp); the readable-and-writable mapping the access starts in is remembered as above
     std::uintptr_t span_begin = 0, span_end = 0;
-    if (!os::accessible(reinterpret_cast<const void*>(static_cast<std::uintptr_t>(at)), static_cast<std::size_t>(end - at), write, &span_begin, &span_end)) {
+    if (!os::accessible(reinterpret_cast<const void*>(static_cast<std::uintptr_t>(at)), static_cast<std::size_t>(end - at), write, &span_begin, &span_end)) {   // host address, not a guest word
         return false;
     }
 #ifdef OPENTONY_STANDALONE

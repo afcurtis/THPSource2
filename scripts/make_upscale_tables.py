@@ -62,10 +62,17 @@ def render() -> str:
                 c(run["unlock"]) if "unlock" in run else "nullptr", "true" if session and run.get("undrawn", "2d") == "2d" else "false",
             ]) + "},")
     lines += ["};", ""]
-    tool = pins["tool"]
+    def download(tool: dict) -> str:
+        return f"constexpr Download kTool = {{{c(tool['name'])}, {c(tool['url'])}, {tool['size']}u, {c(tool['sha256'])}, {c(tool['member'])}, {c(tool['licence'])}, {c(tool['source'])}}};"
+
     lines += [
         "// the tool: a zip whose `member` is the program",
-        f"constexpr Download kTool = {{{c(tool['name'])}, {c(tool['url'])}, {tool['size']}u, {c(tool['sha256'])}, {c(tool['member'])}, {c(tool['licence'])}, {c(tool['source'])}}};",
+        "#ifndef _WIN32",
+        "// the Linux build of the same release (docs/LINUX.md)",
+        download(pins["tool_linux"]),
+        "#else",
+        download(pins["tool"]),
+        "#endif",
         "",
         "// every model the pins name: save_as, licence, author, the .param and the .bin",
         "constexpr ModelPin kModels[] = {",

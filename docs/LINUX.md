@@ -5,6 +5,14 @@ The standalone game built as Linux programs, from the same sources as the Window
 
 ## Build
 
+What you need: a distribution that packages SDL3 (tested on Ubuntu 26.04; Ubuntu 25.04 or later, Debian 13 and current Fedora and Arch have it), and
+
+```bash
+sudo apt-get install -y git cmake ninja-build g++ zlib1g-dev curl libsdl3-0 libavcodec61 libavformat61   # or your release's libavcodec/libavformat
+```
+
+The `libav*` major version only has to match the headers you build against (the script below takes them from the same release).
+
 ```bash
 scripts/linux/fetch-headers.sh        # SDL3 and FFmpeg headers into .tools/linux/sysroot (or: sudo apt-get install libsdl3-dev libavcodec-dev libavformat-dev)
 scripts/linux/fetch-imgui.sh          # the pinned Dear ImGui source, for the launcher
