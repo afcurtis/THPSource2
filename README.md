@@ -1,6 +1,6 @@
 # THPSource2
 
-[![Latest tag](https://img.shields.io/github/v/tag/afcurtis/THPSource2)](https://github.com/afcurtis/THPSource2/tags)
+[![Latest release](https://badgen.net/github/release/afcurtis/THPSource2)](https://github.com/afcurtis/THPSource2/releases/latest)
 [![Licence: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 ![Platform: Windows 10/11 64-bit](https://img.shields.io/badge/platform-Windows%2010%2F11%20(64--bit)-blue)
 
