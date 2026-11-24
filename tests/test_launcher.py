@@ -102,7 +102,15 @@ def test_launcher_links_and_update_check_agree_with_the_repository() -> None:
     task = (ROOT / "src/launcher/thpsource2/app/update_task.cpp").read_text()
     for flag in ('"--head"', '"--proto"', '"=https"', '"--max-time"', '"%{redirect_url}"', '"/releases/latest"'):
         assert flag in task, flag
-    assert '"--location"' not in task and '"-L"' not in task
+    check, install = task.split("// ---- the install ----")
+    assert '"--location"' not in check and '"-L"' not in check   # the check reads the redirect, it never follows it
+    # the install follows redirects (a release asset is served from another host) but only over https, builds its addresses from the repository and the tag, and
+    # installs nothing before the package's size, its SHA-256 against the release's checksum file and its contents have been checked
+    for needed in ('"--location"', '"--proto-redir"', '"=https"', "update::asset_url(repository_url, release.tag", "checksum_from_file", "sha256_file(zip) != expected",
+                   "release.zip_size", '"THPSource2.exe"', "start_batch"):
+        assert needed in install, needed
+    assert install.index("sha256_file(zip) != expected") < install.index('"-xf"') < install.index("update::apply_script") < install.index("State::Ready")
+    assert "browser_download_url" not in task   # an address from the API's answer is never followed
 
 
 def test_release_reports_what_is_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

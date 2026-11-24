@@ -24,6 +24,12 @@ long run_isolated(const std::filesystem::path& program, const std::vector<std::s
                   const std::vector<std::pair<std::string, std::string>>& environment, const std::filesystem::path& output, const std::function<bool()>& keep_going,
                   std::string& error);
 
+// Runs the batch file `script` (cmd.exe /c, a hidden console: the tools the script runs need one) with `argument`, and does not wait: it outlives this process. False with `error` when it did not start
+bool start_batch(const std::filesystem::path& script, const std::string& argument, std::string& error);
+
+// This process's id (the update script waits for it to close)
+unsigned long current_process_id();
+
 void open_in_explorer(const std::filesystem::path& path);
 // Explorer on the folder of `file`, with the file selected (a zip to drag into a web page: no hunting for it)
 void reveal_in_explorer(const std::filesystem::path& file);

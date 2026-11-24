@@ -210,13 +210,29 @@ for the game and comes back when it ends (the old `[Launcher] CloseOnPlay` is ig
   `--no-update-check` or `--screenshot`) a detached thread runs Windows' `curl.exe --silent --head --proto =https --ssl-no-revoke --connect-timeout 5 --max-time 10
   --output NUL --write-out %{redirect_url} <project page>/releases/latest`: a HEAD request, not followed. GitHub answers 302 with the newest release's page as the address
   (`<project page>/releases/tag/v0.8`); a repository with no release answers `<project page>/releases`, a missing one 404 (an empty address). `tag_from_redirect` accepts only
-  an address under the project page whose tag is a plain version (`v` and one to four numbers; "v0.8-rc1" is not), `is_newer` compares it with `kVersion` number by number (0.10 is
-  after 0.9). The result is `Newer`, `Current`, `NoRelease` or `Failed` (offline, no `curl.exe`: silent, with no banner). `Newer` shows a banner above the page (Download opens
-  `kLatestReleaseUrl`, Dismiss stores the tag in `SkippedUpdate` so the next release shows its own); the System page's **Check now** asks at once, also with the check switched off.
-  The launcher never opens an address that came over the network, and downloads and installs nothing: the update is the player unzipping the new release over the install
-  folder (`Build\`, `Licenses\`, the launcher and `README.md` are in the zip; the player's folders are empty ones there, which a merge leaves alone). Reset all keeps the check's
-  setting. A release is found by the tag, so `kVersion` and the release's tag must agree ("Releasing", docs/BUILDING.md). `--page update` shows the banner and the section for a
-  made-up newer release (no request).
+  an address under the project page whose tag is a plain version (`v` and one to four numbers; "v0.8-rc1" is not), `is_newer` compares it with the running version number by
+  number (0.10 is after 0.9). The result is `Newer`, `Current`, `NoRelease` or `Failed` (offline, no `curl.exe`: silent, with no banner). A newer release asks the API once
+  more (`api.github.com/repos/<owner>/<repo>/releases/tags/<tag>`, unauthenticated: 60 an hour for an address, and only a newer release asks) for the release's text and the
+  package's size (`parse_release`; `plain_notes` takes the Markdown marks out); if that fails the banner just has no notes. `Newer` shows a banner above the page: the notes
+  ("What's new in v0.8", a box no taller than 150 points), **Update now**, **Release page** (`kLatestReleaseUrl`) and **Dismiss** (stores the tag in `SkippedUpdate` so the next
+  release shows its own); the System page has the same Update now and Release page beside **Check now**, which asks at once, also with the check switched off.
+  **Update now** (`UpdateInstall`, only for the launcher of an install folder: `THPSource2.exe` beside `Build\`; a launcher run from a build tree only offers the release page)
+  downloads `<project page>/releases/download/<tag>/thpsource2-win64.zip` and its `.sha256` into `Data\Update\` (`curl --location --fail --proto =https --proto-redir =https`;
+  a bar from the file's growing size, Cancel stops curl), then refuses the package unless its size is the API's and its SHA-256 is the `.sha256` file's, unpacks it with `tar.exe`,
+  and refuses it unless it holds `THPSource2.exe`, `Build\opentony.exe` and `Build\SDL3.dll`. Only then does the banner say it is ready: **Restart and install** saves, starts
+  `Data\Update\apply.cmd <pid>` (`update::apply_script`, `start_batch`: `cmd.exe /d /c` with a hidden console; a `DETACHED_PROCESS` start left the script hanging in its
+  first `tasklist`) and closes. The script waits for that process to end (60 s at most), mirrors `Build\` and `Licenses\` from the unpacked release (robocopy `/MIR`: the release
+  owns them, as `tony release install` does), copies `README.md` and `THPSource2.exe`, deletes the staging and starts the launcher again. `Config`, `Data`, `Saves`, `Mods`,
+  `Screenshots` and `Logs` are never named in it. It logs to `Logs\update.txt`; on a failure it writes `Data\Update\failed.txt` and starts whatever launcher is there, which says
+  "The last update did not finish" until OK is pressed (the install may be a mix of two versions: extract the release zip over it). A launcher that starts without a failure note
+  deletes what an earlier update left in `Data\Update\`. The addresses are built from the project page and a tag that is a version, never taken from an answer; the notes are
+  drawn as text and nothing in them is opened. Reset all keeps the check's setting. A release is found by the tag, so `kVersion` and the release's tag must agree, and the zip
+  and `.sha256` must be named as `tony release package` names them ("Releasing", docs/BUILDING.md). `--page update` shows the banner and the section for a made-up newer release
+  (no request).
+  **Testing an update** (nothing newer than the newest release exists to test with): `THPSource2.exe --pretend-version v0.1` compares the newest release with v0.1 instead of
+  the launcher's own version, so the real newest release counts as an update and the whole path (API, download, checks, restart) runs against GitHub; `--update-now` then
+  does the two clicks itself. Do it on a throwaway install (`tony release install --to DIR`), never the one you play: the update replaces `THPSource2.exe` and `Build\` with the
+  published ones. `Logs\update.txt` and the files' hashes against the zip's say what happened.
 - **Debug mode** (System > Debug logging, `[Launcher] DebugMode`, off by default; the launcher sets `OPENTONY_DEBUG=1`, `opentony.exe` reads it). On: every run is kept in `Logs\runs` (the newest 100 normal and 200 crashed
   folders) and listed in `sessions.txt`, `crashes.txt` gets the output of every stopped run, `notes.txt` gets a line at each start and end, and the game runs with `OT_TEXTURE_DUMP=Data\TextureDump`
   (every texture it draws, and the census) and `OT_TEXTURE_PACK_LOG=1` (run.txt: which textures a pack replaced or missed). Off: only the active session is logged: `Logs\runs` keeps the session, the one

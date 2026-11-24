@@ -84,7 +84,8 @@ The launcher's update notice (docs/LAUNCHER.md, "Updates") finds the newest rele
    gh release create v0.8 build/release/thpsource2-win64.zip build/release/thpsource2-win64.zip.sha256 --title "THPSource2 v0.8" --notes-file build/release/RELEASE_NOTES.md
    ```
 
-5. Check what a launcher will see: `curl -sI -o NUL -w "%{redirect_url}" https://github.com/afcurtis/THPSource2/releases/latest` (on WSL or Linux, `-o /dev/null`) prints
+5. Check what a launcher will see (it installs `thpsource2-win64.zip` after checking it against `thpsource2-win64.zip.sha256`, so both files must be on the release, under
+   those names): `curl -sI -o NUL -w "%{redirect_url}" https://github.com/afcurtis/THPSource2/releases/latest` (on WSL or Linux, `-o /dev/null`) prints
    `https://github.com/afcurtis/THPSource2/releases/tag/v0.8`. Launchers older than v0.8 show the notice from their next start. Before the first release it prints
    `.../releases`, and the launcher says "No published release found".
 

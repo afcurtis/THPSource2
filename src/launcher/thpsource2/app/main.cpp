@@ -179,6 +179,8 @@ public:
     float scale = 1.0f;            // the display's content scale: every size in the layout is multiplied by it
     SDL_Texture* logo = nullptr;   // the header's picture (resource 2), or none
     bool update_check_allowed = true;   // false for --no-update-check and a --screenshot: the launcher makes no web request
+    std::string running_version = kVersion;   // the version the update check compares with: --pretend-version sets another, to test an update (docs/LAUNCHER.md, "Updates")
+    bool update_now = false;            // --update-now: install a newer release at once, no clicks (a test of the whole update)
 
     void init(const fs::path& install_dir) {
         where = opentony::layout::Layout{install_dir};
@@ -200,7 +202,14 @@ public:
         screen = check.usable() && page != "setup" ? Screen::Main : Screen::Setup;
         destination = utf8_of(where.game());
         last_run = last_session_line(where.sessions());
-        if (settings.check_updates && update_check_allowed) {
+        if (update_check_allowed) {
+            std::error_code ec;
+            update_failed_notice = fs::exists(UpdateInstall::staging(where.root) / "failed.txt", ec);
+            if (!update_failed_notice) {
+                UpdateInstall::discard(where.root);   // what a finished update, a cancelled one or a crash left behind
+            }
+        }
+        if ((settings.check_updates || update_now) && update_check_allowed) {
             start_update_check();
         }
     }
@@ -376,6 +385,7 @@ public:
     static constexpr float kMaxContentWidth = 1180.0f;   // the widest the page's column grows (before the display's scale)
 
     bool light() const { return theme_light; }
+    void update_tick() { auto_update_step(); }   // once a frame, on every screen (--update-now)
     bool game_running() const { return task.kind == Task::Kind::Play && task.running && task.game_started; }
 
 private:
@@ -481,6 +491,9 @@ private:
         fs::path folder, zip;
     } crash;
     std::shared_ptr<UpdateCheck> update;   // the update notice's request (start_update_check): none until one has been made
+    std::shared_ptr<UpdateInstall> install;   // the download of a newer release (start_update_install): none until the player asks for it
+    bool update_failed_notice = false;     // the updater script of the last run left Data\Update\failed.txt: the notice says so until it is dismissed
+    std::string update_apply_error;        // the updater script could not be started
 
     // ------------------------------------------------------------ state
 
@@ -1177,7 +1190,7 @@ private:
         ImGui::PopFont();
         ImGui::SameLine();
         ImGui::SetCursorPosY(top + (size - ImGui::GetFontSize()) * 0.5f + px(4.0f));
-        ImGui::TextColored(kDim, "%s", kVersion);
+        ImGui::TextColored(kDim, "%s", running_version.c_str());
         header_home_min = origin;
         header_home_max = ImVec2(ImGui::GetItemRectMax().x, origin.y + size);
         if (home_hot) {
@@ -1456,17 +1469,91 @@ private:
         if (update && update->state() == UpdateCheck::State::Checking) {
             return;   // one request at a time
         }
-        update = UpdateCheck::start(kRepoUrl, kVersion);
+        update = UpdateCheck::start(kRepoUrl, running_version);
     }
 
-    // A slim notice above the page when the newest release is newer than this launcher and the player has not dismissed that release. It only points at the release
-    // page: nothing is downloaded or installed from here. Dismiss is remembered (`[Launcher] SkippedUpdate`), so the next release shows its own notice.
+    // This launcher is the one of an install folder (THPSource2.exe beside Build\), so a newer release can be put over it. A launcher run from a build tree only
+    // points at the release page
+    bool can_self_update() const {
+        std::error_code ec;
+        return fs::equivalent(executable_directory(), where.root, ec) && fs::is_regular_file(where.root / "THPSource2.exe", ec) && fs::is_directory(where.build(), ec);
+    }
+
+    void start_update_install() {
+        if (!update || update->state() != UpdateCheck::State::Newer || (install && install->state() != UpdateInstall::State::Failed)) {
+            return;
+        }
+        const std::optional<update::Release> release = update->release();
+        install = UpdateInstall::start(kRepoUrl, release ? *release : update::Release{update->latest(), {}, 0}, where.root);
+    }
+
+    // --update-now: the clicks of a test run, Update now and then Restart and install
+    void auto_update_step() {
+        if (!update_now || !update) {
+            return;
+        }
+        if (update->state() == UpdateCheck::State::Newer && !install) {
+            start_update_install();
+        } else if (install && install->state() == UpdateInstall::State::Ready) {
+            update_now = false;
+            apply_update();
+        } else if (install && install->state() == UpdateInstall::State::Failed) {
+            std::fprintf(stderr, "update: %s\n", install->error().c_str());
+            update_now = false;
+        } else if (update->state() == UpdateCheck::State::Current || update->state() == UpdateCheck::State::Failed || update->state() == UpdateCheck::State::NoRelease) {
+            update_now = false;
+        }
+    }
+
+    void apply_update() {
+        if (!install) {
+            return;
+        }
+        save(true);   // settings are written at once anyway; the launcher is about to close
+        if (install->apply(update_apply_error)) {
+            quit = true;   // the script waits for this process to end, then replaces the files and starts the launcher again
+        }
+    }
+
+    void release_notes(const update::Release& release) {
+        if (release.notes.empty()) {
+            return;
+        }
+        ImGui::Spacing();
+        ImGui::TextColored(kDim, "What's new in %s", release.tag.c_str());
+        const ImGuiStyle& style = ImGui::GetStyle();
+        const float text_height = ImGui::CalcTextSize(release.notes.c_str(), nullptr, false, ImGui::GetContentRegionAvail().x - 2.0f * style.WindowPadding.x).y;
+        ImGui::BeginChild("##notes", ImVec2(0, std::min(px(150.0f), text_height + 2.0f * style.WindowPadding.y + 2.0f)), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+        ImGui::TextWrapped("%s", release.notes.c_str());
+        ImGui::EndChild();
+    }
+
+    // A slim notice above the page when the newest release is newer than this launcher and the player has not dismissed that release: what is new in it, and Update
+    // now, which downloads it, checks it, and on Restart and install closes the launcher, puts the files over this folder and starts it again (update::apply_script).
+    // Dismiss is remembered (`[Launcher] SkippedUpdate`), so the next release shows its own notice. Also shows, until dismissed, that the last update did not finish.
     void update_banner() {
+        if (update_failed_notice) {
+            ImGui::PushStyleColor(ImGuiCol_Border, kBad);
+            ImGui::BeginChild("##updatefailed", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextColored(kBad, "The last update did not finish.");
+            ImGui::SameLine();
+            ImGui::TextColored(kDim, "Logs\\update.txt says why. Your settings, saves and game files were not touched.");
+            ImGui::SameLine(0.0f, ImGui::GetFontSize());
+            if (button("OK##updatefailed", "Hides this message.")) {
+                std::error_code ec;
+                fs::remove(UpdateInstall::staging(where.root) / "failed.txt", ec);
+                UpdateInstall::discard(where.root);
+                update_failed_notice = false;
+            }
+            ImGui::EndChild();
+            ImGui::PopStyleColor();
+        }
         if (!settings.check_updates || !update || update->state() != UpdateCheck::State::Newer) {
             return;
         }
         const std::string latest = update->latest();
-        if (latest == settings.skipped_update) {
+        if (latest == settings.skipped_update && !install) {
             return;
         }
         ImGui::PushStyleColor(ImGuiCol_Border, kAccent);
@@ -1474,16 +1561,69 @@ private:
         ImGui::AlignTextToFramePadding();
         ImGui::TextColored(kAccent, "THPSource2 %s is available", latest.c_str());
         ImGui::SameLine();
-        ImGui::TextColored(kDim, "(you have %s)", kVersion);
-        ImGui::SameLine(0.0f, ImGui::GetFontSize());
-        if (button("Download", "Opens the release page on GitHub in your browser.")) {
-            SDL_OpenURL(kLatestReleaseUrl);
+        ImGui::TextColored(kDim, "(you have %s)", running_version.c_str());
+        const std::optional<update::Release> release = update->release();
+        const UpdateInstall::State phase = install ? install->state() : UpdateInstall::State::Failed;
+        if (!install || phase == UpdateInstall::State::Failed) {
+            ImGui::SameLine(0.0f, ImGui::GetFontSize());
+            if (can_self_update()) {
+                if (button(install ? "Try again" : "Update now", "Downloads this release and checks it. Nothing changes until you choose Restart and install.")) {
+                    start_update_install();
+                }
+                ImGui::SameLine();
+            }
+            if (button("Release page", "Opens the release page on GitHub in your browser.")) {
+                SDL_OpenURL(kLatestReleaseUrl);
+            }
+            ImGui::SameLine();
+            if (button(install ? "Close##update" : "Dismiss", install ? nullptr : "Hides this notice until a newer release comes out.")) {
+                if (install) {
+                    install.reset();
+                    UpdateInstall::discard(where.root);
+                }
+                settings.skipped_update = latest;   // saved at once, as every change is
+            }
+            if (install) {
+                ImGui::TextColored(kBad, "%s", install->error().c_str());
+            } else if (!can_self_update()) {
+                dim_wrapped("This launcher is not in an install folder, so it cannot update itself: download the release and extract it over the folder.");
+            }
+        } else if (phase == UpdateInstall::State::Downloading) {
+            const std::uint64_t done = install->done(), all = install->total();
+            char overlay[64] = "Downloading...";
+            if (all != 0) {
+                std::snprintf(overlay, sizeof overlay, "%.1f of %.1f MB", static_cast<double>(done) / 1048576.0, static_cast<double>(all) / 1048576.0);
+            } else if (done != 0) {
+                std::snprintf(overlay, sizeof overlay, "%.1f MB", static_cast<double>(done) / 1048576.0);
+            }
+            ImGui::SetNextItemWidth(px(360.0f));
+            ImGui::ProgressBar(all != 0 ? static_cast<float>(std::min(1.0, static_cast<double>(done) / static_cast<double>(all))) : -1.0f * static_cast<float>(ImGui::GetTime()),
+                               ImVec2(px(360.0f), 0), overlay);
+            ImGui::SameLine();
+            if (button("Cancel##update", "Stops the download and deletes it.")) {
+                install->cancel();
+            }
+        } else if (phase == UpdateInstall::State::Unpacking) {
+            ImGui::TextColored(kDim, "Checked. Unpacking...");
+        } else {
+            ImGui::TextColored(kGood, "%s is downloaded and checked.", latest.c_str());
+            ImGui::SameLine();
+            ImGui::TextColored(kDim, "Restart and install closes the launcher, installs it and opens it again. Settings, saves and game files are kept.");
+            if (button("Restart and install", "Closes the launcher, replaces the program files and opens it again.")) {
+                apply_update();
+            }
+            ImGui::SameLine();
+            if (button("Not now##update", "Deletes the download.")) {
+                install.reset();
+                UpdateInstall::discard(where.root);
+            }
+            if (!update_apply_error.empty()) {
+                ImGui::TextColored(kBad, "%s", update_apply_error.c_str());
+            }
         }
-        ImGui::SameLine();
-        if (button("Dismiss", "Hides this notice until a newer release comes out.")) {
-            settings.skipped_update = latest;   // saved at once, as every change is
+        if (release) {
+            release_notes(*release);
         }
-        dim_wrapped("To update, close the launcher, extract the new zip over this folder and start it again. Your settings, saves and game files are kept.");
         ImGui::EndChild();
         ImGui::PopStyleColor();
     }
@@ -1500,10 +1640,10 @@ private:
             ImGui::TextColored(kDim, "Checking...");
             break;
         case State::Newer:
-            ImGui::TextColored(kAccent, "%s is available (you have %s)", update->latest().c_str(), kVersion);
+            ImGui::TextColored(kAccent, "%s is available (you have %s)", update->latest().c_str(), running_version.c_str());
             break;
         case State::Current:
-            ImGui::TextColored(kGood, "You have the latest version (%s)", kVersion);
+            ImGui::TextColored(kGood, "You have the latest version (%s)", running_version.c_str());
             break;
         case State::NoRelease:
             ImGui::TextColored(kDim, "No published release found");
@@ -1543,7 +1683,8 @@ private:
             page = "system";
             reset_dialog_request = true;
         } else if (page == "update") {   // --page update: the update notice, as for a newer release (no web request; the screenshot mode of the tests)
-            update = UpdateCheck::answered(UpdateCheck::State::Newer, "v9.9");
+            update = UpdateCheck::answered(UpdateCheck::State::Newer, "v9.9",
+                                           update::Release{"v9.9", "Highlights\n\n- A made-up release for the screenshot, so the notice can be seen.\n- Its notes are the release text from GitHub, in plain words.", 0});
             page = "system";   // the banner above, and the Updates section below it
         } else if (page == "crash") {   // --page crash: the crash panel, as after a crashed run with no log folder left (the screenshot mode of the tests)
             note_crash("2026-01-01 12:00:00 | CRASH (3221225477) | played 12 s | folder runs\\2026-01-01_12-00-00_CRASH-3221225477 | build 2026-01-01 | "
@@ -3394,8 +3535,7 @@ private:
 
         section("Updates");
         if (check_row("Check for updates",
-                      "When the launcher opens, it asks GitHub for the newest release: one request to github.com that shows your IP address and nothing else. "
-                      "A newer release shows a notice with a link to its page. Nothing is downloaded or installed for you.",
+                      "Checks GitHub for the latest release when the launcher opens.",
                       settings.check_updates) &&
             settings.check_updates) {
             start_update_check();
@@ -3412,7 +3552,14 @@ private:
         update_status();
         if (update && update->state() == UpdateCheck::State::Newer) {
             ImGui::SameLine();
-            if (button("Download##update", "Opens the release page on GitHub in your browser.")) {
+            if (can_self_update() && !install) {
+                if (button("Update now##system", "Downloads this release and checks it. Nothing changes until you choose Restart and install.")) {
+                    start_update_install();
+                    settings.skipped_update.clear();   // the notice above shows the progress
+                }
+                ImGui::SameLine();
+            }
+            if (button("Release page##system", "Opens the release page on GitHub in your browser.")) {
                 SDL_OpenURL(kLatestReleaseUrl);
             }
         }
@@ -3433,7 +3580,7 @@ private:
         reset_all_popup();
 
         section("About");
-        ImGui::Text("THPSource2 %s", kVersion);
+        ImGui::Text("THPSource2 %s", running_version.c_str());
         dim_wrapped("A way to play Tony Hawk's Pro Skater 2 on a modern PC: a decompilation, the game's code rebuilt from the original by reverse engineering, so it "
                     "can be fixed and improved while still playing like the real thing. You bring your own copy of the game; none of its files come with this. THPSource2 "
                     "is a fan project, not affiliated with or endorsed by Activision or Neversoft.");
@@ -3853,6 +4000,8 @@ int main(int argc, char** argv) {
     float hover_x = -1.0f, hover_y = -1.0f;   // --hover X,Y: the pointer is put there (window pixels) for a --screenshot, so a tooltip can be checked
     bool play = false;
     bool no_update_check = false;   // --no-update-check: no web request at start (a --screenshot makes none either)
+    std::string pretend_version;    // --pretend-version v0.1: the update check compares the newest release with this instead of the launcher's own version (a test of the update)
+    bool update_now = false;        // --update-now: with a newer release, download it and restart into it without a click (a test of the update)
     for (int k = 1; k < argc; ++k) {
         const std::string argument = argv[k];
         if (argument == "--page" && k + 1 < argc) {
@@ -3867,6 +4016,10 @@ int main(int argc, char** argv) {
             play = true;
         } else if (argument == "--no-update-check") {
             no_update_check = true;
+        } else if (argument == "--pretend-version" && k + 1 < argc) {
+            pretend_version = argv[++k];
+        } else if (argument == "--update-now") {
+            update_now = true;
         }
     }
     // the install folder is the launcher's own; SDL3.dll is in Build\ (delay-loaded: nothing of SDL runs before this)
@@ -3937,6 +4090,10 @@ int main(int argc, char** argv) {
     app.page = page;
     app.play_requested = play;
     app.update_check_allowed = !no_update_check && screenshot.empty();
+    if (!pretend_version.empty() && update::parse_version(pretend_version)) {
+        app.running_version = pretend_version;
+    }
+    app.update_now = update_now && app.update_check_allowed;
     app.init(install.root);
 
     bool hidden = false;
@@ -3970,6 +4127,7 @@ int main(int argc, char** argv) {
             SDL_Delay(50);
             continue;
         }
+        app.update_tick();
         ImGui_ImplSDLRenderer3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         if (hover_x >= 0.0f) {

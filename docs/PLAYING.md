@@ -92,14 +92,14 @@ songs as well as your own.
 
 ## Updating
 
-When it opens, the launcher asks GitHub whether a newer release exists (System > Updates; **Check now** asks at once) and, if there is one, shows a notice with a
-link to its page. **Dismiss** hides the notice until a newer release comes out. To update, close the launcher, unzip the new release and copy everything in its
-folder over this one, replacing files when asked. `Build\`, `Licenses\`, `README.md` and `THPSource2.exe` are replaced; `Config\`, `Data\`, `Saves\`, `Mods\`,
-`Screenshots\` and `Logs\` are not in the zip, so your settings, saves, imported game files and screenshots are kept.
+When it opens, the launcher checks GitHub for the latest release (System > Updates; **Check now** checks at once). If there is a newer one, a notice at the top shows what
+is new in it, with three buttons: **Update now** downloads the release and checks it (nothing changes yet), then **Restart and install** closes the launcher, puts the new
+files over this folder and opens it again; **Release page** opens the release on GitHub; **Dismiss** hides the notice until a newer release comes out. `Config\`, `Data\`,
+`Saves\`, `Mods\`, `Screenshots\` and `Logs\` are not touched, so your settings, saves, imported game files and screenshots are kept. `Logs\update.txt` says what the
+update did. To update by hand instead, close the launcher, unzip the new release and copy everything in its folder over this one, replacing files when asked.
 
-The check is one request to github.com (`<project page>/releases/latest`, with Windows' own `curl.exe`): it shows your IP address and nothing else. Nothing is
-downloaded or installed for you, and the launcher opens only its own project page. Untick **Check for updates** and it never touches the network on its own;
-`--no-update-check` on the command line skips it for one start.
+The check is two requests to github.com (the release's page, and its notes) made with Windows' own `curl.exe`; they show your IP address and nothing else. Untick **Check
+for updates** and the launcher never touches the network on its own; `--no-update-check` on the command line skips it for one start.
 
 ## Reporting a problem
 

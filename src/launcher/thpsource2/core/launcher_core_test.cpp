@@ -1548,6 +1548,47 @@ void test_update_check() {
     CHECK(!up::tag_from_redirect(repo + "/releases/tag/v0.8", ""));
 }
 
+
+// The release the update installs: the GitHub API's answer, the notes made plain, the checksum file, the addresses and the script
+void test_update_release() {
+    namespace up = thpsource2::update;
+    const std::string repo = "https://github.com/afcurtis/THPSource2";
+    const std::string json =
+        R"({"url":"https://api.github.com/repos/afcurtis/THPSource2/releases/1","tag_name":"v0.8","draft":false,"author":{"login":"afcurtis","body":"not this"},)"
+        R"("body":"## What's new\r\n\r\n* **Faster** menus — see [the README](https://example.com/x#y)\r\n* `OT_X` is gone 😀\r\n\r\n\r\n\r\nThanks é","assets":[)"
+        R"({"name":"thpsource2-win64.zip.sha256","size":87},{"name":"thpsource2-win64.zip","size":8156075,"browser_download_url":"https://evil.example/x.zip"}]})";
+    const std::optional<up::Release> release = up::parse_release(json, "v0.8");
+    CHECK(release && release->tag == "v0.8" && release->zip_size == 8156075);
+    CHECK(release && release->notes == "What's new\n\n- Faster menus - see the README\n- OT_X is gone\n\nThanks \xc3\xa9");
+    CHECK(!up::parse_release(json, "v0.9") && !up::parse_release("", "v0.8") && !up::parse_release("[]", "v0.8") && !up::parse_release(R"({"tag_name":"v0.8"} x)", "v0.8") &&
+          !up::parse_release(R"({"tag_name":"v0.8","body":"unterminated)", "v0.8") && !up::parse_release(R"({"tag_name":"v0.8","body":"\q"})", "v0.8"));
+    const std::optional<up::Release> bare = up::parse_release(R"({"tag_name":"v0.8"})", "v0.8");   // no notes, no assets: still the release
+    CHECK(bare && bare->notes.empty() && bare->zip_size == 0);
+    CHECK(!up::parse_release(std::string(300, '[') + std::string(300, ']'), "v0.8"));   // nested too deep to be a release
+    CHECK(up::plain_notes("# One\n## Two\ntext\r\n> quoted\n![shot](a.png) and [a](b) [c](d)\n+ plus\n  * indented").find("](") == std::string::npos);
+    CHECK(up::plain_notes("a\n\n\n\n\nb") == "a\n\nb" && up::plain_notes("\n\n") .empty() && up::plain_notes("**bold** __x__ ~~y~~") == "bold x y");
+    CHECK(up::plain_notes(std::string(500, 'x') + "\n" + std::string(500, 'y'), 600) == std::string(500, 'x') + "\n...");
+    const std::string hash = "73c05042bb96cff977a5e53fd953bcfb91d453de906293ae87add109f7ef82da";
+    CHECK(up::checksum_from_file(hash + "  thpsource2-win64.zip\n", up::kPackageName) == std::optional<std::string>(hash));
+    CHECK(up::checksum_from_file(hash + " *thpsource2-win64.zip\r\n", up::kPackageName) == std::optional<std::string>(hash));
+    CHECK(up::checksum_from_file("73C05042BB96CFF977A5E53FD953BCFB91D453DE906293AE87ADD109F7EF82DA  thpsource2-win64.zip", up::kPackageName) == std::optional<std::string>(hash));
+    CHECK(!up::checksum_from_file(hash + "  other.zip\n", up::kPackageName) && !up::checksum_from_file(hash.substr(1) + "  thpsource2-win64.zip", up::kPackageName) &&
+          !up::checksum_from_file("zz" + hash.substr(2) + "  thpsource2-win64.zip", up::kPackageName) && !up::checksum_from_file(hash + "thpsource2-win64.zip", up::kPackageName) &&
+          !up::checksum_from_file("", up::kPackageName));
+    CHECK(up::api_url(repo, "v0.8") == "https://api.github.com/repos/afcurtis/THPSource2/releases/tags/v0.8" && up::api_url("http://elsewhere/x/y", "v0.8").empty());
+    CHECK(up::asset_url(repo + "/", "v0.8", up::kPackageName) == repo + "/releases/download/v0.8/thpsource2-win64.zip");
+    const std::string script = up::apply_script("v0.8");
+    CHECK(script.find("@TAG@") == std::string::npos && script.find("@PACKAGE@") == std::string::npos && script.find("updated to v0.8") != std::string::npos && script.find("thpsource2-win64.zip") != std::string::npos);
+    CHECK(script.find("Build /MIR") != std::string::npos && script.find("Licenses /MIR") != std::string::npos && script.find("failed.txt") != std::string::npos);
+    // the player's folders are named only in the comment that promises to leave them alone, and only Build and Licenses are mirrored
+    CHECK(script.find("Saves", script.find("Saves") + 1) == std::string::npos && script.find("Mods", script.find("Mods") + 1) == std::string::npos);
+    std::size_t mirrors = 0;
+    for (std::size_t at = script.find("/MIR"); at != std::string::npos; at = script.find("/MIR", at + 1)) {
+        ++mirrors;
+    }
+    CHECK(mirrors == 2 && script.find("\r\n") != std::string::npos && script.find("\n") == script.find("\r\n") + 1);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1557,6 +1598,7 @@ int main(int argc, char** argv) {
     test_ini();
     test_settings();
     test_update_check();
+    test_update_release();
     test_sha256();
     test_bindings();
     test_moved_default_key();

@@ -285,6 +285,27 @@ bool zip_folder(const fs::path& folder, const fs::path& zip_file, std::string& e
     return true;
 }
 
+bool start_batch(const fs::path& script, const std::string& argument, std::string& error) {
+    // cmd.exe /c strips the outer quotes of its command line, so a script path with spaces is quoted twice: /c ""path" argument"
+    const fs::path cmd = system_program("cmd.exe");
+    std::wstring command = quoted(cmd.wstring()) + L" /d /c \"" + quoted(script.wstring()) + L" " + wide(argument) + L"\"";
+    STARTUPINFOW startup = {};
+    startup.cb = sizeof startup;
+    PROCESS_INFORMATION process = {};
+    if (!CreateProcessW(nullptr, command.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP, nullptr,
+                        script.parent_path().wstring().c_str(), &startup, &process)) {
+        error = "cannot start " + utf8_of(script) + " (error " + std::to_string(GetLastError()) + ")";
+        return false;
+    }
+    CloseHandle(process.hThread);
+    CloseHandle(process.hProcess);
+    return true;
+}
+
+unsigned long current_process_id() {
+    return GetCurrentProcessId();
+}
+
 std::string last_session_line(const fs::path& sessions_file) {
     std::ifstream in(sessions_file);
     std::string line, last;

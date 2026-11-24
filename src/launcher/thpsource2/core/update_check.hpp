@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -32,5 +33,39 @@ std::optional<std::string> tag_from_redirect(std::string_view location, std::str
 
 // `latest_tag` is a version newer than `running` (both as written, "v0.8"); false when either is not a version
 bool is_newer(std::string_view latest_tag, std::string_view running);
+
+// ---- the release itself: its notes, its package, and the script that installs it (docs/LAUNCHER.md, "Updates") ----
+
+// The release's zip and its checksum file, as `tony release package` and docs/BUILDING.md "Releasing" name them
+inline constexpr const char* kPackageName = "thpsource2-win64.zip";
+inline constexpr const char* kChecksumName = "thpsource2-win64.zip.sha256";
+
+// What the launcher shows about a release. The notes are optional (the API may be out of reach: the update still installs)
+struct Release {
+    std::string tag;            // "v0.8"
+    std::string notes;          // the release text with the Markdown marks taken out (plain_notes)
+    std::uint64_t zip_size = 0; // bytes of kPackageName, 0 when not listed
+};
+
+// The GitHub API's answer for one release (`api_url`). It is data from the network: only the tag (which must be `expected_tag`), the text and the package's size are read,
+// nothing in it is opened or downloaded. nullopt when it is not a release object of that tag
+std::optional<Release> parse_release(std::string_view json, std::string_view expected_tag);
+
+// Markdown to the plain text a launcher label can show: no `#`, `**`, backticks, quote marks or link addresses ("[text](url)" is "text"), "*" bullets as "-", curly
+// quotes and dashes as plain ones, emoji dropped, runs of blank lines as one, at most `limit` bytes (cut at a line, "..." after)
+std::string plain_notes(std::string_view markdown, std::size_t limit = 6000);
+
+// The 64 hex digits (lower case) at the start of a `sha256sum` line ("<hash>  <file>"), when the line names `file`
+std::optional<std::string> checksum_from_file(std::string_view text, std::string_view file);
+
+// The addresses the launcher asks for, built from the repository's own address and a tag that is a version, never taken from an answer
+std::string api_url(std::string_view repository_url, std::string_view tag);            // https://api.github.com/repos/<owner>/<repo>/releases/tags/<tag>
+std::string asset_url(std::string_view repository_url, std::string_view tag, std::string_view file);   // <repository>/releases/download/<tag>/<file>
+
+// The batch file that puts an unpacked release over the install: it sits in `<install>\Data\Update\` beside `unpack\thpsource2-win64\`, is run with the launcher's process id,
+// waits for the launcher to close, then replaces Build\ and Licenses\ (mirrored: the release owns them), the launcher and README.md, and starts the launcher again.
+// Config, Data, Saves, Mods, Screenshots and Logs are never touched. A failure writes `failed.txt` beside it and Logs\update.txt says why. Everything is
+// relative to the script's own folder, so no path of the player's is in it; `tag` is only written into the log
+std::string apply_script(std::string_view tag);
 
 }  // namespace thpsource2::update
