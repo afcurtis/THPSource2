@@ -202,8 +202,8 @@ for the game and comes back when it ends (the old `[Launcher] CloseOnPlay` is ig
   pause menu, nothing more (the pause also holds the sound).
 - **The crash panel.** A run that ends as a `CRASH` or a `HANG SUSPECTED` (its line of `sessions.txt`) puts a red panel over the tabs with the recorded reason, a box for what the player was doing
   (written into the run's folder as `what_happened.txt`) and a button that zips the run's folder (`Logs\reports\<run>.zip`, with Windows' `tar.exe`). Without Debug mode the zip is made before the
-  panel shows and the button adds the note to it; with Debug mode the button makes the zip, and `notes.txt` has its own button. **Report on GitHub** (the panel's first button, accent
-  coloured) makes the zip (`report_on_github`: the same `make_report`, in either mode), selects it in Explorer (`reveal_in_explorer`) and opens the bug form
+  panel shows; the note is added to it when the player clicks out of the box, on Dismiss and on either button. Three buttons: **Report on GitHub** (accent coloured), **Show Crash Zip** (re-zips with the
+  note and selects the zip in Explorer) and **Dismiss**. Report on GitHub makes the zip (`report_on_github`: the same `make_report`, in either mode), selects it in Explorer (`reveal_in_explorer`) and opens the bug form
   (`kIssueUrl` = `<project page>/issues/new?template=bug.md`, `.github/ISSUE_TEMPLATE/bug.md`) with `SDL_OpenURL`; the player drags the zip into the form. Nothing is uploaded
   from the launcher. System > Diagnostics > Problems opens the same form. `--page crash` shows the panel for a made-up crash (the screenshot mode of the tests).
 - **Updates** (`core/update_check.hpp`, `app/update_task.cpp`; System > Updates, `[Launcher] CheckForUpdates`, default on, and `SkippedUpdate`). When the launcher opens (not with

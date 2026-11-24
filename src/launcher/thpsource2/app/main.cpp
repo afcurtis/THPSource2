@@ -1356,7 +1356,7 @@ private:
         }
     }
 
-    // Zips the crashed run's folder to Logs\reports\<run>.zip, with the player's own words in it (what_happened.txt) when there are any
+    // Zips the crashed run's folder to Logs\reports\<run>.zip, with the player's own words in it (what_happened.txt) when there are any; show selects the zip in Explorer
     bool make_report(bool show) {
         std::error_code ec;
         if (crash.folder.empty() || !fs::is_directory(crash.folder, ec)) {
@@ -1381,7 +1381,7 @@ private:
         crash.message = "Report saved: " + utf8_of(zip);
         crash.message_bad = false;
         if (show) {
-            open_in_explorer(zip.parent_path());
+            reveal_in_explorer(zip);
         }
         return true;
     }
@@ -1419,8 +1419,7 @@ private:
         if (ImGui::IsItemDeactivatedAfterEdit() && have_folder) {
             make_report(false);   // the note goes into the report as soon as the player leaves the box: no button to find
         }
-        dim_wrapped("To report this: click Report on GitHub. Your report zip is selected in Explorer and the bug report form opens in your browser; drag the zip into it. "
-                    "Nothing is sent for you. The logs hold file paths from this PC, such as the install folder.");
+        dim_wrapped("Click Report on GitHub, then drag the .zip crash logs onto the issue.");
         ImGui::PushStyleColor(ImGuiCol_Button, kAccent);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kAccentHover);
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, kAccentActive);
@@ -1433,20 +1432,10 @@ private:
         }
         ImGui::SameLine();
         ImGui::BeginDisabled(!have_folder);
-        if (button(crash.debug ? "Create report" : "Open report", "Zips the run's logs, with your note, into Logs\\reports and opens the folder.")) {
+        if (button("Show Crash Zip", "Zips the run's logs, with your note, into Logs\\reports and shows the zip in Explorer.")) {
             make_report(true);
         }
-        ImGui::SameLine();
-        if (button("Open logs")) {
-            open_in_explorer(crash.folder);
-        }
         ImGui::EndDisabled();
-        if (crash.debug) {
-            ImGui::SameLine();
-            if (button("Open notes.txt")) {
-                open_in_explorer(where.notes());
-            }
-        }
         ImGui::SameLine();
         if (button("Dismiss", "Closes this panel. A note in the box is saved with the report first.")) {
             if (crash.description[0] != '\0' && have_folder) {
