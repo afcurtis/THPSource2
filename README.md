@@ -48,10 +48,10 @@ you can also keep the look you love and add what you want: a higher frame rate, 
 - **Modern controllers, natively.** Xbox and other pads work with no setup; rebind every button and key in the launcher.
 - **Your own soundtrack**, with now-playing titles. Drop in `.bik` songs; RETHAWED music packs work as they come.
 - **New game modes.** Goals Speed Runs with a clock that counts up, Competitions on any level, and Free Skate or a Single Session as any
-  skater, all without touching your save. Build your own trick sets too.
-- **A high score board in the launcher**, kept apart from your game saves: scores, speed-run times and competition medals, level by level.
-- **The HUD your way.** Scale it, hide it, or add the grind balance meter the PlayStation had and the PC version never showed.
-- **Play it as intended.** Original PC and Original PlayStation presets, the latter with its dither and a curved CRT screen.
+  skater, independently of your career save but with centralised high scores.
+- **A high score board in the launcher**: scores, speed-run times and competition medals, level by level.
+- **The HUD your way.** Scale it, hide it, or add the hidden grind balance meter and a new now playing music visual.
+- **Play it as intended.** Original PC and Original PSX presets + a curved CRT screen filter.
 - **Fully portable.** Your install becomes a native x86-64 application in one folder: unzip it anywhere, and settings, saves and mods
   stay with it.
 - **Handy hotkeys, all configurable.** Hold L3+R3 for one second to quit the game back to the launcher, F8 for a screenshot, Alt+Enter to
@@ -61,7 +61,7 @@ you can also keep the look you love and add what you want: a higher frame rate, 
 
 <img src="docs/images/launcher-graphics.png" alt="The THPSource2 launcher, Graphics tab" width="720">
 
-*Every graphics option in one place, with a tooltip for each, and presets to start from: Enhanced, Original PC or Original PlayStation.*
+*Every graphics option in one place, with a tooltip for each, and presets to start from: Enhanced, PC or PSX.*
 
 <table>
 <tr>
@@ -69,7 +69,7 @@ you can also keep the look you love and add what you want: a higher frame rate, 
 <td width="50%"><img src="docs/images/launcher-quick-start.png" alt="The launcher's Quick Start page"></td>
 </tr>
 <tr>
-<td><em>One high score board for every run you finish, separate from your saves.</em></td>
+<td><em>One high score board for every run you finish</em></td>
 <td><em>New game modes: straight into a Goals Speed Run, a Competition, a session or Free Skate on any level, as any skater.</em></td>
 </tr>
 </table>
