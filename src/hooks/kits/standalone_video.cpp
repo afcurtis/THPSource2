@@ -39,6 +39,7 @@
 //   OT_SCREENSHOTS=<dir>    F8 writes the frame as a PNG there
 //   OT_SCREENSHOT_AT=<n>    (tests) the n-th presented frame is saved too, as the key would
 //   OT_TEXTURE_DUMP=<dir>   write the game's textures there as PNGs named by key, with an index (standalone_texture_dump.hpp); needs no window
+#include "../../platform/path_separator.h"
 #include "../../hal/sdl/sdl_api.h"
 #include "../../hal/sdl/sdl_backends.h"
 #include "../../hal/sdl/sdl_video.h"
@@ -48,7 +49,11 @@
 #include "standalone_png.hpp"
 #include "standalone_texture_dump.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <algorithm>
 #include <cstdint>
@@ -326,7 +331,7 @@ void screenshot_key() {
         char name[64];
         std::snprintf(name, sizeof name, "THPS2_%04d-%02d-%02d_%02d-%02d-%02d%s%s.png", now.wYear, now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond, n != 0 ? "_" : "",
                       n != 0 ? std::to_string(n).c_str() : "");
-        const std::string path = g_screenshots + "\\" + name;
+        const std::string path = g_screenshots + OT_PATH_SEPARATOR + name;
         if (GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES) {
             continue;
         }
@@ -415,7 +420,7 @@ bool write_image(const std::string& path, const OtHalImage& image) {
 void __cdecl on_present(std::uint32_t frame, void*) {
     char name[32];
     std::snprintf(name, sizeof name, "frame_%05u", static_cast<unsigned>(frame));
-    const std::string base = g_directory + "\\" + name;
+    const std::string base = g_directory + OT_PATH_SEPARATOR + name;
     if (g_draw_stream != nullptr) {
         std::vector<std::uint8_t> stream(g_draw_stream(frame, nullptr, 0));
         g_draw_stream(frame, stream.data(), static_cast<std::uint32_t>(stream.size()));

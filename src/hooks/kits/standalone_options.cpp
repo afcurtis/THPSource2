@@ -12,7 +12,11 @@
 #include "../../runtime/trick_database.hpp"
 #include "guest_arena.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <algorithm>
 #include <cmath>

@@ -7,7 +7,12 @@
 // Unset (or empty), nothing moves. A file anywhere else (the package, a mod, an absolute path of the player's choosing) is never touched.
 #pragma once
 
+#ifdef _WIN32
 #include <direct.h>
+#else
+#include "ot_os.hpp"
+#include "win32_posix.h"   // _getcwd
+#endif
 
 #include <cctype>
 #include <cstdio>
@@ -15,6 +20,22 @@
 #include <string>
 
 namespace opentony::kitdll {
+
+// fopen of a host path the game named: on Linux a name that exists under another case is that file (the game spells its files as a case-insensitive file system
+// lets it, "data/tricks.bin" for DATA/TRICKS.BIN)
+inline std::FILE* host_fopen(const std::string& path, const char* mode) {
+#ifdef _WIN32
+    return std::fopen(path.c_str(), mode);
+#else
+    std::string host = path;   // a path built with the Windows separator (the mod overlay's) is the host's
+    for (char& c : host) {
+        if (c == '\\') {
+            c = '/';
+        }
+    }
+    return opentony::os::fopen_nocase(host, mode);
+#endif
+}
 
 namespace userdata_detail {
 

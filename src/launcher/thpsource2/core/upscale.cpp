@@ -431,6 +431,10 @@ void run_batch(const std::vector<const Job*>& batch, const std::string& method, 
     }
     std::string error;
     if (!model(method, work / "in", work / "out", error)) {
+        if (cancel != nullptr && cancel->load()) {   // the runner stopped the tool for a cancel: nothing failed
+            report.cancelled = true;
+            return;
+        }
         for (std::size_t k = 0; k < prepared.size(); ++k) {
             fail(report, method + ": " + error);
         }

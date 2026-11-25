@@ -17,8 +17,30 @@
 #include "launcher/layout.hpp"
 #include "launcher/original_2000_static.inc"
 
+#ifdef _WIN32
 #include <windows.h>
 #include <bcrypt.h>
+#define OT_PROGRAM_SUFFIX ".exe"
+#define OT_MODULE_SUFFIX ".dll"
+#else
+#include "platform/sha256.hpp"
+#include "platform/win32_posix.h"
+
+#include <fcntl.h>
+#include <spawn.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include <cerrno>
+#include <csignal>
+#include <ctime>
+
+extern char** environ;
+#define OT_PROGRAM_SUFFIX ""
+#define OT_MODULE_SUFFIX ".so"
+#endif
 
 #include <algorithm>
 #include <cctype>
@@ -68,6 +90,9 @@ void write_all(const fs::path& path, const void* bytes, std::size_t size) {
 }
 
 std::string sha256_hex(const std::vector<std::uint8_t>& data) {
+#ifndef _WIN32
+    return opentony::sha256::hex(data.data(), data.size());
+#else
     BCRYPT_ALG_HANDLE algorithm = nullptr;
     BCRYPT_HASH_HANDLE hash = nullptr;
     std::uint8_t digest[32] = {};
@@ -89,6 +114,7 @@ std::string sha256_hex(const std::vector<std::uint8_t>& data) {
         std::snprintf(text + 2 * k, 3, "%02x", digest[k]);
     }
     return text;
+#endif
 }
 
 // A file of the game directory by name, whatever its case (a copied install may have any).
@@ -327,11 +353,32 @@ void bind_pad_pause(const fs::path& ini) {
 
 std::string with_separator(fs::path path) {
     std::string text = path.make_preferred().string();
-    if (!text.empty() && text.back() != '\\') {
-        text += '\\';
+    constexpr char kSeparator = static_cast<char>(fs::path::preferred_separator);
+    if (!text.empty() && text.back() != kSeparator) {
+        text += kSeparator;
     }
     return text;
 }
+
+#ifndef _WIN32
+// the last write of a file as local time, and its size (the Windows build asks GetFileAttributesEx)
+void file_stamp(const fs::path& file, SYSTEMTIME& when, unsigned long long& size) {
+    when = {};
+    size = 0;
+    struct stat info{};
+    if (::stat(file.c_str(), &info) != 0) {
+        return;
+    }
+    tm local{};
+    localtime_r(&info.st_mtime, &local);
+    when.wYear = static_cast<WORD>(local.tm_year + 1900);
+    when.wMonth = static_cast<WORD>(local.tm_mon + 1);
+    when.wDay = static_cast<WORD>(local.tm_mday);
+    when.wHour = static_cast<WORD>(local.tm_hour);
+    when.wMinute = static_cast<WORD>(local.tm_min);
+    size = static_cast<unsigned long long>(info.st_size);
+}
+#endif
 
 }  // namespace
 
@@ -406,10 +453,10 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    const fs::path spike = bin / "opentony_spike.exe";
-    const fs::path standalone = bin / "opentony_standalone.dll";
+    const fs::path spike = bin / ("opentony_spike" OT_PROGRAM_SUFFIX);
+    const fs::path standalone = bin / ("opentony_standalone" OT_MODULE_SUFFIX);
     if (!fs::is_regular_file(spike, ec) || !fs::is_regular_file(standalone, ec)) {
-        fail("opentony_spike.exe and opentony_standalone.dll must be in " + bin.string(), 2);
+        fail(spike.filename().string() + " and " + standalone.filename().string() + " must be in " + bin.string(), 2);
     }
     set_default("OPENTONY_GAME_DIR", with_separator(game));
     set_default("OPENTONY_DATA_DIR", fs::path(data).make_preferred().string());
@@ -453,9 +500,22 @@ int main(int argc, char** argv) {
     note(std::string("[") + run_name + "] run started");
     set_default("OPENTONY_INPUT_LOG", (run_dir / "input.txt").string());   // every key, pad button and window event with its time (docs/PLAYING.md)
     // the heartbeat: the game counts its event pumps in this mapping, and the loop below notices when the count stops (a hang)
+#ifdef _WIN32
     const std::string heartbeat_name = "OpenTonyHeartbeat-" + std::to_string(GetCurrentProcessId());
     HANDLE heartbeat_map = CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, 8, heartbeat_name.c_str());
     volatile LONG* heartbeat = heartbeat_map != nullptr ? static_cast<volatile LONG*>(MapViewOfFile(heartbeat_map, FILE_MAP_ALL_ACCESS, 0, 0, 8)) : nullptr;
+#else
+    // a POSIX shared memory object (/dev/shm), the game's sdl_window.cpp opens it by the same name
+    const std::string heartbeat_name = "/OpenTonyHeartbeat-" + std::to_string(::getpid());
+    volatile LONG* heartbeat = nullptr;
+    if (const int fd = ::shm_open(heartbeat_name.c_str(), O_CREAT | O_RDWR | O_CLOEXEC, 0600); fd >= 0) {
+        if (::ftruncate(fd, 8) == 0) {
+            void* view = ::mmap(nullptr, 8, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            heartbeat = view != MAP_FAILED ? static_cast<volatile LONG*>(view) : nullptr;
+        }
+        ::close(fd);
+    }
+#endif
     if (heartbeat != nullptr) {
         SetEnvironmentVariableA("OT_HEARTBEAT", heartbeat_name.c_str());
     }
@@ -471,9 +531,10 @@ int main(int argc, char** argv) {
     set_default("OT_DISABLE_CONTROLS_MENU", "1");   // the launcher has the controls; the game's Player and Display controls screens are greyed
     bind_pad_pause(where.ini());
 
-    std::string command = "\"" + spike.string() + "\" \"" + image.string() + "\" \"" + standalone.string() + "\" - \"" + (state / "empty.tsv").string() + "\"";
     // the game's output goes to opentony\log\run.txt (a player's window closes with the program); a stop is then reported in a message box
     const fs::path run_log = run_dir / "run.txt";
+#ifdef _WIN32
+    std::string command = "\"" + spike.string() + "\" \"" + image.string() + "\" \"" + standalone.string() + "\" - \"" + (state / "empty.tsv").string() + "\"";
     SECURITY_ATTRIBUTES inherit = {sizeof inherit, nullptr, TRUE};
     HANDLE log = CreateFileW(run_log.c_str(), GENERIC_WRITE, FILE_SHARE_READ, &inherit, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     STARTUPINFOA startup = {};
@@ -490,11 +551,48 @@ int main(int argc, char** argv) {
     }
     // a hang (the window answers but no frame is pumped for kHangSeconds) leaves watchdog.txt and a minidump (hang.dmp: every thread's stack) in the run folder;
     // the game is left running, since a long load can recover
+#else
+    // the spike in the game folder, its output (stdout and stderr) in run.txt
+    const std::string arguments[] = {spike.string(), image.string(), standalone.string(), "-", (state / "empty.tsv").string()};
+    std::vector<char*> argv_spike;
+    for (const std::string& argument : arguments) {
+        argv_spike.push_back(const_cast<char*>(argument.c_str()));
+    }
+    argv_spike.push_back(nullptr);
+    posix_spawn_file_actions_t actions;
+    posix_spawn_file_actions_init(&actions);
+    posix_spawn_file_actions_addopen(&actions, 1, run_log.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    posix_spawn_file_actions_adddup2(&actions, 1, 2);
+    posix_spawn_file_actions_addchdir_np(&actions, game.c_str());
+    pid_t child = 0;
+    const int spawned = posix_spawn(&child, spike.c_str(), &actions, nullptr, argv_spike.data(), environ);
+    posix_spawn_file_actions_destroy(&actions);
+    if (spawned != 0) {
+        fail("cannot start " + spike.string() + " (" + std::strerror(spawned) + ")");
+    }
+    int child_status = 0;
+    bool child_done = false;
+    const auto still_running = [&]() {
+        for (int waited = 0; waited < 10; ++waited) {   // one second, in tenths
+            const pid_t got = ::waitpid(child, &child_status, WNOHANG);
+            if (got == child || (got < 0 && errno != EINTR)) {
+                child_done = true;
+                return false;
+            }
+            Sleep(100);
+        }
+        return true;
+    };
+#endif
     constexpr ULONGLONG kHangSeconds = 60;
     bool hang_suspected = false;
     LONG last_beat = heartbeat != nullptr ? *heartbeat : 0;
     ULONGLONG last_beat_at = GetTickCount64();
+#ifdef _WIN32
     while (WaitForSingleObject(process.hProcess, 1000) == WAIT_TIMEOUT) {
+#else
+    while (still_running()) {
+#endif
         if (heartbeat == nullptr) {
             continue;
         }
@@ -506,6 +604,7 @@ int main(int argc, char** argv) {
             hang_suspected = true;
             std::ofstream(run_dir / "watchdog.txt") << "HANG SUSPECTED: the game pumped no events for " << kHangSeconds << " s, " << (GetTickCount64() - began) / 1000
                 << " s after it started (pump count " << beat << "). hang.dmp holds every thread's stack.\n";
+#ifdef _WIN32
             if (HMODULE dbghelp = LoadLibraryA("dbghelp.dll")) {
                 using Writer = BOOL(WINAPI*)(HANDLE, DWORD, HANDLE, int, void*, void*, void*);
                 if (auto write = reinterpret_cast<Writer>(GetProcAddress(dbghelp, "MiniDumpWriteDump"))) {
@@ -516,8 +615,10 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+#endif   // (Linux: no minidump; OT_HANG_DUMP=SECONDS makes the game report its own stack, standalone_spike.cpp)
         }
     }
+#ifdef _WIN32
     DWORD code = 0;
     GetExitCodeProcess(process.hProcess, &code);
     CloseHandle(process.hThread);
@@ -525,6 +626,17 @@ int main(int argc, char** argv) {
     if (log != INVALID_HANDLE_VALUE) {
         CloseHandle(log);
     }
+#else
+    // the exit code, or for a signal the Windows code of the same stop (a fault the crash handler did not catch reads as an access violation)
+    DWORD code = !child_done ? 1u
+                 : WIFEXITED(child_status) ? static_cast<DWORD>(WEXITSTATUS(child_status))
+                 : WTERMSIG(child_status) == SIGSEGV || WTERMSIG(child_status) == SIGBUS ? 0xc0000005u
+                 : 0xc0000000u | static_cast<DWORD>(WTERMSIG(child_status));
+    if (heartbeat != nullptr) {
+        ::munmap(const_cast<LONG*>(heartbeat), 8);
+    }
+    ::shm_unlink(heartbeat_name.c_str());
+#endif
     const bool crashed = code != 0;
     // the reason: the program's own FATAL line, else the last line that is not a log-format note
     std::string reason;
@@ -557,7 +669,8 @@ int main(int argc, char** argv) {
     std::string build_stamp;
     {
         std::ofstream build_file(final_dir / "build.txt");
-        for (const fs::path& file : {bin / "opentony.exe", spike, standalone}) {
+        for (const fs::path& file : {bin / ("opentony" OT_PROGRAM_SUFFIX), spike, standalone}) {
+#ifdef _WIN32
             WIN32_FILE_ATTRIBUTE_DATA info = {};
             SYSTEMTIME when = {};
             if (GetFileAttributesExW(file.c_str(), GetFileExInfoStandard, &info)) {
@@ -565,9 +678,15 @@ int main(int argc, char** argv) {
                 FileTimeToLocalFileTime(&info.ftLastWriteTime, &local);
                 FileTimeToSystemTime(&local, &when);
             }
+            const unsigned long long size = (static_cast<unsigned long long>(info.nFileSizeHigh) << 32) | info.nFileSizeLow;
+#else
+            SYSTEMTIME when;
+            unsigned long long size;
+            file_stamp(file, when, size);
+#endif
             char line[512];
             std::snprintf(line, sizeof line, "%04d-%02d-%02d %02d:%02d  %llu bytes  %s\n", when.wYear, when.wMonth, when.wDay, when.wHour, when.wMinute,
-                (static_cast<unsigned long long>(info.nFileSizeHigh) << 32) | info.nFileSizeLow, file.filename().string().c_str());
+                size, file.filename().string().c_str());
             build_file << line;
             if (file == standalone) {
                 build_stamp = std::string(line, 16);
@@ -614,7 +733,9 @@ int main(int argc, char** argv) {
     if (crashed) {
         const std::string text = "THPSource2 stopped (exit code " + std::to_string(code) + ").\n\n" + reason.substr(0, 400) + "\n\nThe full output is in:\n" + final_log.string() + "\n\nEvery run is listed in:\n" + where.sessions().string();
         std::fprintf(stderr, "opentony: %s\n", text.c_str());
+#ifdef _WIN32
         MessageBoxA(nullptr, text.c_str(), "THPSource2", MB_OK | MB_ICONERROR);
+#endif
     }
     return static_cast<int>(code);
 }

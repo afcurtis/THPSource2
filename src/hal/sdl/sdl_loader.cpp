@@ -1,6 +1,12 @@
 #include "sdl_api.h"
 
+#ifdef _WIN32
 #include <windows.h>
+#define OT_SDL_LIBRARY "SDL3.dll"
+#else
+#include "win32_posix.h"
+#define OT_SDL_LIBRARY "libSDL3.so.0"   /* the soname of SDL 3.x */
+#endif
 
 // Loads SDL3.dll and fills ot_sdl_api (OT_SDL_DYNAMIC builds): shared by the
 // hook DLL (src/hooks/hal/hal_runtime.cpp) and the Win32 tools.
@@ -21,15 +27,15 @@ int ot_sdl_load(const char *directory, const char **missing) {
     if (directory != 0) {
         lstrcpynA(path, directory, MAX_PATH);
     }
-    if (lstrlenA(path) + 9 < MAX_PATH) {
-        lstrcatA(path, "SDL3.dll");
+    if (lstrlenA(path) + (int)sizeof(OT_SDL_LIBRARY) < MAX_PATH) {
+        lstrcatA(path, OT_SDL_LIBRARY);
     }
     g_module = LoadLibraryA(path);
     if (g_module == 0) {
-        g_module = LoadLibraryA("SDL3.dll");
+        g_module = LoadLibraryA(OT_SDL_LIBRARY);
     }
     if (g_module == 0) {
-        *missing = "SDL3.dll";
+        *missing = OT_SDL_LIBRARY;
         return 0;
     }
 #define OT_SDL_RESOLVE(name)                                                                             \

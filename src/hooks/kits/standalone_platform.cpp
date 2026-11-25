@@ -31,7 +31,11 @@
 #include "input.h"
 #include "window.h"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <algorithm>
 #include <cstdint>
@@ -566,11 +570,13 @@ void platform_drain_messages() {
     if (g_platform.window == nullptr) {
         return;
     }
+#ifdef _WIN32
     MSG message;
     while (PeekMessageA(&message, nullptr, 0, 0, PM_REMOVE)) {
         TranslateMessage(&message);
         DispatchMessageA(&message);
     }
+#endif   // (Linux: no thread message queue; SDL's pump below reads the window's events)
 }
 
 // the message pump of Game_FrameTick: a closed window ends the program

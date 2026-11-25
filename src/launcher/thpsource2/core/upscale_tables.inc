@@ -177,7 +177,12 @@ constexpr CensusRun kCensusRuns[] = {
 };
 
 // the tool: a zip whose `member` is the program
+#ifndef _WIN32
+// the Linux build of the same release (docs/LINUX.md)
+constexpr Download kTool = {"upscayl-bin", "https://github.com/upscayl/upscayl-ncnn/releases/download/20251207-174704/upscayl-bin-20251207-174704-linux.zip", 3952825u, "a9fab3c770b62f2b7a35d8d6d61eb4e8b3aef79128b665c919d080b85a2292f2", "upscayl-bin-20251207-174704-linux/upscayl-bin", "AGPL-3.0", "https://github.com/upscayl/upscayl-ncnn"};
+#else
 constexpr Download kTool = {"upscayl-bin", "https://github.com/upscayl/upscayl-ncnn/releases/download/20251207-174704/upscayl-bin-20251207-174704-windows.zip", 2421760u, "1f0f65c5d2ade866555e2ac467d35952c35a47080a4060fe56a1ab028f67258a", "upscayl-bin-20251207-174704-windows/upscayl-bin.exe", "AGPL-3.0", "https://github.com/upscayl/upscayl-ncnn"};
+#endif
 
 // every model the pins name: save_as, licence, author, the .param and the .bin
 constexpr ModelPin kModels[] = {

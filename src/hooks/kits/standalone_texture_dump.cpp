@@ -1,5 +1,6 @@
 #include "standalone_texture_dump.hpp"
 
+#include "../../platform/path_separator.h"
 #include "../../hal/texture_key.hpp"
 #include "standalone_png.hpp"
 
@@ -75,7 +76,7 @@ double ms(std::int64_t ticks) { return g_frequency.QuadPart != 0 ? 1000.0 * stat
 std::uint32_t(__cdecl* g_list)(std::uint32_t*, std::uint32_t*, std::uint32_t*, std::uint32_t) = nullptr;
 int(__cdecl* g_texels)(std::uint32_t, std::uint32_t*, std::uint32_t*, std::uint32_t*, unsigned char*, std::uint32_t) = nullptr;
 
-std::string path_of(const char* name) { return g_dir + "\\" + name; }
+std::string path_of(const char* name) { return g_dir + OT_PATH_SEPARATOR + name; }
 
 const char* use_name(std::uint8_t bits) { return bits == (kWorld | kTwoD) ? "both" : bits == kWorld ? "world" : bits == kTwoD ? "2d" : "unknown"; }
 const char* wrap_name(std::uint8_t bits) { return bits == (kWrap | kClamp) ? "both" : bits == kWrap ? "wrap" : bits == kClamp ? "clamp" : "unknown"; }
@@ -215,7 +216,7 @@ Row* row_for(std::uint64_t key, std::int32_t width, std::int32_t height, std::ui
     row.format = format;
     row.alpha = alpha;
     row.tag = g_tag;
-    const std::string png = g_dir + "\\" + tex::key_text(key) + ".png";
+    const std::string png = g_dir + OT_PATH_SEPARATOR + tex::key_text(key) + ".png";
     if (GetFileAttributesA(png.c_str()) == INVALID_FILE_ATTRIBUTES && !standalone_write_png(png, width, height, 4, rgba.data())) {
         ++g_png_failed;
     }

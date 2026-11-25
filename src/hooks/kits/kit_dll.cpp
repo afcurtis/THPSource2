@@ -20,9 +20,15 @@
 #include "standalone_music.hpp"
 #endif
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "ot_os.hpp"
+#include "win32_posix.h"
+#endif
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -32,6 +38,9 @@
 #include <vector>
 
 namespace opentony::kitdll {
+#ifndef _WIN32
+namespace os = opentony::os;
+#endif
 namespace {
 
 // 11d (docs/PORT64_AUDIT.md D3): a production DLL holds the arena backend only; the sparse region backend is the fixtures'
@@ -80,6 +89,7 @@ bool mapped(std::uint32_t address, std::size_t size, bool write) {
         return true;
     }
 #endif
+#ifdef _WIN32
     while (at < end) {
         MEMORY_BASIC_INFORMATION info;
         // `at` is a host address, not a guest word (the walk is over host pages)
@@ -101,6 +111,20 @@ bool mapped(std::uint32_t address, std::size_t size, bool write) {
         at = region_end;
     }
     return true;
+#else
+    // Linux: the mappings of /proc/self/maps (ot_os.hpp); the readable-and-writable mapping the access starts in is remembered as above
+    std::uintptr_t span_begin = 0, span_end = 0;
+    if (!os::accessible(reinterpret_cast<const void*>(static_cast<std::uintptr_t>(at)), static_cast<std::size_t>(end - at), write, &span_begin, &span_end)) {   // host address, not a guest word
+        return false;
+    }
+#ifdef OPENTONY_STANDALONE
+    if (span_end != 0) {
+        good_begin = span_begin;
+        good_end = span_end;
+    }
+#endif
+    return true;
+#endif
 }
 
 // The replays' scratch window (the stack locals of the retail functions at fixed addresses, which Wine
@@ -115,7 +139,11 @@ bool map_scratch() {
     if (!arena::kFlat) {
         if (!arena::commit(kBase, kBytes)) {
             char line[96];
+#ifdef _WIN32
             std::snprintf(line, sizeof line, "kits: cannot commit the scratch window in the arena (%lu)", GetLastError());
+#else
+            std::snprintf(line, sizeof line, "kits: cannot commit the scratch window in the arena (%s)", os::last_error().c_str());
+#endif
             log_line(line);
             return false;
         }
@@ -123,10 +151,19 @@ bool map_scratch() {
         return true;
     }
 #endif
+#ifdef _WIN32
     void* at = VirtualAlloc(nullptr, kBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    const unsigned long error = GetLastError();
+#else
+    void* at = os::reserve(kBytes);   // (a 32-bit layout only: the Linux build always has the arena above)
+    if (at != nullptr && !os::commit(at, kBytes)) {
+        at = nullptr;
+    }
+    const unsigned long error = static_cast<unsigned long>(errno);
+#endif
     if (at == nullptr) {
         char line[96];
-        std::snprintf(line, sizeof line, "kits: cannot allocate the scratch window (%lu)", GetLastError());
+        std::snprintf(line, sizeof line, "kits: cannot allocate the scratch window (%lu)", error);
         log_line(line);
         return false;
     }

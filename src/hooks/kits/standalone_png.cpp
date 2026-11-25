@@ -1,6 +1,10 @@
 #include "standalone_png.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 #include <zlib.h>
 
 #include <cstdio>

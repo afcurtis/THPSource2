@@ -734,7 +734,7 @@ private:
         saved_settings.game_dir = settings.game_dir;
     }
 
-    fs::path opentony_exe() const { return where.build() / "opentony.exe"; }
+    fs::path opentony_exe() const { return where.build() / opentony::layout::program_file("opentony"); }
 
     bool begin_task(Task::Kind kind) {
         if (task.running) {
@@ -4034,7 +4034,20 @@ int main(int argc, char** argv) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "THPSource2", SDL_GetError(), nullptr);
         return 1;
     }
+#ifdef _WIN32
     set_window_icon(SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
+#else
+    {   // the window icon: resource 1 (app/icon.png) through SDL; Windows takes the .ico of the program's resources
+        png::Image icon;
+        std::string icon_error;
+        if (png::decode(resource_bytes(1), icon, icon_error)) {
+            if (SDL_Surface* surface = SDL_CreateSurfaceFrom(icon.width, icon.height, SDL_PIXELFORMAT_RGBA32, icon.rgba.data(), icon.width * 4)) {
+                SDL_SetWindowIcon(window, surface);
+                SDL_DestroySurface(surface);
+            }
+        }
+    }
+#endif
     SDL_SetRenderVSync(renderer, 1);
     SDL_SetWindowMinimumSize(window, static_cast<int>(880 * scale), static_cast<int>(600 * scale));
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -4046,13 +4059,52 @@ int main(int argc, char** argv) {
     io.IniFilename = nullptr;   // the launcher keeps no window layout file
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
     style_ui(scale);
+    std::error_code ec;
+#ifdef _WIN32
     const char* windows = std::getenv("WINDIR");
     const fs::path font = fs::path(windows != nullptr ? windows : "C:\\Windows") / "Fonts" / "segoeui.ttf";
-    std::error_code ec;
+    const fs::path symbols = fs::path(windows != nullptr ? windows : "C:\\Windows") / "Fonts" / "seguisym.ttf";
+    const fs::path semibold = fs::path(windows != nullptr ? windows : "C:\\Windows") / "Fonts" / "seguisb.ttf";
+#else
+    // the first of the common sans-serif families a Linux desktop has (the regular and the heading face of the same family), and DejaVu Sans for the arrows
+    const auto first_of = [&ec](std::initializer_list<const char*> candidates) {
+        for (const char* candidate : candidates) {
+            if (fs::is_regular_file(candidate, ec)) {
+                return fs::path(candidate);
+            }
+        }
+        return fs::path();
+    };
+    struct Family { const char* regular; const char* heading; };
+    static constexpr Family kFamilies[] = {
+        {"/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf", "/usr/share/fonts/truetype/noto/NotoSans-SemiBold.ttf"},
+        {"/usr/share/fonts/noto/NotoSans-Regular.ttf", "/usr/share/fonts/noto/NotoSans-SemiBold.ttf"},
+        {"/usr/share/fonts/google-noto/NotoSans-Regular.ttf", "/usr/share/fonts/google-noto/NotoSans-SemiBold.ttf"},
+        {"/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", "/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf"},
+        {"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"},
+        {"/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf"},
+        {"/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"},
+    };
+    fs::path font, semibold;
+    for (const Family& family : kFamilies) {
+        if (fs::is_regular_file(family.regular, ec)) {
+            font = family.regular;
+            semibold = fs::is_regular_file(family.heading, ec) ? fs::path(family.heading) : fs::path();
+            if (semibold.empty()) {   // a family without its semibold: the bold
+                std::string bold = family.heading;
+                if (const std::size_t at = bold.find("SemiBold"); at != std::string::npos) {
+                    bold.replace(at, 8, "Bold");
+                    semibold = fs::is_regular_file(bold, ec) ? fs::path(bold) : fs::path();
+                }
+            }
+            break;
+        }
+    }
+    const fs::path symbols = first_of({"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/dejavu/DejaVuSans.ttf"});
+#endif
     if (fs::is_regular_file(font, ec)) {
         io.Fonts->AddFontFromFileTTF(utf8_of(font).c_str(), 18.0f * scale);
         // the arrows of the trick lists (the diagonals are not in every Segoe UI): Segoe UI Symbol fills in what the first font lacks
-        const fs::path symbols = fs::path(windows != nullptr ? windows : "C:\\Windows") / "Fonts" / "seguisym.ttf";
         if (fs::is_regular_file(symbols, ec)) {
             ImFontConfig fallback;
             fallback.MergeMode = true;
@@ -4064,7 +4116,6 @@ int main(int argc, char** argv) {
         io.Fonts->AddFontDefault(&config);
     }
     {   // the headings' semibold (Segoe UI Semibold); without it they use the regular face
-        const fs::path semibold = fs::path(windows != nullptr ? windows : "C:\\Windows") / "Fonts" / "seguisb.ttf";
         if (fs::is_regular_file(semibold, ec)) {
             g_heading_font = io.Fonts->AddFontFromFileTTF(utf8_of(semibold).c_str(), 18.0f * scale);
         }

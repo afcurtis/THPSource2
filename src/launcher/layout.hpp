@@ -46,6 +46,17 @@ struct Layout {
 };
 
 // The root for a program that lives in `directory`: the folder above Build\ when it is called Build, else the folder itself (a program run from a build tree).
+// The file names of the programs in Build: opentony.exe and opentony_standalone.dll on Windows, opentony and opentony_standalone.so on Linux (docs/LINUX.md)
+#ifdef _WIN32
+inline constexpr const char* kProgramSuffix = ".exe";
+inline constexpr const char* kModuleSuffix = ".dll";
+#else
+inline constexpr const char* kProgramSuffix = "";
+inline constexpr const char* kModuleSuffix = ".so";
+#endif
+inline std::string program_file(const char* name) { return std::string(name) + kProgramSuffix; }
+inline std::string module_file(const char* name) { return std::string(name) + kModuleSuffix; }
+
 inline Layout from_program_directory(const std::filesystem::path& directory) {
     std::string name = directory.filename().string();
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });

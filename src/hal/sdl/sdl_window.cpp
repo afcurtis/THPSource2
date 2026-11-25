@@ -5,6 +5,10 @@
 #ifndef HWND_MESSAGE
 #define HWND_MESSAGE ((HWND)-3) /* WINVER 0x0500; the VC6 headers predate it */
 #endif
+#else
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #endif
 
 #include <stdarg.h>
@@ -48,6 +52,9 @@ signed char g_axis_zone[16];
 #ifdef _WIN32
 volatile LONG *g_heartbeat = 0;
 int g_heartbeat_tried = 0;
+#else
+volatile int32_t *g_heartbeat = 0;   // the launcher's POSIX shared memory object (opentony_launcher.cpp)
+int g_heartbeat_tried = 0;
 #endif
 
 const char *pad_button_name(int button) {
@@ -86,6 +93,19 @@ void heartbeat() {
         }
     }
     if (g_heartbeat != 0) InterlockedIncrement((LONG *)g_heartbeat);
+#else
+    if (!g_heartbeat_tried) {
+        g_heartbeat_tried = 1;
+        if (const char *name = getenv("OT_HEARTBEAT")) {
+            const int fd = shm_open(name, O_RDWR | O_CLOEXEC, 0600);
+            if (fd >= 0) {
+                void *view = mmap(nullptr, 8, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+                g_heartbeat = view != MAP_FAILED ? (volatile int32_t *)view : 0;
+                close(fd);
+            }
+        }
+    }
+    if (g_heartbeat != 0) __atomic_add_fetch(g_heartbeat, 1, __ATOMIC_SEQ_CST);
 #endif
 }
 

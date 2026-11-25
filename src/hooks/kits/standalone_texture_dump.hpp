@@ -2,7 +2,11 @@
 
 #include "../../hal/video.h"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <cstdint>
 

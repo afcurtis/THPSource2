@@ -148,7 +148,7 @@ def test_pkr_asset_is_in_the_kit_library_and_the_retail_zlib_range_is_not_linked
 
 def test_the_overlay_is_in_front_of_the_file_lookup():
     files = (KITS_DIR / "standalone_files.cpp").read_text()
-    assert files.index("ot_overlay_lookup") < files.index('std::fopen(full.c_str(), "rb")')
+    assert files.index("ot_overlay_lookup") < files.index('host_fopen(full, "rb")')
     assert "mod_overlay.cpp" in (KITS_DIR / "CMakeLists.txt").read_text()
 
 

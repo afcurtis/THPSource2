@@ -19,7 +19,11 @@
 #include "../../launcher/music_library.hpp"
 #include "../../runtime/host_options.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "win32_posix.h"
+#endif
 
 #include <algorithm>
 #include <cctype>

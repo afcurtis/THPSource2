@@ -22,7 +22,10 @@ struct UpscaleProgress {
 };
 
 // The model runner the pipeline takes: `tool` over a folder with a model of `models`. A tool that finds no Vulkan device is said in plain words.
-upscale::ModelRunner upscaler_model_runner(const std::filesystem::path& tool, const std::filesystem::path& models);
+// While the tool runs, `cancel` (when given) stops it within half a second, and `on_files(done, of)` is told how many of the input folder's pictures it has
+// written so far (first with 0 at the start of each run), so the progress can move inside a batch.
+upscale::ModelRunner upscaler_model_runner(const std::filesystem::path& tool, const std::filesystem::path& models, const std::atomic<bool>* cancel = nullptr,
+                                           std::function<void(std::size_t done, std::size_t of)> on_files = {});
 // The stamp's name for the tool: its file name and size (a new release of it is another stamp)
 std::string upscaler_stamp_name(const std::filesystem::path& tool);
 

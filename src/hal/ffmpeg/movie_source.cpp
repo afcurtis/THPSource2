@@ -10,7 +10,12 @@ extern "C" {
 #include <libavutil/log.h>
 }
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "ot_os.hpp"
+#include "win32_posix.h"
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -61,6 +66,11 @@ bool g_tried = false;
 std::string g_detail;
 
 std::string module_directory() {
+#ifndef _WIN32
+    const std::string text = opentony::os::module_file_of(reinterpret_cast<const void*>(&module_directory));
+    const std::size_t slash = text.find_last_of('/');
+    return slash == std::string::npos ? std::string() : text.substr(0, slash + 1);
+#else
     HMODULE self = nullptr;
     if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                             reinterpret_cast<LPCSTR>(&module_directory), &self)) {
@@ -71,6 +81,7 @@ std::string module_directory() {
     std::string text(path, length);
     const std::size_t slash = text.find_last_of("\\/");
     return slash == std::string::npos ? std::string() : text.substr(0, slash + 1);
+#endif
 }
 
 HMODULE load_library(const std::string& directories_note, const std::string& name, std::string& tried) {
@@ -79,7 +90,11 @@ HMODULE load_library(const std::string& directories_note, const std::string& nam
     char environment[MAX_PATH] = {};
     if (GetEnvironmentVariableA("OPENTONY_FFMPEG_DIR", environment, MAX_PATH) != 0) {
         std::string directory = environment;
+#ifdef _WIN32
         if (!directory.empty() && directory.back() != '\\' && directory.back() != '/') directory += '\\';
+#else
+        if (!directory.empty() && directory.back() != '/') directory += '/';
+#endif
         places.push_back(directory);
     }
     places.push_back(module_directory());
@@ -87,7 +102,11 @@ HMODULE load_library(const std::string& directories_note, const std::string& nam
     for (const std::string& place : places) {
         const std::string full = place + name;
         tried += (tried.empty() ? "" : "; ") + (place.empty() ? name + " (search path)" : full);
+#ifdef _WIN32
         if (HMODULE module = LoadLibraryExA(full.c_str(), nullptr, place.empty() ? 0 : LOAD_WITH_ALTERED_SEARCH_PATH)) {
+#else
+        if (HMODULE module = LoadLibraryA(full.c_str())) {   // dlopen: a bare name is looked for on the library path, as the system's FFmpeg is
+#endif
             return module;
         }
     }
@@ -109,9 +128,16 @@ bool load_api() {
     g_tried = true;
     std::string tried;
     // the file names carry the major versions of the headers this was built with: a build of another major is refused here
+#ifdef _WIN32
     g_api.util = load_library("", "avutil-" OT_STR(LIBAVUTIL_VERSION_MAJOR) ".dll", tried);
     g_api.codec = g_api.util != nullptr ? load_library("", "avcodec-" OT_STR(LIBAVCODEC_VERSION_MAJOR) ".dll", tried) : nullptr;
     g_api.format = g_api.codec != nullptr ? load_library("", "avformat-" OT_STR(LIBAVFORMAT_VERSION_MAJOR) ".dll", tried) : nullptr;
+#else
+    // the shared objects' sonames carry the same major versions (the system's FFmpeg, or one in OPENTONY_FFMPEG_DIR or beside this module)
+    g_api.util = load_library("", "libavutil.so." OT_STR(LIBAVUTIL_VERSION_MAJOR), tried);
+    g_api.codec = g_api.util != nullptr ? load_library("", "libavcodec.so." OT_STR(LIBAVCODEC_VERSION_MAJOR), tried) : nullptr;
+    g_api.format = g_api.codec != nullptr ? load_library("", "libavformat.so." OT_STR(LIBAVFORMAT_VERSION_MAJOR), tried) : nullptr;
+#endif
     if (g_api.format == nullptr) {
         g_detail = "FFmpeg " OT_STR(LIBAVFORMAT_VERSION_MAJOR) " libraries did not load (tried " + tried + ")";
         g_api = Api();
@@ -411,7 +437,14 @@ std::unique_ptr<MovieSource> MovieSource::open(const std::string& path, bool wan
         return nullptr;
     }
     auto source = std::make_unique<FfmpegSource>();
+#ifdef _WIN32
     if (!source->init(path, want_video, want_audio, error)) return nullptr;
+#else
+    // the callers build Windows paths (the media folder + "\\" + the game's name for the file, e.g. ATVILOGO.DAT for ATVILOGO.dat): the host's file
+    std::string host = path;
+    std::replace(host.begin(), host.end(), '\\', '/');
+    if (!source->init(opentony::os::resolve_nocase(host), want_video, want_audio, error)) return nullptr;
+#endif
     return source;
 }
 
