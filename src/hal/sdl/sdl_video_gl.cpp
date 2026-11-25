@@ -475,6 +475,9 @@ const float kAoBias = 0.1f;
 const float kAoFadeFrom = 0.003f;
 const float kAoFadeTo = 0.012f;
 int32_t g_supersample_used = 100; // the factor (x100) wanted_target() settled on
+// the most bytes a supersampled target may cost (width x height x (8 x samples + 6 with ambient occlusion)). A fixed number, not the card's memory: 1 GB crashed
+// an AMD driver stack within seconds of the first frames (2026-11 report), so it is 400 MB
+const int64_t kSupersampleBudget = 400000000ll;
 int32_t g_coverage_state = -1;    // alpha-to-coverage on (1) or off (0) as last set; -1 not set yet
 OtHalVertex *g_line_quads = 0;    // lines widened to quads for a target larger than the mode
 uint32_t g_line_capacity = 0;
@@ -526,6 +529,48 @@ bool load_gl() {
     OT_GL_FUNCTIONS(OT_GL_RESOLVE)
 #undef OT_GL_RESOLVE
     return complete;
+}
+
+// One line in run.txt naming the GPU and the driver the picture goes through (a crash report says only which DLL faulted), and the video memory where the driver says:
+// GL_NVX_gpu_memory_info (total dedicated and what is free now) or GL_ATI_meminfo (what is free now). Neither is standard; with neither the line has no memory
+void log_gpu() {
+    const char *vendor = reinterpret_cast<const char *>(gl.glGetString(GL_VENDOR));
+    const char *renderer = reinterpret_cast<const char *>(gl.glGetString(GL_RENDERER));
+    const char *version = reinterpret_cast<const char *>(gl.glGetString(GL_VERSION));
+    // 0 = no memory query, 1 = total and free (NVIDIA), 2 = free only (AMD)
+    int memory_kind = 0;
+    GLint total_mb = 0;
+    GLint free_mb = 0;
+    GLint count = 0;
+    gl.glGetIntegerv(GL_NUM_EXTENSIONS, &count);
+    for (GLint index = 0; index < count && memory_kind == 0; ++index) {
+        const char *name = reinterpret_cast<const char *>(gl.glGetStringi(GL_EXTENSIONS, static_cast<GLuint>(index)));
+        if (name == 0) {
+            continue;
+        }
+        GLint kb[4] = {0, 0, 0, 0};
+        if (strcmp(name, "GL_NVX_gpu_memory_info") == 0) {
+            GLint free_kb = 0;
+            gl.glGetIntegerv(0x9047 /* GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX */, kb);
+            gl.glGetIntegerv(0x9049 /* GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX */, &free_kb);
+            total_mb = kb[0] / 1024;
+            free_mb = free_kb / 1024;
+            memory_kind = 1;
+        } else if (strcmp(name, "GL_ATI_meminfo") == 0) {
+            gl.glGetIntegerv(0x87FC /* TEXTURE_FREE_MEMORY_ATI */, kb);
+            free_mb = kb[0] / 1024;
+            memory_kind = 2;
+        }
+    }
+    gl.glGetError(); // a query the driver refused leaves an error that is not the draws'
+    // (no snprintf: the 32-bit VC6 SDK has none)
+    printf("video: GPU %s | %s | OpenGL %s", vendor != 0 ? vendor : "?", renderer != 0 ? renderer : "?", version != 0 ? version : "?");
+    if (memory_kind == 1) {
+        printf(", %d MB video memory, %d MB free", total_mb, free_mb);
+    } else if (memory_kind == 2) {
+        printf(", %d MB of video memory free", free_mb);
+    }
+    printf("\n");
 }
 
 GLuint compile(GLenum type, const char *source) {
@@ -948,7 +993,8 @@ void wanted_target(int32_t *width, int32_t *height) {
     gl.glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &limit);
     g_supersample_used = 100;
     if (g_options.supersample > 100 && (g_options.follow_window || (g_options.target_width > 0 && g_options.target_height > 0))) {
-        // the largest factor up to the one asked (in steps of 5%) whose target fits the driver's size limit and about 1 GB: width x height x (4 colour + 4 depth) x samples
+        // the largest factor up to the one asked (in steps of 5%) whose target fits the driver's size limit and about 400 MB: width x height x (4 colour + 4 depth) x samples
+        // (the budget limits only the factor: a window-sized target is made whatever it costs)
         GLint max_samples = 0;
         gl.glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
         const int64_t samples = g_options.samples < 2 ? 1 : (g_options.samples > max_samples ? (max_samples < 1 ? 1 : max_samples) : g_options.samples);
@@ -957,7 +1003,7 @@ void wanted_target(int32_t *width, int32_t *height) {
             const int64_t scaled_height = (static_cast<int64_t>(*height) * factor / 100 + 1) & ~static_cast<int64_t>(1);
             // (ambient occlusion adds a single-sample depth copy, 4 bytes, and two half-resolution RG16F buffers, 2 bytes, a pixel)
             if ((limit > 0 && (scaled_width > limit || scaled_height > limit)) ||
-                scaled_width * scaled_height * (8 * samples + (g_options.ambient_occlusion != 0 ? 6 : 0)) > 1000000000ll) {
+                scaled_width * scaled_height * (8 * samples + (g_options.ambient_occlusion != 0 ? 6 : 0)) > kSupersampleBudget) {
                 continue;
             }
             *width = static_cast<int32_t>(scaled_width);
@@ -1331,6 +1377,7 @@ int OT_HAL_CALL video_init(const OtHalVideoMode *mode) {
     if (!load_gl()) {
         return 0;
     }
+    log_gpu();
     GLuint vertex = compile(GL_VERTEX_SHADER, kVertexShader);
     GLuint fragment = compile(GL_FRAGMENT_SHADER, kFragmentShader);
     if (vertex == 0 || fragment == 0) {

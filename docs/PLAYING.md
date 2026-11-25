@@ -73,7 +73,7 @@ Upscaled textures: Graphics > "Upscale textures..." downloads an AI upscaler (ab
 sharper ones on your PC (a graphics card with Vulkan is needed; 15 to 30 minutes the first time). Then tick "Upscaled textures". The world gets the AI model's
 version, the HUD and menus their own pixels at 4x.
 
-Presets (bottom left, beside Save as... and Delete...): **Enhanced** (the default) turns everything up, including 4x supersampling, at 60 fps by default for broad compatibility (raise it to 120 on the **Display** tab if your PC can handle it); on a slower GPU,
+Presets (bottom left, beside Save as... and Delete...): **Enhanced** (the default) turns everything up, including 2x supersampling, 4x anti-aliasing, at 60 fps by default for broad compatibility (raise it to 120 on the **Display** tab if your PC can handle it); on a slower GPU,
 lower Supersampling first. **Original PC** is the game as it ran on a PC; **Original PlayStation** is the console on a TV (its own textures, dither and a CRT picture on a curved screen).
 A preset sets the picture, HUD, frame rate, graphics and a few gameplay options (camera stick, autokick, vibration, intro movies), never your window, V-Sync, sound,
 controls or unlocks. Change anything and Save as... keeps it as a preset of your own.

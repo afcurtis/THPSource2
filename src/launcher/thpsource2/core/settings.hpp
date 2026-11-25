@@ -89,9 +89,9 @@ struct Settings {
     bool true_colour = true;       // the PC port's 24-bit bitmaps are drawn in all 24 bits, not cut to 15 (Data\TrueColour, made from the unpacked game files); unused with PSX textures
     bool upscaled_textures = false; // the upscaled set (Data\Upscaled, made by "Upscale textures...") is drawn; needs smooth textures with texture detail (mip maps)
     int internal_resolution = 2;   // 0 PSX (512 x 240), 1 PC (640 x 480), 2 match the window (a file from before the list was cut to three, with 3 or 4, reads as 2)
-    int msaa = 8;                  // 0 off, 2, 4 or 8 samples
+    int msaa = 4;                  // 0 off, 2, 4 or 8 samples
     bool smooth_cutouts = true;    // with multisampling: fences and leaves (cut-out textures) get smooth edges (alpha-to-coverage)
-    int supersample = 400;         // x100: 100 off, 150, 200, 300, 400 times the internal resolution's size; PSX and PC ignore it (the backend lowers a factor the GPU cannot hold)
+    int supersample = 200;         // x100: 100 off, 150, 200, 300, 400 times the internal resolution's size; PSX and PC ignore it (the backend lowers a factor the GPU cannot hold)
     int scaling = 0;               // how the picture is scaled to the window: 0 smooth, 1 sharp (whole pixels, soft edges), 2 nearest, 3 CRT (scanlines, soft columns, a faint mask); only at the PSX and PC render resolutions (Native always sends smooth)
     bool crt_curve = false;        // the picture bent as on a curved tube, with rounded corners; with any output and any render resolution. On in Original PlayStation only
     bool psx_dither = false;       // the PlayStation's 4 x 4 dither and 15-bit colour over the finished picture; only offered at the PSX render resolution, off in every preset (G7); not part of a preset's match

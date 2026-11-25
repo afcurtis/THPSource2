@@ -65,7 +65,7 @@ ImGui window, and the Windows process and Explorer calls. The launcher is built 
 ## What the game reads
 
 Every setting is wired. Every run sets every variable in the list; an empty value unsets it, so nothing leaks from one run into the next. The
-standalone logs what it made in `run.txt` (`video: window ...`, `video: picture 1280 x 720, rendered at ...`, `options: ...`).
+standalone logs what it made in `run.txt` (`video: window ...`, `video: picture 1280 x 720, rendered at ...`, `options: ...`), including one `video: GPU <vendor> | <renderer> | OpenGL <version>` line (with the video memory where the driver reports it: NVIDIA's and AMD's extensions only) that names the GPU a crash report's DLL belongs to.
 
 | Launcher setting | `THPSource2.ini` | Environment | Done in |
 |---|---|---|---|
@@ -88,7 +88,7 @@ standalone logs what it made in `run.txt` (`video: window ...`, `video: picture 
 | PlayStation dither | `[Graphics] PSXDither` (default off, on in the Original PlayStation preset only; greyed unless the resolution is PlayStation) | `OT_PSX_DITHER` = `1` or `0` (`0` unless the resolution is PlayStation): the 4 x 4 matrix and 5 bits a channel over the whole finished picture before scaling | sdl_video_gl.cpp |
 | Ambient occlusion | `[Graphics] AmbientOcclusion` (0 off, 1 low, 2 high; default High, High in Enhanced and off in the originals; a launcher file from before the key reads off) | `OT_AMBIENT_OCCLUSION` = `off`, `low`, `high` | sdl_video_gl.cpp |
 | Smooth cut-out edges | `[Graphics] SmoothCutouts` (default on; greyed without multisampling) | `OT_ALPHA_TO_COVERAGE` = `1` or `0` (`0` without multisampling) | sdl_video_gl.cpp |
-| Supersampling | `[Graphics] Supersample` (100 off, 150, 200, 300, 400; default 400, a value that is not an option is off; greyed for PSX and PC) | `OT_SUPERSAMPLE` = `1`, `1.5`, `2`, `3`, `4` (`1` for PSX and PC) | sdl_video_gl.cpp |
+| Supersampling | `[Graphics] Supersample` (100 off, 150, 200, 300, 400; default 200, a value that is not an option is off; greyed for PSX and PC) | `OT_SUPERSAMPLE` = `1`, `1.5`, `2`, `3`, `4` (`1` for PSX and PC) | sdl_video_gl.cpp |
 | PSX colour | `[Graphics] PSXColor` | `OT_PSX_COLOR` = `0` or `1` | draw_kit.cpp (`Presentation`) |
 | PSX textures | `[Graphics] UsePSXTextures` | `OT_PSX_TEXTURES` = `0` or `1` | standalone_files.cpp |
 | Fog distance | `[Graphics] FogDistance` (100 / 150 / 275 / 500 / 1000 = off; the launcher shows them as multiples of the level's own: PlayStation (1x), PC (1.5x), Dreamcast (2.75x), Far (5x), Off) | `OT_FOG_DISTANCE` = percent or `off` | standalone_options.cpp |
@@ -122,7 +122,7 @@ Defaults of a new file: fullscreen, vertical sync off, pause on a lost focus on,
 ticks Upscaled textures when the set has been made). **Presets** (the footer's list at the bottom left, `apply_preset` in `core/settings.hpp`) set the look and feel
 at once: the Display tab's picture shape, field of view, HUD layout and size, balance meter, song title and frame rate; every Graphics option; the camera stick,
 autokick, vibration, starting camera and intro movies. The window's mode and size, V-Sync, the HUD's visibility, the FPS counter, sound, unlocks, initials, controls,
-hotkeys and trick sets are the player's, and no preset touches them. **Enhanced** is everything at its most: the window's resolution with 4x supersampling, 8x
+hotkeys and trick sets are the player's, and no preset touches them. **Enhanced** is everything turned up, short of what a driver may not hold: the window's resolution with 2x supersampling, 4x
 multisampling, smooth cut-out edges, smooth textures with 16x texture detail, sharp HUD, PSX colour, no fog, the most object detail, High ambient occlusion, true colour
 and the upscaled textures once made, on the PC's replacement bitmaps (the PlayStation textures are lower resolution); the window's own shape, the wide view, the HUD at
 the edges at the Auto size, 60 fps (every display holds it), the song title, the camera stick, autokick and vibration on. **Original PC** is the game as
@@ -146,7 +146,7 @@ for the game and comes back when it ends (the old `[Launcher] CloseOnPlay` is ig
 ### Supersampling and the downsample
 
 - **Supersampling** multiplies the size of the render target (each side) when the render resolution is Native; PSX and PC ignore it. The factor is lowered
-  in steps of 5% until the target fits `GL_MAX_RENDERBUFFER_SIZE` and about 1 GB (width x height x 8 bytes x samples); `run.txt` says what it got
+  in steps of 5% until the target fits `GL_MAX_RENDERBUFFER_SIZE` and about 400 MB (width x height x 8 bytes x samples; a fixed budget, not the card's memory, and only the factor is lowered by it: a window-sized target is made whatever it costs); `run.txt` says what it got
   (`video: picture ... rendered at ...`, then `video: supersampling 150% of 1.5`). A target past the driver's limit with no supersampling is clamped to the largest of its shape.
 - **The downsample.** A target larger than the rectangle it is shown in is presented through a box filter over each output pixel's footprint (N x N bilinear taps, N the
   footprint rounded up, at most 6), not the bilinear blit, which skips texels above 2x. Smaller targets keep the old paths. The multisample resolve stays a blit and comes first.

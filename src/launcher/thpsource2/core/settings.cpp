@@ -235,9 +235,9 @@ void apply_preset(Settings& s, int preset, bool upscaled_available) {
     // Graphics: Enhanced everything at its most, with the PC's sharper textures (the upscaled set once it has been made); Original PC as it ran (640 x 480, PC
     // colour and fog); Original PlayStation the console on a TV (512 x 240, its own textures unfiltered, its colour, fog and dither, through the CRT)
     s.internal_resolution = enhanced ? 2 : psx ? 0 : 1;
-    s.msaa = enhanced ? 8 : 0;
+    s.msaa = enhanced ? 4 : 0;
     s.smooth_cutouts = enhanced;
-    s.supersample = enhanced ? 400 : 100;
+    s.supersample = enhanced ? 200 : 100;
     s.texture_filter = psx ? 0 : 1;
     s.anisotropy = enhanced ? 16 : 0;
     s.sharp_hud = enhanced;

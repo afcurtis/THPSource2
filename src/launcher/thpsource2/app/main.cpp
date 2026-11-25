@@ -3596,7 +3596,7 @@ private:
         static constexpr const char* kTip = "A preset sets the look and feel at once: the picture, HUD and frame rate (Display), every Graphics option, and the camera "
                                             "stick, autokick, vibration, starting camera and intro movies. The window, V-Sync, sound, controls and unlocks are yours and stay.";
         static constexpr const char* kBuiltInTips[kPresetCount] = {
-            "Everything at its most: the window's own shape with a wide view and the HUD at the edges, 60 fps, the song title, 4x supersampling, 8x anti-aliasing, 16x "
+            "Everything turned up: the window's own shape with a wide view and the HUD at the edges, 60 fps, the song title, 2x supersampling, 4x anti-aliasing, 16x "
             "texture detail, no fog, the most object detail, high ambient occlusion, true-colour (and upscaled, once made) PC textures, the camera stick.",
             "The PC game as it ran: 640 x 480 at 4:3 and 30 fps, the original view and HUD, the PC's textures, colour and fog, no camera stick.",
             "The PlayStation on a TV: 512 x 240 at 4:3 and 30 fps, its own unfiltered textures, colour, fog and dither through the CRT with a curved screen, no camera stick."};

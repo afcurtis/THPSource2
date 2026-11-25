@@ -156,7 +156,7 @@ void test_settings() {
     // the enhanced defaults of a new file, and what each reaches the game as
     const Settings enhanced = default_settings();
     CHECK(enhanced.aspect == 0 && enhanced.fov_adjust && !enhanced.use_psx_textures && enhanced.psx_colour && enhanced.fog_distance == kFogOffDistance && enhanced.texture_filter == 1 &&
-          enhanced.internal_resolution == 2 && enhanced.msaa == 8 && enhanced.supersample == 400 && preset_of(enhanced) == 0 && enhanced.scaling == 0 && enhanced.autokick == 1 && enhanced.vibration == 1 && !enhanced.quick_start &&
+          enhanced.internal_resolution == 2 && enhanced.msaa == 4 && enhanced.supersample == 200 && preset_of(enhanced) == 0 && enhanced.scaling == 0 && enhanced.autokick == 1 && enhanced.vibration == 1 && !enhanced.quick_start &&
           enhanced.music_now_playing && !enhanced.grind_meter && enhanced.frame_rate == 60 && enhanced.vsync == 0);
     Settings game = enhanced;
     game.aspect = 2;
@@ -437,7 +437,7 @@ void test_settings() {
 
     // supersampling and smooth cut-outs: off and on by default; env per option; PSX and PC sizes pass 1; keys round-trip and bad values fall back
     {
-        CHECK(enhanced.supersample == 400 && enhanced.smooth_cutouts);
+        CHECK(enhanced.supersample == 200 && enhanced.smooth_cutouts);
         const auto env_of = [](const Settings& s, const char* name) {
             for (const auto& [key, text] : launch_environment(s, "")) {
                 if (key == name) {
@@ -489,7 +489,7 @@ void test_settings() {
         apply_preset(preset, 2);
         CHECK(preset.supersample == 100 && !preset.smooth_cutouts);
         apply_preset(preset, 0);
-        CHECK(preset.supersample == 400 && preset.smooth_cutouts);
+        CHECK(preset.supersample == 200 && preset.smooth_cutouts);
     }
 
     // sharp menus and HUD: on by default, only with smooth textures; key round-trips; a file without it gets the default; presets
@@ -565,7 +565,7 @@ void test_settings() {
         apply_preset(preset, 2);
         CHECK(preset.anisotropy == 0 && preset.texture_filter == 0 && preset.use_psx_textures && preset.fog_distance == 100);
         apply_preset(preset, 0);
-        CHECK(preset.anisotropy == 16 && preset.texture_filter == 1 && preset.msaa == 8 && preset.supersample == 400 && preset.internal_resolution == 2);
+        CHECK(preset.anisotropy == 16 && preset.texture_filter == 1 && preset.msaa == 4 && preset.supersample == 200 && preset.internal_resolution == 2);
         CHECK(!preset.use_psx_textures && preset.psx_colour && preset.fog_distance == kFogOffDistance);   // Enhanced is everything at its most, with the PC's sharper textures
         // the preset the values match, or none; a setting no preset holds (the window, sound, unlocks) does not change the match
         for (int k = 0; k < kPresetCount; ++k) {
@@ -586,7 +586,7 @@ void test_settings() {
         }
         preset.msaa = 2;
         CHECK(preset_of(preset) == -1);
-        preset.msaa = 8;
+        preset.msaa = 4;
         preset.fog_distance = 900;   // shown as Off: still Enhanced
         CHECK(preset_of(preset) == 0);
         game.max_stats = true;

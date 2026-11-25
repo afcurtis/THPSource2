@@ -49,7 +49,7 @@ typedef struct OtHalSdlVideoOptions {
                                OT_HAL_SDL_FILTER_NEAREST are unchanged */
     float lod_bias;         /* added to the mip level of those draws (0 = none; negative sharpens) */
     int32_t supersample;    /* x100: 0 or 100 off; 150, 200, 300, 400 multiply the size of a target that follows the window or has a size set (never the mode's own).
-                               Lowered until the target fits GL_MAX_RENDERBUFFER_SIZE and about 1 GB; world draws then get a LOD bias of -log2(factor) (at most -2) */
+                               Lowered until the target fits GL_MAX_RENDERBUFFER_SIZE and about 400 MB; world draws then get a LOD bias of -log2(factor) (at most -2) */
     int32_t alpha_to_coverage; /* 1: with multisampling, a cut-out texture (alpha only 0 or 255) drawn as a plain blended world draw is drawn without blending, its
                                alpha sharpened around one half and turned into coverage, so fences and leaves get antialiased edges */
     int32_t sharp_2d;          /* 1: a 2D draw (every reciprocal depth exactly 1: HUD, fonts, menus) that filters linearly keeps whole texels and blends only the last output
