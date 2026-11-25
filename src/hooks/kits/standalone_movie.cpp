@@ -355,7 +355,33 @@ std::uint32_t seam_update(const Args&, const std::string&) {
     return 0;
 }
 
-std::uint32_t seam_setup_full_screen(const Args&, const std::string&) { return 0; }  // the HAL owns the screen set-up
+// The full screen path of PCMovie_PlayStartupMedia (control mode 0: a movie the game plays from a level, the bails video after a medal) ends
+// as retail's does, with D3DDevice->SetTexture(0, NULL) (vtable slot 0x23) on the IDirect3DDevice7 at 0x029da3c0. A standalone program has no
+// Direct3D: WINMAIN_InitDirect3D never ran, the word is 0, and the call read the vtable through a null pointer (GitHub report, v0.7.1: a crash
+// at the end of the bails video). The first such movie gets a stand-in device, as the 32-bit HAL has one (video_hal.cpp): a guest object whose
+// vtable answers D3D_OK in every slot. It is made here and not at boot so the guest heap of every other path stays as it was.
+constexpr std::uint32_t kD3DDevice = 0x029da3c0;
+constexpr std::uint32_t kDeviceSlots = 49;                      // IDirect3DDevice7's methods
+constexpr std::uint32_t kStandInDeviceMethod = 0x0000d3d7;      // the slots' target: below the null guard, so never code; a seam (kEntries)
+
+std::uint32_t seam_stand_in_device_method(const Args&, const std::string&) { return 0; }  // D3D_OK
+
+void ensure_device() {
+    if (retail<std::uint32_t>(kD3DDevice) != 0) return;
+    const std::uint32_t object = arena::heap_allocate(4 + 4 * kDeviceSlots);
+    if (object == 0) return;
+    retail<std::uint32_t>(object) = object + 4;
+    for (std::uint32_t slot = 0; slot < kDeviceSlots; ++slot) {
+        retail<std::uint32_t>(object + 4 + 4 * slot) = kStandInDeviceMethod;
+    }
+    retail<std::uint32_t>(kD3DDevice) = object;
+    movie_log("full screen movie: a stand-in Direct3D device at %08x", static_cast<unsigned>(object));
+}
+
+std::uint32_t seam_setup_full_screen(const Args&, const std::string&) {  // the HAL owns the screen set-up
+    ensure_device();
+    return 0;
+}
 
 std::uint32_t seam_draw_full_screen(const Args&, const std::string&) {
     std::lock_guard<std::mutex> lock(g_lock);
@@ -395,6 +421,7 @@ const Entry kEntries[] = {
     {seam::bink::BinkMovieUpdate, &seam_update},
     {seam::bink::PCMOVIE_StreamThread, &seam_stream_thread},
     {seam::crt::CRT_beginthread, &seam_begin_thread},
+    {kStandInDeviceMethod, &seam_stand_in_device_method},
 };
 
 }  // namespace

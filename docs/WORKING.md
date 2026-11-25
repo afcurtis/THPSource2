@@ -72,6 +72,9 @@ i5-12600 (12 threads), 15 GB in WSL. pytest runs `-n auto`; builds and ctest tak
      `gates full --only smoke session standalone parity` and `gates full --only native-build ctest verify-all pytest selftest replay32 hooks-build-64`.
    - Orphaned Wine `services.exe` from an earlier run can fail `smoke/session` repeatedly: kill them by PID, rerun.
 3. Before committing matching work: `tony verify --all` and `pytest -q` (`AGENTS.md`).
+   - `pytest -q` skips the Wine tests. With `OPENTONY_WINE_TESTS=1` they run under `-n auto` on one shared headless prefix at once, and the
+     `boot-*` cold-boot comparisons fail with `no session.done` or diverge from delivery 2: run them `-n 0`, or a file at a time.
+     `test_standalone_spike.py::test_a_process_without_the_retail_image_answers_like_retail_on_a_career_image` fails at HEAD (`0 refused`, 11-25).
 4. **Ship to the person's test install** when the player can see the change: `bash scripts/play/m12/package.sh` (or `tony hooks build --arch 64`
    then `tony release package --arch 64`: a package alone ships the old DLL), then
    `bash tony.sh release install --to <test install>` (the path is in `AGENTS.local.md`). The launcher must be closed (it holds `Build\SDL3.dll`; an install

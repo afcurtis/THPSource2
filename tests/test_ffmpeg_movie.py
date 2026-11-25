@@ -185,6 +185,19 @@ def test_the_startup_movies_play_through_the_natives_and_the_seams_as_bink_plays
 
 @needs_wine
 @pytest.mark.skipif(not (KITS / "opentony_movie_player.exe").is_file(), reason="opentony_movie_player.exe not built")
+def test_a_movie_from_a_level_plays_full_screen_and_returns(tmp_path):
+    # control mode 0 (the bails video after a medal): PCMovie_PlayStartupMedia ends with D3DDevice->SetTexture(0, NULL). The standalone has no
+    # Direct3D device, so the first such movie gets a stand-in; without it the call read a vtable at guest address 0 (GitHub report, v0.7.1)
+    out = tmp_path / "play"
+    out.mkdir()
+    output = _run("opentony_movie_player.exe", _winepath(KITS / "opentony_standalone.dll"), _winepath(out), "fullscreen", "NSLOGO", "NSLOGO")
+    assert "FATAL" not in output and "CRASH" not in output, output[-2000:]
+    assert output.count("fullscreen NSLOGO: played") == 2, output[-2000:]    # the second movie reuses the stand-in
+    assert "RESULT 532 frames decoded" in output
+
+
+@needs_wine
+@pytest.mark.skipif(not (KITS / "opentony_movie_player.exe").is_file(), reason="opentony_movie_player.exe not built")
 def test_a_level_select_clip_plays_a_frame_per_update_and_loops_and_music_streams_to_its_end(tmp_path):
     clip = tmp_path / "clip"
     clip.mkdir()

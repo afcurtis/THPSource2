@@ -1,6 +1,8 @@
 // opentony_movie_player.exe (Phase 5.3b): plays the game's movies and music through the standalone seams, with no Bink.
 //
 //   opentony_movie_player.exe <opentony_standalone.dll> <out-dir> startup NAME...   PCMovie_PlayStartupMedia(`\NAME.STR;1`) for each
+//   opentony_movie_player.exe <opentony_standalone.dll> <out-dir> fullscreen NAME...   the same with the control mode 0 of a level (the bails
+//                                                                                     video after a medal): the full screen path, SetTexture at the end
 //   opentony_movie_player.exe <opentony_standalone.dll> <out-dir> music N...        start_music of `LTIXnn.DAT`, run to its end
 //   opentony_movie_player.exe <opentony_standalone.dll> <out-dir> clip NAME FRAMES  a level-select clip (looping, one BinkMovieUpdate per tick)
 //
@@ -141,7 +143,7 @@ LONG WINAPI crash_filter(EXCEPTION_POINTERS* info) {
 
 int main(int argc, char** argv) {
     if (argc < 5) {
-        std::fprintf(stderr, "usage: opentony_movie_player <opentony_standalone.dll> <out-dir> startup|music NAME...\n");
+        std::fprintf(stderr, "usage: opentony_movie_player <opentony_standalone.dll> <out-dir> startup|fullscreen|music|clip NAME...\n");
         return 64;
     }
     SetUnhandledExceptionFilter(&crash_filter);
@@ -188,18 +190,18 @@ int main(int argc, char** argv) {
     }
     static OtHalAudioBackend audio = make_audio();
     set_hal(&kMovie, &audio);
-    *reinterpret_cast<volatile std::uint32_t*>(kControlMode) = 1;
-
     const std::string mode = argv[3];
+    *reinterpret_cast<volatile std::uint32_t*>(kControlMode) = mode == "fullscreen" ? 0 : 1;
+
     int status = 0;
     for (int index = 4; index < argc; ++index) {
         char* name = reinterpret_cast<char*>(kScratch);
-        if (mode == "startup") {
+        if (mode == "startup" || mode == "fullscreen") {
             std::snprintf(name, 0x100, "\\%s.STR;1", argv[index]);
             std::fprintf(g.frames, "movie %s\n", argv[index]);
             const std::uint32_t arguments[1] = {kScratch};
             const std::uint32_t played = call(kStartupMedia, arguments, 1);
-            std::printf("startup %s: %s, %llu frames decoded so far\n", argv[index], (played & 0xff) != 0 ? "played" : "NOT PLAYED",
+            std::printf("%s %s: %s, %llu frames decoded so far\n", mode.c_str(), argv[index], (played & 0xff) != 0 ? "played" : "NOT PLAYED",
                         static_cast<unsigned long long>(g.presented));
             if ((played & 0xff) == 0) status = 1;
         } else if (mode == "music") {
