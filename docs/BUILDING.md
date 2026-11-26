@@ -106,7 +106,10 @@ build/native-sdl/opentony_linux_host --try-boot \
     build/static/thawk2_static.img /path/to/game-directory
 ```
 
-The experimental boot skips movies and music and uses an empty save profile.
+The experimental boot skips movies and uses an empty save profile. Original
+soundtrack playback uses the installed game's `Music` folder when the host
+was built with FFmpeg development libraries (`libavcodec`, `libavformat`,
+and `libavutil`, found through pkg-config).
 The first SDL3 gamepad uses the game's default controller bindings.
 Settings are kept in memory. To verify the menu headlessly, set
 `SDL_VIDEODRIVER=offscreen`, `SDL_AUDIODRIVER=dummy`, and
@@ -129,10 +132,10 @@ build/native-sdl/THPSource2
 The launcher shares the Windows interface, game import, settings and presets.
 Its Play button prepares the assets and starts the native host. The host
 honors window size and mode, V-Sync, OpenGL quality and scaling settings,
-control bindings and movement stick. The guest display still uses 4:3.
-Windows feature parity is pending for gameplay settings, the 60/120 fps
-modes, Quick Start, saves, and the music and movie pipeline. Linux updates
-are installed by rebuilding the checkout.
+frame-rate selection, audio levels, control bindings and movement stick.
+The guest display still uses 4:3. Windows feature parity is pending for
+gameplay settings, Quick Start, saves, custom music, and movie playback.
+Linux updates are installed by rebuilding the checkout.
 
 **Upscale textures** on Linux uses the native Vulkan Upscayl tool and the
 same pinned UltraSharp model as on Windows. It gets texture keys from the

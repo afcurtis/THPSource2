@@ -3,11 +3,17 @@
 
 #include "kit_bridge.hpp"
 #include "draw_kit.hpp"
+#include "frame_pacing.hpp"
 #include "guest_format.hpp"
 #include "pkr_asset.hpp"
 #include "seam_addresses_generated.hpp"
 #include "standalone_thunks_generated.hpp"
 #include "../../launcher/thpsource2/core/ini.hpp"
+
+#ifdef OPENTONY_LINUX_MUSIC
+#include "audio_game.hpp"
+#include "linux_music.hpp"
+#endif
 
 #ifdef OPENTONY_LINUX_SDL
 #include "../../hal/sdl/sdl_api.h"
@@ -39,6 +45,12 @@ std::uint32_t control_word = 0x0009001f;
 constexpr std::uint32_t kTimerState = 0x006a05a0;
 constexpr std::uint32_t kTimerCallback = 0x004dace0;
 constexpr std::uint32_t kSimTick = 0x0056e31c;
+constexpr std::uint32_t kGameTick = 0x0056e320;
+constexpr std::uint32_t kFrameAccumulator = 0x006a0590;
+constexpr std::uint32_t kGameAccumulator = 0x006a0598;
+constexpr std::uint32_t kLastSceneTick = 0x0056e840;
+constexpr std::uint32_t kPauseFlag = 0x00561c04;
+constexpr std::uint32_t kPauseFlag2 = 0x0056a8e0;
 constexpr std::uint32_t kPackagePreload = 0x004e9780;
 constexpr std::uint32_t kStreamClose = 0x00500e7b;
 constexpr std::uint32_t kStreamRead = 0x00502358;
@@ -55,6 +67,21 @@ constexpr std::uint32_t kFailed = 0xffffffffu;
 const char* settings_file() {
     const char* path = std::getenv("OPENTONY_SETTINGS");
     return path != nullptr && *path != '\0' ? path : "THawk2.ini";
+}
+
+runtime::framepacing::Pacing configured_pacing() {
+    runtime::framepacing::Pacing pacing;
+    const char* value = std::getenv("OT_FRAME_RATE");
+    if (value != nullptr && (std::strcmp(value, "60") == 0 || std::strcmp(value, "120") == 0)) {
+        const bool high = std::strcmp(value, "120") == 0;
+        pacing.limiter_ticks = 1;
+        pacing.exact_clock = true;
+        pacing.count_30hz = true;
+        pacing.period_ticks = high ? 0.5 : 1.0;
+        pacing.sub_tick = high;
+        pacing.carry_fraction = high;
+    }
+    return pacing;
 }
 
 template <std::size_t>
@@ -85,13 +112,41 @@ class BootHost final : public runtime::ServiceHost {
 public:
     BootHost(LinuxGuestMemory& arena, const std::filesystem::path& game_dir)
         : arena_(arena), package_(game_dir.empty() ? game_dir : std::filesystem::absolute(game_dir) / "ALL.PKR"),
-          settings_(thpsource2::IniFile::load(settings_file())) {
+          settings_(thpsource2::IniFile::load(settings_file()))
+#ifdef OPENTONY_LINUX_MUSIC
+          , music_(game_dir)
+#endif
+    {
         memory_.make_live(nullptr, false, arena.base());
         services_.attach(this);
         make_kits(memory_, services_);
     }
 
-    std::uint32_t resolve(std::uint32_t address, const std::vector<std::uint32_t>& args, bool virtual_call = false) {
+    std::uint32_t resolve(std::uint32_t address, const std::vector<std::uint32_t>& args, bool virtual_call = false,
+                          const std::string& text = {}) {
+#ifdef OPENTONY_LINUX_MUSIC
+        namespace audio = runtime::pcplatform::audio;
+        if (address == seam::bink::StartBinkMovie && args.size() >= 2 && (args[1] & 0xff) != 0) {
+            const auto name = !text.empty() ? text : memory_.cstring(args[0], 0x100);
+            if (music_.open(name)) {
+                memory_.set32(audio::kMovieHandle, 1);
+                return 1;
+            }
+            memory_.set32(audio::kMovieHandle, 0);
+            return 0;
+        }
+        if (address == seam::bink::CreateBinkSurface) {
+            return music_.start();
+        }
+        if (address == seam::crt::CRT_beginthread && !args.empty() && args[0] == seam::bink::PCMOVIE_StreamThread) {
+            music_active_ = true;  // The frame pump services the queue on Linux.
+            return 1;
+        }
+        if (address == seam::bink::CloseBinkMovie) {
+            stop_music();
+            return 0;
+        }
+#endif
         // Use the same startup movie skip as the recorded boot-menu scenario.
         if (address == 0x004e5ec0 || address == seam::bink::StartBinkMovie || address == seam::bink::CloseBinkMovie) {
             return 0;
@@ -123,6 +178,10 @@ public:
             const auto result = dispatch(*native, words.data(), std::make_index_sequence<kMaxStackArgs + 1>{});
             if (address == 0x0046aee0) {
                 menu_active_ = false;
+            }
+            if (address == 0x00413f70) {  // Options_Init
+                apply_audio_level("OT_SFX_LEVEL", 0x0055fb3c, 0x0052be44, 0x0056a2e8, 0x555);
+                apply_audio_level("OT_MUSIC_LEVEL", 0x0055fb40, 0x0052be48, 0x0056a2ec, 0x15);
             }
             x87_load(saved);
             return result;
@@ -258,6 +317,11 @@ public:
             return formatted.size() > capacity ? kFailed : static_cast<std::uint32_t>(formatted.size());
         }
         if (address == seam::hal::Game_FrameTick || address == seam::hal::WINMAIN_Sleep) {
+#ifdef OPENTONY_LINUX_MUSIC
+            if (music_active_ && (memory_.u8(runtime::pcplatform::audio::kMovieThreadFlag) != 0 || !music_.pump())) {
+                stop_music();
+            }
+#endif
 #ifdef OPENTONY_LINUX_SDL
             OtHalWindowEvent events[16];
             const auto count = ot_hal_sdl_window.pump(events, std::size(events));
@@ -268,11 +332,7 @@ public:
             }
 #endif
             if (memory_.u32(kTimerState) != 0) {
-                const auto interval = std::chrono::milliseconds(std::max(memory_.u32(kTimerState + 4), 1u));
-                const auto now = std::chrono::steady_clock::now();
-                next_tick_ = std::max(next_tick_ + interval, now);
-                std::this_thread::sleep_until(next_tick_);
-                resolve(kTimerCallback, {0, 0, kTimerState, 0, 0});
+                deliver_tick();
             }
             return memory_.u32(kSimTick);
         }
@@ -359,6 +419,23 @@ public:
     }
 
     std::uint32_t call(const std::string& name, const std::vector<std::uint32_t>& args, const std::string& text) override {
+#ifdef OPENTONY_LINUX_MUSIC
+        if (name == "win32_BinkSetVolume" && args.size() >= 2) {
+            music_.volume(static_cast<std::int32_t>(args[1]));
+            return 0;
+        }
+        if (name == "win32_BinkPause" && args.size() >= 2) {
+            music_.pause((args[1] & 0xff) != 0);
+            return 0;
+        }
+        if (name == "win32_BinkSetPan") {
+            return 0;  // The music stream is stereo and centered.
+        }
+        if (name == "win32_Sleep" && music_active_ && memory_.u8(runtime::pcplatform::audio::kMovieThreadFlag) != 0) {
+            stop_music();
+            return 0;
+        }
+#endif
         if (name == "win32_GetCursorPos" && args.size() == 1 && args[0] != 0) {
             memory_.set32(args[0], mouse_x_);
             memory_.set32(args[0] + 4, mouse_y_);
@@ -401,19 +478,19 @@ public:
             std::uint32_t address = 0;
             const auto parsed = std::from_chars(hex.data(), hex.data() + hex.size(), address, 16);
             if (parsed.ec == std::errc{} && parsed.ptr == hex.data() + hex.size()) {
-                return resolve(address, words, virtual_call);
+                return resolve(address, words, virtual_call, text);
             }
         }
         for (const auto& entry : std::span(kLiveCalls, kLiveCallCount)) {
             if (name == entry.service) {
                 std::vector<std::uint32_t> full(entry.lead, entry.lead_value);
                 full.insert(full.end(), words.begin(), words.end());
-                return resolve(entry.address, full);
+                return resolve(entry.address, full, false, text);
             }
         }
         for (const auto& entry : std::span(kServices, kServiceCount)) {
             if (name == entry.name) {
-                return resolve(entry.address, words);
+                return resolve(entry.address, words, false, text);
             }
         }
         throw runtime::ServiceFault("Linux host has no service named " + name);
@@ -482,6 +559,66 @@ public:
 #endif
 
 private:
+    void apply_audio_level(const char* key, std::uint32_t slider, std::uint32_t mixer, std::uint32_t save, std::uint32_t multiplier) {
+        if (const char* value = std::getenv(key); value != nullptr && *value != '\0') {
+            const auto level = static_cast<std::uint32_t>(std::clamp(std::atoi(value), 0, 10)) * 6 / 5;
+            memory_.set32(slider, level);
+            memory_.set32(mixer, level * multiplier);
+            memory_.set32(save, level);
+        }
+    }
+
+#ifdef OPENTONY_LINUX_MUSIC
+    void stop_music() {
+        music_.close();
+        music_active_ = false;
+        memory_.set32(runtime::pcplatform::audio::kMovieHandle, 0);
+        memory_.set8(runtime::pcplatform::audio::kMoviePlaying, 0);
+        memory_.set8(runtime::pcplatform::audio::kMovieThreadFlag, 0);
+    }
+#endif
+    void advance_ticks(double step, double frame) {
+        arena::at<double>(kFrameAccumulator) = frame;
+        memory_.set32(kSimTick, static_cast<std::uint32_t>(frame));
+        if (memory_.u32(kPauseFlag) == 0 && memory_.u32(kPauseFlag2) == 0) {
+            arena::at<double>(kGameAccumulator) = arena::at<double>(kGameAccumulator) + step;
+        }
+        memory_.set32(kGameTick, static_cast<std::uint32_t>(arena::at<double>(kGameAccumulator)));
+    }
+
+    void deliver_tick() {
+        namespace pacing = runtime::framepacing;
+        using Clock = std::chrono::steady_clock;
+        const auto now = Clock::now();
+        if (!pacing::pacing().exact_clock) {
+            const auto interval = std::chrono::milliseconds(std::max(memory_.u32(kTimerState + 4), 1u));
+            next_tick_ = std::max(next_tick_ + interval, now);
+            std::this_thread::sleep_until(next_tick_);
+            resolve(kTimerCallback, {0, 0, kTimerState, 0, 0});
+            return;
+        }
+
+        const auto before = memory_.u32(kSimTick);
+        const double step = last_delivery_ == Clock::time_point{} ? 0.0 :
+            std::clamp(std::chrono::duration<double>(now - last_delivery_).count() * 60.0, 0.0, 4.0);
+        const double frame = arena::at<double>(kFrameAccumulator) + step;
+        advance_ticks(step, frame);
+        last_delivery_ = now;
+        const auto last_scene = memory_.u32(kLastSceneTick);
+        const bool sub_tick = pacing::pacing().sub_tick;
+        const auto since_scene = pacing::count_delivery(sub_tick ? pacing::sub_tick_state().last_scene : last_scene);
+        double target = sub_tick ? pacing::scene_due(frame) : pacing::whole_tick_due(frame, last_scene, pacing::limiter_ticks());
+        if (target <= frame && since_scene >= pacing::kIdleDelivery && memory_.u32(kSimTick) == before) {
+            target = std::floor(frame) + 1.0;
+        }
+        if (target > frame) {
+            const double left = target - frame;
+            last_delivery_ = now + std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(left / 60.0));
+            std::this_thread::sleep_until(last_delivery_);
+            advance_ticks(left, target);
+        }
+    }
+
     const char* readable_text(std::uint32_t address) const {
         const auto heap_end = arena_.heap().stats().committed_end;
         const std::pair<std::uint32_t, std::uint32_t> ranges[] = {
@@ -565,12 +702,17 @@ private:
     LinuxGuestMemory& arena_;
     std::filesystem::path package_;
     thpsource2::IniFile settings_;
+#ifdef OPENTONY_LINUX_MUSIC
+    LinuxMusic music_;
+    bool music_active_ = false;
+#endif
     std::array<std::unique_ptr<std::FILE, CloseFile>, 16> streams_;
     std::optional<assets::PkrArchive> archive_;
     std::array<std::optional<Resource>, 10> resources_;
     std::int32_t mouse_x_ = 320;
     std::int32_t mouse_y_ = 240;
     std::chrono::steady_clock::time_point next_tick_{};
+    std::chrono::steady_clock::time_point last_delivery_{};
     bool menu_active_ = false;
 #ifdef OPENTONY_LINUX_SDL
     std::uint32_t menu_frames_ = 0;
@@ -671,6 +813,9 @@ void run_with_sdl_window(bool try_boot) {
     std::puts("Linux host: presented a frame through SDL3/OpenGL");
     std::fflush(stdout);
     if (try_boot) {
+        const auto pacing = configured_pacing();
+        runtime::framepacing::set_pacing(pacing);
+        std::printf("Linux host: target %.0f FPS\n", 60.0 / pacing.period_ticks);
         if (!ot_hal_sdl_input.init()) {
             throw runtime::ServiceFault("SDL input startup failed");
         }
