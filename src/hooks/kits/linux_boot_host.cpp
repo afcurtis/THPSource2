@@ -13,6 +13,7 @@
 #include "../../hal/sdl/sdl_api.h"
 #include "../../hal/sdl/sdl_backends.h"
 #include "../../hal/sdl/sdl_video.h"
+#include "standalone_gamepad.hpp"
 #endif
 
 #include <algorithm>
@@ -247,6 +248,7 @@ public:
             OtHalInputState state{};
             ot_hal_sdl_input.poll(&state);
             memory_.write(0x006a43e4, state.keys);
+            gamepad::update_joystick(state.pads[0]);
             memory_.set8(0x006a44f8, (state.mouse.buttons & OT_MOUSE_LEFT) != 0);
             if (state.mouse.dx || state.mouse.dy || state.mouse.buttons) {
                 mouse_x_ = std::clamp(state.mouse.x, 0, 639);

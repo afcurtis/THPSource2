@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 #include "guest_arena.hpp"
+#include "standalone_gamepad.hpp"
 
 namespace opentony::kitdll {
 namespace {
@@ -56,10 +57,7 @@ volatile T& retail(std::uint32_t address) {
 
 constexpr std::uint32_t kBuildActionMask = 0x004e42c0;
 constexpr std::uint32_t kKeyboard = 0x006a43e0;        // the keyboard wrapper: +4 the 256 key bytes
-constexpr std::uint32_t kJoystick = 0x006a42e8;        // the joystick wrapper (DIJOYSTATE at +4: lX, lY; buttons at +0x34)
-constexpr std::uint32_t kJoystickAcquired = 0x006a43d4;
 constexpr std::uint32_t kMouseButton = 0x006a44f8;     // the left button, as the window's WM_LBUTTONDOWN / UP leave it
-constexpr std::uint32_t kJoystickRange = 1000;
 constexpr std::int32_t kDisplayWidth = 640;            // the display the game is told it has, unless the program made another (display(), standalone_options.hpp)
 constexpr std::int32_t kDisplayHeight = 480;
 
@@ -323,59 +321,6 @@ void poll_hotkeys(const OtHalInputState& state) {
 }
 
 // ---- the devices ---------------------------------------------------------------------------------------------------------------
-std::int32_t joystick_axis(std::int16_t value, std::uint32_t buttons, std::uint32_t negative, std::uint32_t positive) {
-    if (buttons & negative) {
-        return -static_cast<std::int32_t>(kJoystickRange);
-    }
-    if (buttons & positive) {
-        return static_cast<std::int32_t>(kJoystickRange);
-    }
-    const std::int32_t scaled = static_cast<std::int32_t>(value) * static_cast<std::int32_t>(kJoystickRange) / 32767;
-    return scaled < -static_cast<std::int32_t>(kJoystickRange) ? -static_cast<std::int32_t>(kJoystickRange) : scaled;
-}
-
-// DIJOYSTATE as the hooked build's input adapter writes it (src/hooks/hal/hal_input.cpp): the stick (or the d-pad) in -1000..1000 and the buttons numbered as the game's
-// default JOYPAD bindings (JUMP=1 KICK=0 GRAB=2 GRIND=4 SPINLEFT=3 SPINRIGHT=5 NOLLIE=6 SWITCH=7) expect: the layout of the console game on an Xbox pad, A ollie, X flip,
-// B grab, Y grind, LB / RB spin, LT / RT nollie and switch. (SDL's own order, A B X Y, made B the ollie and Start a switch.) Back and Start follow as 8 and 9.
-void write_joystick(const OtHalGamepadState& pad) {
-    const std::uint32_t buttons = pad.buttons;
-    const bool pressed[] = {
-        (buttons & OT_GAMEPAD_WEST) != 0,           (buttons & OT_GAMEPAD_SOUTH) != 0,         (buttons & OT_GAMEPAD_EAST) != 0,
-        (buttons & OT_GAMEPAD_LEFT_SHOULDER) != 0,  (buttons & OT_GAMEPAD_NORTH) != 0,         (buttons & OT_GAMEPAD_RIGHT_SHOULDER) != 0,
-        pad.axes[OT_GAMEPAD_LEFT_TRIGGER] > 8192,   pad.axes[OT_GAMEPAD_RIGHT_TRIGGER] > 8192, (buttons & OT_GAMEPAD_BACK) != 0,
-        (buttons & OT_GAMEPAD_START) != 0,          (buttons & OT_GAMEPAD_LEFT_STICK) != 0,    (buttons & OT_GAMEPAD_RIGHT_STICK) != 0,
-    };
-    // OT_PAD_STICK left (the default) | right | none: the stick that moves the skater and the menus besides the d-pad (PARTYMOD's MovementStick; the launcher sets it)
-    static const int stick = [] {
-        const char* wanted = std::getenv("OT_PAD_STICK");
-        return wanted == nullptr ? 0 : std::strcmp(wanted, "right") == 0 ? 1 : std::strcmp(wanted, "none") == 0 ? -1 : 0;
-    }();
-    const std::int16_t stick_x = stick == 0 ? pad.axes[OT_GAMEPAD_LEFT_X] : stick == 1 ? pad.axes[OT_GAMEPAD_RIGHT_X] : 0;
-    const std::int16_t stick_y = stick == 0 ? pad.axes[OT_GAMEPAD_LEFT_Y] : stick == 1 ? pad.axes[OT_GAMEPAD_RIGHT_Y] : 0;
-    const std::int32_t x = joystick_axis(stick_x, buttons, OT_GAMEPAD_DPAD_LEFT, OT_GAMEPAD_DPAD_RIGHT);
-    const std::int32_t y = joystick_axis(stick_y, buttons, OT_GAMEPAD_DPAD_UP, OT_GAMEPAD_DPAD_DOWN);
-    retail<std::int32_t>(kJoystick + 0x04) = x;
-    retail<std::int32_t>(kJoystick + 0x08) = y;
-    for (std::uint32_t index = 0; index < 32; ++index) {
-        const bool down = index < sizeof pressed / sizeof pressed[0] && pressed[index];
-        retail<std::uint8_t>(kJoystick + 0x34 + index) = down ? 0x80 : 0x00;
-        retail<std::uint32_t>(kJoystick + 0x6c + 4 * index) = down ? 1u : 0u;
-    }
-    retail<std::int32_t>(kJoystick + 0x64) = x;
-    retail<std::int32_t>(kJoystick + 0x68) = y;
-}
-
-void clear_joystick() {
-    retail<std::int32_t>(kJoystick + 0x04) = 0;
-    retail<std::int32_t>(kJoystick + 0x08) = 0;
-    for (std::uint32_t index = 0; index < 32; ++index) {
-        retail<std::uint8_t>(kJoystick + 0x34 + index) = 0;
-        retail<std::uint32_t>(kJoystick + 0x6c + 4 * index) = 0;
-    }
-    retail<std::int32_t>(kJoystick + 0x64) = 0;
-    retail<std::int32_t>(kJoystick + 0x68) = 0;
-}
-
 // The rectangle of the window the picture covers (the video's present: the display's shape kept and centred, or the whole window when stretched)
 struct Shown {
     double left, top, width, height;
@@ -471,9 +416,8 @@ void poll_devices() {
     }
 
     // the joystick
-    const bool connected = state.pads[0].connected != 0;
-    if (connected) {
-        write_joystick(state.pads[0]);
+    gamepad::update_joystick(state.pads[0]);
+    if (state.pads[0].connected != 0) {
         static const bool pad_trace = std::getenv("OT_INPUT_TRACE") != nullptr;
         static std::uint32_t traced_buttons = 0;
         static std::int16_t traced_axes[OT_GAMEPAD_AXIS_COUNT];
@@ -483,12 +427,9 @@ void poll_devices() {
             std::memcpy(traced_axes, pad.axes, sizeof traced_axes);
             std::fprintf(stderr, "input: poll %u: pad buttons %05x axes %d %d %d %d %d %d joystick %d %d\n", static_cast<unsigned>(g_polls), static_cast<unsigned>(pad.buttons),
                          pad.axes[0], pad.axes[1], pad.axes[2], pad.axes[3], pad.axes[4], pad.axes[5],
-                         static_cast<int>(retail<std::int32_t>(kJoystick + 0x04)), static_cast<int>(retail<std::int32_t>(kJoystick + 0x08)));
+                         static_cast<int>(retail<std::int32_t>(gamepad::kJoystick + 0x04)), static_cast<int>(retail<std::int32_t>(gamepad::kJoystick + 0x08)));
         }
-    } else if (retail<std::uint8_t>(kJoystickAcquired) != 0) {
-        clear_joystick();
     }
-    retail<std::uint8_t>(kJoystickAcquired) = connected ? 1 : 0;
     ++g_polls;
 }
 

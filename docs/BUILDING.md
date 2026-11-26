@@ -107,6 +107,7 @@ build/native-sdl/opentony_linux_host --try-boot \
 ```
 
 The experimental boot skips movies and music and uses an empty save profile.
+The first SDL3 gamepad uses the game's default controller bindings.
 Settings are kept in memory. To verify the menu headlessly, set
 `SDL_VIDEODRIVER=offscreen`, `SDL_AUDIODRIVER=dummy`, and
 `OT_LINUX_MENU_SCREENSHOT` to the path of a BMP file. The host saves the
