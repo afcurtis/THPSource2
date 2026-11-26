@@ -130,6 +130,11 @@ bool open_device() {
     if (g_device == 0) {
         return false;
     }
+#ifdef __linux__
+    // SDL applies logical-device gain to each stream before mixing. Leave
+    // 6 dB of headroom for overlapping full-volume effects and music.
+    OT_SDL(SDL_SetAudioDeviceGain)(g_device, 0.5f);
+#endif
     if (!OT_SDL(SDL_GetAudioDeviceFormat)(g_device, &g_device_spec, 0)) {
         g_device_spec = wanted;
     }

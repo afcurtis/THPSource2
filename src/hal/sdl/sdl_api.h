@@ -97,6 +97,7 @@
     X(SDL_CloseAudioDevice)      \
     X(SDL_ResumeAudioDevice)     \
     X(SDL_GetAudioDeviceFormat)  \
+    X(SDL_SetAudioDeviceGain)    \
     X(SDL_CreateAudioStream)     \
     X(SDL_DestroyAudioStream)    \
     X(SDL_BindAudioStream)       \

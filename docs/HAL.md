@@ -471,6 +471,11 @@ consumes in real time. `OPENTONY_AUDIO_DRIVER` picks the driver;
 `OPENTONY_AUDIO_FILE` with `disk` writes the mixed output (float32 stereo)
 to a file, which is how the output is checked headless.
 
+On Linux, the logical device applies 6 dB of gain reduction before SDL
+mixes the streams. Overlapping effects and music can otherwise clip at
+full scale. Check for samples at either full-scale limit in a postmix
+capture to detect clipping that SDL has already clamped.
+
 The native Linux host applies the loudest request for a shared looping sound
 at the next input poll when `OT_VEHICLE_SOUND_FIX=1`. Hangar's fluorescent
 lights share one voice, and applying each emitter's settings as it updates
