@@ -97,6 +97,7 @@
     X(SDL_CloseAudioDevice)      \
     X(SDL_ResumeAudioDevice)     \
     X(SDL_GetAudioDeviceFormat)  \
+    X(SDL_SetAudioDeviceGain)    \
     X(SDL_CreateAudioStream)     \
     X(SDL_DestroyAudioStream)    \
     X(SDL_BindAudioStream)       \
@@ -104,6 +105,7 @@
     X(SDL_SetAudioStreamGetCallback) \
     X(SDL_PutAudioStreamData)    \
     X(SDL_GetAudioStreamQueued)  \
+    X(SDL_FlushAudioStream)      \
     X(SDL_ClearAudioStream)      \
     X(SDL_SetAudioStreamFrequencyRatio) \
     X(SDL_SetAudioStreamGain)    \

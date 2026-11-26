@@ -17,8 +17,6 @@
 #include "standalone_options.hpp"
 #include "standalone_static_init.hpp"
 
-#include <windows.h>
-
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -172,19 +170,20 @@ constexpr std::uint32_t kCommandLine = 0x029d8370;   // WinMain's lpCmdLine, kep
 constexpr std::uint32_t kMainWindow = 0x029d8374;
 constexpr std::uint32_t kOptionsPath = 0x029d8378;   // the working directory, "\" (0x00540c34), "TH2_OPT.CFG" (0x0055c344)
 constexpr std::uint32_t kWorkingDirectory = 0x006a71bc;
+
 constexpr std::uint32_t kScreenWidth = 0x029da394;
 constexpr std::uint32_t kScreenHeight = 0x029da398;
 
 
 // WINMAIN_InitDirectDraw (0x004f8130): the display-mode list cleared (0x7c1 words at 0x029d8478), DirectDraw created, the cooperative level and the
 // 640 x 480 x 16 display mode set (the screen words default to that size), the flipping primary and its back buffer made. The surfaces are the HAL's.
-void init_direct_draw() {
+void init_direct_draw(const Display& mode) {
     for (std::uint32_t k = 0; k < 0x7c1; ++k) {
         retail<std::uint32_t>(0x029d8478 + 4 * k) = 0;
     }
     if (retail<std::uint32_t>(kScreenWidth) == 0 && retail<std::uint32_t>(kScreenHeight) == 0) {
-        retail<std::uint32_t>(kScreenHeight) = static_cast<std::uint32_t>(display().height);   // 640 x 480 unless the program made a wider display (standalone_options.hpp)
-        retail<std::uint32_t>(kScreenWidth) = static_cast<std::uint32_t>(display().width);
+        retail<std::uint32_t>(kScreenHeight) = static_cast<std::uint32_t>(mode.height);
+        retail<std::uint32_t>(kScreenWidth) = static_cast<std::uint32_t>(mode.width);
     }
 }
 
@@ -332,12 +331,9 @@ void init_input() {
 
 }  // namespace
 
-bool g_booting = false;
+void standalone_initialize() { run_dynamic_initializers(); }
 
-// The whole start-up, then `main`; the answer is main's (the process ends in the clock's frame budget or the recorder's limit before that, as a rule).
-std::uint32_t standalone_boot() {
-    g_booting = true;
-    run_dynamic_initializers();
+void standalone_prepare_platform() {
     // Game_Startup (0x004f7e30), in its order
     // the (empty) command line is a guest block for the process's lifetime, as Windows keeps retail's
     const std::uint32_t command_line = arena::heap_allocate(16);
@@ -352,14 +348,28 @@ std::uint32_t standalone_boot() {
     std::strcat(arena::chars(kOptionsPath), arena::text(0x00540c34));
     std::strcat(arena::chars(kOptionsPath), arena::text(0x0055c344));
     retail<std::uint32_t>(kMainWindow) = 0;   // the HAL's window; the game passes the handle only to the platform calls stood in for here
-    init_direct_draw();
+}
+
+void standalone_read_startup_options() {
+#ifdef _WIN32
+    init_direct_draw(display());
+#else
+    init_direct_draw(Display{});
+#endif
     call(0x004f6b90);   // WINMAIN_LoadOptions
     call(0x004f6c60);   // WINMAIN_SaveOptions
+}
+
+std::uint32_t standalone_start_game() {
+#ifdef _WIN32
     options_after_load();   // the player's options that replace what the file holds (standalone_options.cpp); nothing without them
+#endif
     call(0x004f7ce0);   // Game_FrameTick
     init_direct3d();
     init_input();
+#ifdef _WIN32
     options_after_input();
+#endif
     call(0x004f27c0, {retail<std::uint32_t>(kMainWindow)});   // Audio_Init (standalone_audio.cpp)
     // Game_FrameTick: retail goes on when it answers 0x75 (an empty message queue) and shuts down otherwise; the seam answers SimulationPublicTick
     // (standalone_seams.cpp), and a closed window ends the program there
@@ -377,11 +387,26 @@ std::uint32_t standalone_boot() {
     return call(0x0046a770);          // main
 }
 
+#ifdef _WIN32
+bool g_booting = false;
+
+// The whole start-up, then `main`; the answer is main's.
+std::uint32_t standalone_boot() {
+    g_booting = true;
+    standalone_initialize();
+    standalone_prepare_platform();
+    standalone_read_startup_options();
+    return standalone_start_game();
+}
+
 bool standalone_booting() { return g_booting; }
+#endif
 
 }  // namespace opentony::kitdll
 
+#ifdef _WIN32
 // 9: the cold boot, for a program that has laid out the static data and attached the Kits (opentony_spike.exe, OT_SPIKE_CALL=boot)
 extern "C" __declspec(dllexport) std::uint32_t __cdecl ot_standalone_boot() {
     return opentony::kitdll::standalone_boot();
 }
+#endif

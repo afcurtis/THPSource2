@@ -71,7 +71,9 @@ def test_launcher_environment_is_read_by_the_standalone() -> None:
     """The display variables the launcher sets (core/settings.cpp launch_environment) are the ones the standalone reads."""
 
     settings = (ROOT / "src/launcher/thpsource2/core/settings.cpp").read_text()
-    sources = (ROOT / "src/hooks/kits/standalone_video.cpp").read_text() + (ROOT / "src/hooks/kits/standalone_platform.cpp").read_text()
+    sources = "".join((ROOT / "src/hooks/kits" / name).read_text() for name in (
+        "standalone_video.cpp", "standalone_platform.cpp", "standalone_gamepad.hpp",
+    ))
     for name in ("OT_WINDOW_MODE", "OT_WINDOW_SIZE", "OT_VSYNC", "OT_WINDOW_TITLE", "OT_PAD_STICK"):
         assert f'"{name}"' in settings and f'std::getenv("{name}")' in sources, name
 

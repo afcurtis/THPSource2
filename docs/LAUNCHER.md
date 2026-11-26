@@ -67,6 +67,11 @@ ImGui window, and the Windows process and Explorer calls. The launcher is built 
 Every setting is wired. Every run sets every variable in the list; an empty value unsets it, so nothing leaks from one run into the next. The
 standalone logs what it made in `run.txt` (`video: window ...`, `video: picture 1280 x 720, rendered at ...`, `options: ...`), including one `video: GPU <vendor> | <renderer> | OpenGL <version>` line (with the video memory where the driver reports it: NVIDIA's and AMD's extensions only) that names the GPU a crash report's DLL belongs to.
 
+The native Linux game uses the same aspect ratio, widescreen FOV, and
+in-level HUD settings. Auto chooses the picture shape when the game opens.
+Resizing a window scales that picture to fit. Menus stay in the centered
+4:3 area.
+
 | Launcher setting | `THPSource2.ini` | Environment | Done in |
 |---|---|---|---|
 | Window / borderless / fullscreen | `[Window] Windowed`, `Borderless` | `OT_WINDOW_MODE` = `windowed`, `borderless`, `fullscreen` | standalone_video.cpp |

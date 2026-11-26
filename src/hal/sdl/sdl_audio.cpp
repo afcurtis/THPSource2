@@ -87,6 +87,7 @@ void SDLCALL feed_voice(void *userdata, SDL_AudioStream *stream, int additional,
         uint32_t frames = static_cast<uint32_t>((remaining + 7) / 8);
         frames = frames < kChunkFrames ? frames : kChunkFrames;
         uint32_t rendered = 0;
+        bool end_of_sound = false;
         {
             Held held;
             Voice &voice = g_voices[slot];
@@ -101,18 +102,22 @@ void SDLCALL feed_voice(void *userdata, SDL_AudioStream *stream, int additional,
             rendered = ot_hal_audio_render(&sound->format, sound->data, sound->size, &voice.position, voice.loop,
                 voice.left, voice.right, buffer, frames);
             if (rendered < frames && !voice.loop) {
-                voice.finished = 1; // a one-shot reached its end
+                voice.finished = 1;
+                end_of_sound = true;
             }
             g_stats.frames_rendered += rendered;
         }
-        if (rendered == 0) {
-            return;
+        if (rendered != 0) {
+            OT_SDL(SDL_PutAudioStreamData)(stream, buffer, static_cast<int>(rendered * 8u));
         }
-        OT_SDL(SDL_PutAudioStreamData)(stream, buffer, static_cast<int>(rendered * 8u));
-        remaining -= static_cast<int>(rendered * 8u);
+        if (end_of_sound) {
+            // Allow SDL's resampler to emit the remaining samples without more input.
+            OT_SDL(SDL_FlushAudioStream)(stream);
+        }
         if (rendered < frames) {
             return;
         }
+        remaining -= static_cast<int>(rendered * 8u);
     }
 }
 
@@ -125,6 +130,11 @@ bool open_device() {
     if (g_device == 0) {
         return false;
     }
+#ifdef __linux__
+    // SDL applies logical-device gain to each stream before mixing. Leave
+    // 6 dB of headroom for overlapping full-volume effects and music.
+    OT_SDL(SDL_SetAudioDeviceGain)(g_device, 0.5f);
+#endif
     if (!OT_SDL(SDL_GetAudioDeviceFormat)(g_device, &g_device_spec, 0)) {
         g_device_spec = wanted;
     }
@@ -420,9 +430,20 @@ int OT_HAL_CALL audio_voice_playing(OtHalHandle handle) {
     if (g_lock == 0) {
         return 0;
     }
-    Held held;
-    const Voice *voice = voice_of(handle);
-    return voice != 0 && !voice->finished;
+    SDL_AudioStream *stream;
+    {
+        Held held;
+        const Voice *voice = voice_of(handle);
+        if (voice == 0) {
+            return 0;
+        }
+        if (!voice->finished) {
+            return 1;
+        }
+        stream = voice->stream;
+    }
+    // The producer can reach EOF before the device has played the queued tail.
+    return OT_SDL(SDL_GetAudioStreamQueued)(stream) > 0;
 }
 
 uint32_t OT_HAL_CALL audio_voice_position(OtHalHandle handle) {

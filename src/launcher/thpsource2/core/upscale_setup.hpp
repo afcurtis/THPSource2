@@ -51,6 +51,7 @@ struct CensusRun {
 };
 
 const Download& tool();
+std::filesystem::path tool_program(const std::filesystem::path& folder);
 std::span<const ModelPin> models();
 const ModelPin* model(const std::string& name);
 std::span<const CensusRun> census();

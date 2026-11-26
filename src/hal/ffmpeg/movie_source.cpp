@@ -10,7 +10,9 @@ extern "C" {
 #include <libavutil/log.h>
 }
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -27,9 +29,11 @@ namespace {
 // ---- the libraries, found and bound at run time ----------------------------------------------------------------------
 
 struct Api {
+#ifdef _WIN32
     HMODULE util = nullptr;
     HMODULE codec = nullptr;
     HMODULE format = nullptr;
+#endif
 
     // avutil
     AVFrame* (*frame_alloc)() = nullptr;
@@ -60,6 +64,7 @@ Api g_api;
 bool g_tried = false;
 std::string g_detail;
 
+#ifdef _WIN32
 std::string module_directory() {
     HMODULE self = nullptr;
     if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
@@ -148,6 +153,24 @@ bool load_api() {
     g_detail = "loaded from " + tried.substr(tried.rfind("; ") == std::string::npos ? 0 : tried.rfind("; ") + 2);
     return true;
 }
+
+#else
+bool load_api() {
+    if (!g_tried) {
+        g_tried = true;
+        g_api = {
+            av_frame_alloc, av_frame_free, av_frame_unref, av_log_set_level,
+            avcodec_find_decoder, avcodec_alloc_context3, avcodec_parameters_to_context,
+            avcodec_open2, avcodec_send_packet, avcodec_receive_frame, avcodec_free_context,
+            avcodec_flush_buffers, av_packet_alloc, av_packet_free, av_packet_unref,
+            avformat_open_input, avformat_find_stream_info, av_read_frame, av_seek_frame, avformat_close_input,
+        };
+        g_api.log_set_level(AV_LOG_ERROR);
+        g_detail = "linked system FFmpeg";
+    }
+    return true;
+}
+#endif
 
 // float [-1, 1) to 16 bits
 std::int16_t to_pcm16(float value) {

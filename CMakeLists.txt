@@ -7,6 +7,8 @@ find_package(ZLIB REQUIRED)
 include(cmake/opentony_sources.cmake)
 
 option(OPENTONY_BUILD_TESTS "Build native reconstruction tests" ON)
+option(OPENTONY_BUILD_SDL "Build the native SDL3 platform backend" OFF)
+option(OPENTONY_BUILD_LINUX_LAUNCHER "Build the native Linux graphical launcher" OFF)
 
 add_library(opentony_assets STATIC ${OPENTONY_ASSETS_SOURCES})
 target_compile_features(opentony_assets PUBLIC cxx_std_20)
@@ -33,6 +35,28 @@ target_link_libraries(opentony_native_replay PRIVATE opentony_runtime)
 target_compile_features(opentony_native_replay PRIVATE cxx_std_20)
 target_compile_options(opentony_native_replay PRIVATE -Wall -Wextra -Wpedantic)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SIZEOF_VOID_P EQUAL 8
+        AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+    add_executable(opentony_linux_host
+        src/hooks/kits/linux_boot_host.cpp
+        src/hooks/kits/linux_guest_memory.cpp
+        src/hooks/kits/linux_host_main.cpp
+        src/hooks/kits/standalone_audio.cpp
+        src/hooks/kits/standalone_boot.cpp
+        src/hooks/kits/standalone_kits_generated.cpp
+        src/hooks/kits/standalone_static_init_generated.cpp
+        src/hooks/kits/standalone_surfaces.cpp
+        src/launcher/thpsource2/core/ini.cpp
+    )
+    # The generated adapters keep their argument lists on Linux and use
+    # the host calling convention. Thiscall adapters still take a dummy EDX.
+    set_source_files_properties(src/hooks/kits/standalone_kits_generated.cpp PROPERTIES
+        COMPILE_DEFINITIONS "__cdecl=;__stdcall=;__fastcall=")
+    target_link_libraries(opentony_linux_host PRIVATE opentony_runtime)
+    target_include_directories(opentony_linux_host PRIVATE src/hal)
+    target_compile_options(opentony_linux_host PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 # Portable part of the platform HAL (src/hal/, docs/HAL.md). The backends and
 # hook adapters are Win32-only and built by src/hooks/CMakeLists.txt.
 add_library(opentony_hal STATIC
@@ -49,6 +73,46 @@ add_library(opentony_hal STATIC
 target_compile_features(opentony_hal PUBLIC cxx_std_20)
 target_include_directories(opentony_hal PUBLIC src/hal)
 target_compile_options(opentony_hal PRIVATE -Wall -Wextra -Wpedantic)
+
+if(OPENTONY_BUILD_SDL)
+    find_package(SDL3 3.4 REQUIRED CONFIG)
+    add_library(opentony_hal_sdl STATIC
+        src/hal/sdl/sdl_audio.cpp
+        src/hal/sdl/sdl_clock.cpp
+        src/hal/sdl/sdl_input.cpp
+        src/hal/sdl/sdl_video_gl.cpp
+        src/hal/sdl/sdl_video_gpu.cpp
+        src/hal/sdl/sdl_window.cpp
+    )
+    target_compile_features(opentony_hal_sdl PUBLIC cxx_std_20)
+    target_compile_definitions(opentony_hal_sdl PUBLIC OT_SDL_DYNAMIC=0)
+    target_link_libraries(opentony_hal_sdl PUBLIC opentony_hal SDL3::SDL3)
+    if(TARGET opentony_linux_host)
+        target_compile_definitions(opentony_linux_host PRIVATE OPENTONY_LINUX_SDL=1)
+        target_link_libraries(opentony_linux_host PRIVATE opentony_hal_sdl)
+        find_package(PkgConfig QUIET)
+        if(PkgConfig_FOUND)
+            pkg_check_modules(OPENTONY_FFMPEG QUIET IMPORTED_TARGET libavcodec libavformat libavutil)
+            if(OPENTONY_FFMPEG_FOUND)
+                target_sources(opentony_linux_host PRIVATE src/hal/ffmpeg/movie_source.cpp src/hooks/kits/linux_music.cpp)
+                target_compile_definitions(opentony_linux_host PRIVATE OPENTONY_LINUX_MUSIC=1)
+                target_link_libraries(opentony_linux_host PRIVATE PkgConfig::OPENTONY_FFMPEG)
+            endif()
+        endif()
+    endif()
+
+    if(OPENTONY_BUILD_TESTS)
+        add_executable(opentony_texture_pack_test src/hooks/tools/texture_pack_test.cpp)
+        target_link_libraries(opentony_texture_pack_test PRIVATE opentony_hal_sdl)
+    endif()
+endif()
+
+if(OPENTONY_BUILD_LINUX_LAUNCHER)
+    if(NOT TARGET opentony_linux_host OR NOT TARGET opentony_hal_sdl)
+        message(FATAL_ERROR "The Linux launcher requires Linux x86-64 and OPENTONY_BUILD_SDL=ON")
+    endif()
+    include(cmake/linux_launcher.cmake)
+endif()
 
 if(OPENTONY_BUILD_TESTS)
     enable_testing()

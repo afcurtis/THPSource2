@@ -191,13 +191,12 @@ int OT_HAL_CALL window_create(const OtHalWindowDesc *desc) {
 }
 
 int OT_HAL_CALL window_adopt(void *native_window) {
+#ifdef _WIN32
     if (g_window != 0 || native_window == 0) {
         return 0;
     }
     SDL_PropertiesID properties = OT_SDL(SDL_CreateProperties)();
-#ifdef _WIN32
     OT_SDL(SDL_SetPointerProperty)(properties, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, native_window);
-#endif
     // With OpenGL the adopted window gets a GL pixel format (video=sdl draws into it);
     // with Vulkan it gets a surface the SDL_GPU backend can claim.
     OT_SDL(SDL_SetBooleanProperty)(properties, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, g_opengl != 0);
@@ -208,10 +207,12 @@ int OT_HAL_CALL window_adopt(void *native_window) {
         return 0;
     }
     g_adopted = 1;
-#ifdef _WIN32
     find_helpers();
-#endif
     return 1;
+#else
+    (void)native_window;
+    return 0;
+#endif
 }
 
 void OT_HAL_CALL window_destroy(void) {

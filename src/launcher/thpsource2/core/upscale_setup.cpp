@@ -97,7 +97,30 @@ int count_pngs(const fs::path& folder, std::uintmax_t* bytes) {
 
 }  // namespace
 
-const Download& tool() { return kTool; }
+const Download& tool() {
+#ifdef __linux__
+    static constexpr Download linux_tool{
+        "upscayl-bin",
+        "https://github.com/upscayl/upscayl-ncnn/releases/download/20251207-174704/upscayl-bin-20251207-174704-linux.zip",
+        3952825,
+        "a9fab3c770b62f2b7a35d8d6d61eb4e8b3aef79128b665c919d080b85a2292f2",
+        "upscayl-bin-20251207-174704-linux/upscayl-bin",
+        "AGPL-3.0",
+        "https://github.com/upscayl/upscayl-ncnn",
+    };
+    return linux_tool;
+#else
+    return kTool;
+#endif
+}
+
+fs::path tool_program(const fs::path& folder) {
+#ifdef __linux__
+    return folder / "upscayl-bin";
+#else
+    return folder / "upscayl-bin.exe";
+#endif
+}
 std::span<const ModelPin> models() { return kModels; }
 const ModelPin* model(const std::string& name) {
     for (const ModelPin& m : kModels) {
@@ -164,16 +187,17 @@ bool write_class_table(const fs::path& file, std::string& error) {
 std::vector<Fetch> download_plan(const fs::path& folder, const upscale::Options& options) {
     std::vector<Fetch> plan;
     std::error_code ec;
-    if (!fs::is_regular_file(folder / "upscayl-bin.exe", ec)) {
+    if (!fs::is_regular_file(tool_program(folder), ec)) {
+        const auto& binary = tool();
         Fetch f;
-        f.what = std::string("the upscaler (") + kTool.name + ", " + kTool.licence + ")";
-        f.url = kTool.url;
+        f.what = std::string("the upscaler (") + binary.name + ", " + binary.licence + ")";
+        f.url = binary.url;
         f.to = folder / "upscayl-bin.zip";
-        f.size = kTool.size;
-        f.sha256 = kTool.sha256;
+        f.size = binary.size;
+        f.sha256 = binary.sha256;
         f.zip = true;
-        f.member = kTool.member;
-        f.program = folder / "upscayl-bin.exe";
+        f.member = binary.member;
+        f.program = tool_program(folder);
         plan.push_back(f);
     }
     std::vector<std::string> names;
@@ -357,7 +381,7 @@ int merge_dumps(const std::vector<fs::path>& runs, const fs::path& out, std::str
 State state(const fs::path& upscaler, const fs::path& dump, const fs::path& upscaled, const upscale::Options& options) {
     State s;
     std::error_code ec;
-    s.tool = fs::is_regular_file(upscaler / "upscayl-bin.exe", ec);
+    s.tool = fs::is_regular_file(tool_program(upscaler), ec);
     s.models = true;
     for (const Fetch& f : download_plan(upscaler, options)) {
         s.models = s.models && f.zip;   // only the tool is missing (or nothing)

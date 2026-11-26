@@ -115,12 +115,19 @@ runtime::drawkit::Output g_draw_output;   // what the draw path (src/runtime/dra
 
 // The video backend the draw path draws into and uploads textures to. Call it before the first draw; a different backend replaces the cache (its textures belonged to the
 // old one).
-extern "C" __declspec(dllexport) void __cdecl ot_standalone_set_video_hal(const OtHalVideoBackend* video) {
+void opentony_standalone_video_hal(const OtHalVideoBackend* video) {
     opentony::kitdll::g_textures.reset();
     opentony::kitdll::g_video = video;
     opentony::kitdll::g_draw_output.video = video;
+#ifdef _WIN32
     opentony::kitdll::g_draw_output.movie_texture = &opentony::kitdll::movie_overlay_texture;   // the level select's video box
+#endif
     opentony::runtime::drawkit::set_output(opentony::kitdll::g_draw_output);
+}
+
+#ifdef _WIN32
+extern "C" __declspec(dllexport) void __cdecl ot_standalone_set_video_hal(const OtHalVideoBackend* video) {
+    opentony_standalone_video_hal(video);
 }
 
 // record != 0 keeps each frame's primitive stream (ot_standalone_draw_stream); on_present runs after each present with the frame number (0 first), from inside the
@@ -147,3 +154,4 @@ extern "C" __declspec(dllexport) std::uint32_t __cdecl ot_standalone_draw_stream
     }
     return static_cast<std::uint32_t>(file.size());
 }
+#endif

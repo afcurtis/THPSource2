@@ -45,6 +45,7 @@
 #include "../../hal/movie.h"
 #include "../../hal/video.h"
 
+#include "standalone_display.hpp"
 #include "standalone_png.hpp"
 #include "standalone_texture_dump.hpp"
 
@@ -475,36 +476,6 @@ void __cdecl on_present(std::uint32_t frame, void*) {
     std::fflush(stdout);
 }
 
-// OT_ASPECT: the picture's shape as width over height, 0 for `window` (the caller knows the window), and whether it is stretched over the window
-struct Aspect {
-    double ratio = 4.0 / 3.0;
-    bool window = false;
-    bool stretch = false;
-};
-Aspect parse_aspect(const char* text) {
-    Aspect aspect;
-    if (text == nullptr || *text == '\0') {
-        return aspect;
-    }
-    int w = 0, h = 0;
-    if (std::strcmp(text, "window") == 0 || std::strcmp(text, "auto") == 0) {
-        aspect.window = true;
-    } else if (std::strcmp(text, "stretch") == 0) {
-        aspect.stretch = true;
-    } else if (std::sscanf(text, "%d:%d", &w, &h) == 2 && w > 0 && h > 0) {
-        aspect.ratio = static_cast<double>(w) / static_cast<double>(h);
-    }
-    return aspect;
-}
-
-// The width of the game's screen for a picture of that shape, its height being 480: 640 for 4:3 and anything narrower (the game's 2D layer has no narrower layout), an
-// even number up to 32:9
-std::int32_t picture_width(double ratio) {
-    const double clamped = (std::min)((std::max)(ratio, 4.0 / 3.0), 32.0 / 9.0);
-    const auto width = static_cast<std::int32_t>(480.0 * clamped + 0.5);
-    return (std::max)((width + 1) & ~1, 640);
-}
-
 }  // namespace
 
 // Starts the video, the window, the input and the audio when OT_VIDEO_DIR, OT_VIDEO_SDL or OT_VIDEO_SHOW is set: false only when it was asked for and cannot run.
@@ -542,9 +513,9 @@ extern "C" __declspec(dllexport) bool __cdecl standalone_video_start(HMODULE kit
     OtHalVideoMode mode = {640, 480, 32u, 0u, 0u};
     const bool show = std::getenv("OT_VIDEO_SHOW") != nullptr;
     // the player's display options: the picture's shape decides the mode (the size the game draws in), the rest is how the backend renders and presents it
-    Aspect aspect = parse_aspect(std::getenv("OT_ASPECT"));
+    auto aspect = opentony::kitdll::parse_aspect(std::getenv("OT_ASPECT"));
     if (!aspect.window) {
-        mode.width = picture_width(aspect.ratio);
+        mode.width = opentony::kitdll::picture_width(aspect.ratio);
     }
     const bool display_options = std::getenv("OT_ASPECT") != nullptr || std::getenv("OT_INTERNAL_RESOLUTION") != nullptr;
     const char* pacing = std::getenv("OT_PACING");
@@ -590,7 +561,7 @@ extern "C" __declspec(dllexport) bool __cdecl standalone_video_start(HMODULE kit
             } else if (show && desktop.w > 0 && desktop.h > 0) {
                 aspect.ratio = static_cast<double>(desktop.w) / desktop.h;   // an automatic window takes the display's shape
             }
-            mode.width = picture_width(aspect.ratio);
+            mode.width = opentony::kitdll::picture_width(aspect.ratio);
         }
         std::int32_t scale = 1;
         if (const char* wanted = std::getenv("OT_WINDOW_SCALE"); wanted != nullptr && show) {

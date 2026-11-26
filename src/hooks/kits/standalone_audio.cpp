@@ -22,9 +22,8 @@
 #include "audio.h"
 #include "wav_asset.hpp"
 
-#include <windows.h>
-
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -289,12 +288,25 @@ bool device_up() { return retail<std::uint32_t>(kDevice) != 0; }
 // OT_VEHICLE_SOUND_FIX=1 (the launcher's default) arbitrates the shared voice, PARTYMOD's way (sfx.c: only the nearest emitter moves the sound), without knowing the emitters: the
 // loudest call of a tick is the nearest emitter's (the levels come from the distance), so it alone is applied, and a silent call on a playing voice only mutes it and is carried out
 // when a whole tick went by with nobody in range. One-shots and a run without the variable keep retail's behaviour.
+#ifdef _WIN32
 struct SharedVoice {
     std::uint64_t stamp = ~0ull;   // the tick of the calls below
     std::int32_t best = -1;        // the loudest level asked for in that tick
     bool pending = false;          // the voice is muted and waits for a tick in which nobody wanted it
 };
 SharedVoice g_shared[kSlotCount];
+
+#else
+// Resolve the competing requests before publishing gain and pan to the
+// asynchronous mixer so it cannot render an intermediate emitter's settings.
+struct LoopVolume {
+    std::uint32_t duplicate = 0;
+    std::int32_t left = 0;
+    std::int32_t right = 0;
+    std::int32_t level = -1;
+};
+LoopVolume g_loop_volumes[kSlotCount];
+#endif
 
 bool vehicle_sound_fix() {
     static const bool on = [] {
@@ -304,8 +316,10 @@ bool vehicle_sound_fix() {
     return on;
 }
 
+#ifdef _WIN32
 // the frame counter and the animation clock: constant while the objects of one tick update, different in the next
 std::uint64_t tick_stamp() { return (static_cast<std::uint64_t>(retail<std::uint32_t>(kFrameCounter)) << 32) | retail<std::uint32_t>(kAnimationClock); }
+#endif
 
 // ---- the arithmetic of the retail code -------------------------------------------------------------------------------------------
 // `_ftol` (VC6): truncation to a 64-bit integer, the low dword returned
@@ -345,7 +359,20 @@ std::int32_t volume_mb(std::uint32_t record, std::int32_t left, std::int32_t rig
     return ftol(stored) - kVolumeFloor;
 }
 // the pan: the quieter side over the louder, scaled to +-10000 (0x004f30b7..0x004f30f1)
-std::int32_t pan_mb(std::int32_t left, std::int32_t right) {
+std::int32_t pan_mb(std::uint32_t record, std::int32_t left, std::int32_t right) {
+#ifndef _WIN32
+    if (vehicle_sound_fix() && retail<std::uint8_t>(record + 0x2c) != 0 && left != right) {
+        // The HAL expects attenuation in millibels. Preserve the requested
+        // channel ratio, with no discontinuity as the levels cross.
+        const auto quieter = (std::min)(left, right);
+        const auto louder = (std::max)(left, right);
+        const auto attenuation = quieter == 0 ? 10000 : (std::min)(
+            10000, static_cast<int>(-2000.0 * std::log10(static_cast<double>(quieter) / louder)));
+        return left > right ? -attenuation : attenuation;
+    }
+#else
+    (void)record;
+#endif
     if (right < left) {
         return ftol(rounded(rounded(static_cast<long double>(right) / left) * constant(kConstPanLeft)));
     }
@@ -379,7 +406,11 @@ void stop_sound(std::uint32_t voice) {
     if (slot >= kSlotCount) {
         return;
     }
+#ifdef _WIN32
     g_shared[slot] = SharedVoice{};
+#else
+    g_loop_volumes[slot] = LoopVolume{};
+#endif
     for (Buffer& buffer : g_slots[slot].buffers) {
         if (buffer.exists) {
             stop(buffer);
@@ -395,6 +426,9 @@ void halt_sound(std::uint32_t slot) {
     if (!device_up() || slot >= kSlotCount) {
         return;
     }
+#ifndef _WIN32
+    g_loop_volumes[slot] = LoopVolume{};
+#endif
     for (Buffer& buffer : g_slots[slot].buffers) {
         if (buffer.exists) {
             stop(buffer);
@@ -416,7 +450,7 @@ bool start_buffer(std::uint32_t slot, std::uint32_t dup, std::int32_t left, std:
         return false;
     }
     buffer.volume_mb = volume;
-    buffer.pan_mb = pan_mb(left, right);
+    buffer.pan_mb = pan_mb(record, left, right);
     buffer.frequency = frequency_of(record);
     apply(host, buffer);
     play(host, buffer, (flags_of(slot) & 2) != 0);
@@ -502,6 +536,7 @@ std::uint32_t play_sound(const Args& args) {
     return voice;
 }
 
+#ifdef _WIN32
 // True when the call must not reach the retail code (see "vehicles that share a sound"): a quieter call than the tick's loudest, or a silent one on a voice that is playing
 bool shared_voice_skips(std::uint32_t slot, std::uint32_t dup, std::int32_t left, std::int32_t right) {
     const std::uint32_t record = record_of(slot);
@@ -537,26 +572,12 @@ bool shared_voice_skips(std::uint32_t slot, std::uint32_t dup, std::int32_t left
     }
     return true;
 }
+#endif
 
-// 0x004f34b0
-void set_voice_volume(const Args& args) {
-    if (args.size() < 3 || !device_up()) {
-        return;
-    }
-    const std::uint32_t slot = args[0] & 0xffff;
-    const std::uint32_t dup = (args[0] >> 16) & 7;
-    if (slot >= kSlotCount) {
-        return;
-    }
-    report("SetVoiceVolume", args[0], args[1], args[2]);
-    if (vehicle_sound_fix() && shared_voice_skips(slot, dup, static_cast<std::int32_t>(args[1]), static_cast<std::int32_t>(args[2]))) {
-        return;
-    }
+void apply_voice_volume(std::uint32_t slot, std::uint32_t dup, std::int32_t left, std::int32_t right) {
     if ((flags_of(slot) & 1) == 0) {
-        start_voice(slot, static_cast<std::int32_t>(args[1]), static_cast<std::int32_t>(args[2]));
+        start_voice(slot, left, right);
     }
-    const std::int32_t left = (std::max)(static_cast<std::int32_t>(args[1]), 0);
-    const std::int32_t right = (std::max)(static_cast<std::int32_t>(args[2]), 0);
     if (left < 1 && right < 1) {
         stop_sound(slot);
         return;
@@ -573,8 +594,41 @@ void set_voice_volume(const Args& args) {
         return;
     }
     buffer.volume_mb = volume;
-    buffer.pan_mb = pan_mb(left, right);
+    buffer.pan_mb = pan_mb(record, left, right);
     apply(host, buffer);
+}
+
+// 0x004f34b0
+void set_voice_volume(const Args& args) {
+    if (args.size() < 3 || !device_up()) {
+        return;
+    }
+    const std::uint32_t slot = args[0] & 0xffff;
+    const std::uint32_t dup = (args[0] >> 16) & 7;
+    if (slot >= kSlotCount) {
+        return;
+    }
+    report("SetVoiceVolume", args[0], args[1], args[2]);
+    const auto left = (std::max)(static_cast<std::int32_t>(args[1]), 0);
+    const auto right = (std::max)(static_cast<std::int32_t>(args[2]), 0);
+    if (vehicle_sound_fix()) {
+#ifdef _WIN32
+        if (shared_voice_skips(slot, dup, left, right)) {
+            return;
+        }
+#else
+        const auto record = record_of(slot);
+        if (record != 0 && retail<std::uint8_t>(record + 0x2c) != 0) {
+            auto& request = g_loop_volumes[slot];
+            const auto level = (std::max)(left, right);
+            if (level > request.level) {
+                request = {dup, left, right, level};
+            }
+            return;
+        }
+#endif
+    }
+    apply_voice_volume(slot, dup, left, right);
 }
 
 // 0x004f3690: the frequency comes from the record's pitch, which the sound front stores before it calls
@@ -701,6 +755,38 @@ std::vector<std::uint8_t> read_file(const std::string& path) {
     return bytes;
 }
 
+#ifdef __linux__
+// The stock Hangar light loop has a strong 60 Hz hum and a separate band of
+// crackle above 2 kHz. Filter across the wrap so the seam is smoothed as well.
+std::vector<std::int16_t> filter_hangar_lights(const assets::WavPcmAsset& wav) {
+    constexpr int radius = 48;
+    constexpr double pi = 3.14159265358979323846;
+    constexpr double cutoff_hz = 900.0;
+    const auto samples = wav.samples();
+    const auto count = samples.size() / 2;
+    const double cutoff = cutoff_hz / wav.format().samples_per_second;
+    double kernel[2 * radius + 1];
+    double total = 0;
+    for (int tap = -radius; tap <= radius; ++tap) {
+        const double window = 0.5 + 0.5 * std::cos(pi * tap / radius);
+        const double sinc = tap == 0 ? 2 * cutoff : std::sin(2 * pi * cutoff * tap) / (pi * tap);
+        kernel[tap + radius] = window * sinc;
+        total += window * sinc;
+    }
+    std::vector<std::int16_t> filtered(count);
+    for (std::size_t index = 0; index < count; ++index) {
+        double value = 0;
+        for (std::size_t tap = 0; tap < std::size(kernel); ++tap) {
+            const auto at = 2 * ((index + count + tap - radius) % count);
+            const auto word = std::to_integer<unsigned>(samples[at]) | (std::to_integer<unsigned>(samples[at + 1]) << 8);
+            value += kernel[tap] * static_cast<std::int16_t>(word);
+        }
+        filtered[index] = static_cast<std::int16_t>(std::clamp(std::lround(value / total), -32768L, 32767L));
+    }
+    return filtered;
+}
+#endif
+
 // 0x004f2b40: the first free slot, the sound made from the WAV; the slot, or -1
 std::uint32_t create_buffer_from_wav(const std::string& path) {
     std::uint32_t slot = 0;
@@ -732,6 +818,14 @@ std::uint32_t create_buffer_from_wav(const std::string& path) {
         desc.format.bits_per_sample = wav.format().bits_per_sample;
         desc.data = wav.samples().data();
         desc.size = static_cast<std::uint32_t>(wav.sample_size());
+#ifdef __linux__
+        std::vector<std::int16_t> filtered;
+        if (path == "audio/humlights1.wav" && desc.format.sample_rate == 44100 &&
+            desc.format.channels == 1 && desc.format.bits_per_sample == 16 && desc.size >= 2 * 48) {
+            filtered = filter_hangar_lights(wav);
+            desc.data = filtered.data();
+        }
+#endif
         Slot& host = g_slots[slot];
         host = Slot{};
         host.sound = g_audio->sound_create(&desc);
@@ -739,6 +833,9 @@ std::uint32_t create_buffer_from_wav(const std::string& path) {
         host.buffers[0].exists = true;
         retail<std::uint32_t>(slot_address(slot)) = token(slot, 0);
         report("  sound_create", slot, desc.format.sample_rate, desc.size);
+        if (log_calls()) {
+            std::fprintf(stderr, "audio: slot %u: %s\n", static_cast<unsigned>(slot), path.c_str());
+        }
     } catch (const std::exception& problem) {
         std::fprintf(stderr, "game: ERROR!!!!!! Loading WAV file %s (%s)\n", path.c_str(), problem.what());
         return 0xffffffffu;
@@ -790,9 +887,15 @@ void audio_init() {
     for (Slot& slot : g_slots) {
         slot = Slot{};
     }
+#ifdef _WIN32
     for (SharedVoice& shared : g_shared) {
         shared = SharedVoice{};
     }
+#else
+    for (LoopVolume& request : g_loop_volumes) {
+        request = LoopVolume{};
+    }
+#endif
     retail<std::uint32_t>(kDevice) = 0xa0d10001u;
 }
 
@@ -850,7 +953,28 @@ bool call_audio_seam(std::uint32_t address, const std::vector<std::uint32_t>& ar
 
 }  // namespace opentony::kitdll
 
+#ifndef _WIN32
+void opentony::kitdll::flush_standalone_loop_volumes() {
+    if (!vehicle_sound_fix() || !device_up()) {
+        return;
+    }
+    for (std::uint32_t slot = 0; slot < kSlotCount; ++slot) {
+        const auto request = g_loop_volumes[slot];
+        if (request.level >= 0) {
+            g_loop_volumes[slot] = LoopVolume{};
+            apply_voice_volume(slot, request.duplicate, request.left, request.right);
+        }
+    }
+}
+#endif
+
+void opentony::kitdll::set_standalone_audio(const OtHalAudioBackend* audio) {
+    g_audio = audio != nullptr ? audio : &kSilent;
+}
+
+#ifdef _WIN32
 // The HAL's audio service of the program (already initialised by the program, or null for no sound). Audio_Init (0x004f27c0) asks it to start.
 extern "C" __declspec(dllexport) void __cdecl ot_standalone_set_audio_hal(const OtHalAudioBackend* audio) {
-    opentony::kitdll::g_audio = audio != nullptr ? audio : &opentony::kitdll::kSilent;
+    opentony::kitdll::set_standalone_audio(audio);
 }
+#endif
