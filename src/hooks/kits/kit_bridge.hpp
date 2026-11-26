@@ -89,6 +89,9 @@ std::uint32_t platform_input_polls();
 bool call_audio_seam(std::uint32_t address, const std::vector<std::uint32_t>& args, const std::string& text, std::uint32_t& result);
 bool has_audio_seam(std::uint32_t address);
 void set_standalone_audio(const OtHalAudioBackend* audio);
+#ifndef _WIN32
+void flush_standalone_loop_volumes();
+#endif
 // standalone_movie.cpp (5.3b): the Bink seams (SetupFullScreenMovie ... CloseBinkMovie, and _beginthread for the music thread) and the
 // Bink imports the natives report by name (`win32_BinkWait` ...). True when the address or the name is one of theirs.
 bool call_movie_seam(std::uint32_t address, const std::vector<std::uint32_t>& args, const std::string& text, std::uint32_t& result);

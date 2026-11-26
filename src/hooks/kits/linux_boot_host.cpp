@@ -337,6 +337,7 @@ public:
             return memory_.u32(kSimTick);
         }
         if (address == seam::hal::PCInput_Poll) {
+            flush_standalone_loop_volumes();
 #ifdef OPENTONY_LINUX_SDL
             OtHalInputState state{};
             ot_hal_sdl_input.poll(&state);

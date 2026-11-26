@@ -471,6 +471,12 @@ consumes in real time. `OPENTONY_AUDIO_DRIVER` picks the driver;
 `OPENTONY_AUDIO_FILE` with `disk` writes the mixed output (float32 stereo)
 to a file, which is how the output is checked headless.
 
+The native Linux host applies the loudest request for a shared looping sound
+at the next input poll when `OT_VEHICLE_SOUND_FIX=1`. Hangar's fluorescent
+lights share one voice, and applying each emitter's settings as it updates
+can expose a momentary mute or pan change to the SDL mixer. The selected
+request's channel ratio is converted to millibels for the HAL.
+
 `audio=sdl` (`src/hooks/hal/audio_hal.cpp`) replaces `Audio_Init` only:
 `AudioDevice` becomes a stand-in `IDirectSound` whose buffers are HAL
 sounds and voices, and everything else in pc\soundlib.cpp (loading, the
