@@ -2,7 +2,7 @@
 
 [![Latest release](https://badgen.net/github/release/afcurtis/THPSource2)](https://github.com/afcurtis/THPSource2/releases/latest)
 [![Licence: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-![Platform: Windows 10/11 64-bit](https://img.shields.io/badge/platform-Windows%2010%2F11%20(64--bit)-blue)
+![Platforms: Windows and Linux x86-64](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue)
 
 **A full decompilation of Tony Hawk's Pro Skater 2 rebuilt into a native modern game** [x32|PC|2000] → [x64|PC|Portable]. Any resolution or aspect ratio, up to 120fps, unlimited draw distance, texture upscaling, new game modes and much more. Bring your own copy of the game.
 
@@ -76,6 +76,15 @@ you can also keep the look you love and add what you want: a higher frame rate, 
 
 ## Get playing
 
+### Linux (x86-64)
+
+[Build the native SDL3 launcher from source](docs/BUILDING.md#native-linux),
+point it at your PC game files, and press **Play**. The Linux build runs without Wine and supports native
+gamepad input, the original soundtrack with FFmpeg, widescreen, and adjustable HUD placement.
+See the build guide for current Linux feature limits.
+
+### Windows
+
 1. Download `thpsource2-win64.zip` from the [latest release](https://github.com/afcurtis/THPSource2/releases/latest) and unzip it anywhere.
 2. Run `THPSource2.exe` and point it at your game: an installed copy, the disc, or a disc image (`.iso`, `.bin`, `.img`).
 3. Press **PLAY**.
@@ -95,7 +104,7 @@ has the details.
 - **Weather and time of day**
 - **More levels**, and **custom levels**
 - **Later-series mechanics**, such as keeping a combo going through a revert
-- **Linux and Android builds**
+- **Android build**
 - **Tougher competitions**
 - **An in-game mod menu**
 

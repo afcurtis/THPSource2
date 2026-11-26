@@ -1,6 +1,6 @@
 # Building and running THPSource2
 
-This is the whole path from a clean checkout to the game running on Windows. `.github/workflows/native.yml` runs the same commands (steps 1-3 and 5).
+Build and run the game from source on [Linux](#native-linux) or [Windows](#1-what-you-need).
 
 THPSource2 contains no game data. You supply your own copy of the PC game: the **Activision Value re-release** (the one on the Value disc, `SETUP\data`):
 
@@ -11,6 +11,75 @@ THPSource2 contains no game data. You supply your own copy of the PC game: the *
 | `med\Movies\*.dat`, `Music\*.dat` | the game folder | movies and music (Bink; optional: a movie or track that cannot be opened is logged and skipped) |
 
 The original 2000 release works too, with its unprotected `THawk2.exe` (SHA-256 `003152194111a3e564c1a458da2a02cc1187a4f47c147a4126f5d37913cfee8a`, 1,460,224 bytes): `ALL.PKR`, the music and the movies are the same files, and the first run rebuilds the static data at the re-release's addresses (`re/xref/original_2000_static.yml`, `re/evidence/xref-static-original-2000.md`). The copy-protected `THawk2.exe` on the original disc (SafeDisc, data encrypted) and any other build are refused, with the reason.
+
+## Native Linux
+
+The source build runs on x86-64 Linux with SDL3 and OpenGL. The launcher
+prepares your PC game files and starts the native host directly, without Wine.
+
+### Build and play
+
+Install a C++20 compiler, CMake 3.20 or newer, Ninja, zlib development files,
+SDL3 3.4 or newer with its CMake package, and Python 3.12 or 3.13 with venv.
+A desktop session and an OpenGL 3.3-capable driver are required to play.
+For the original soundtrack, also install pkg-config and the development
+packages for FFmpeg's `libavcodec`, `libavformat`, and `libavutil` **before**
+configuring CMake.
+
+From the root of the checkout (substitute `python3.13` if needed):
+
+```bash
+python3.12 -m venv .tools/venv
+.tools/venv/bin/python -m pip install -e .
+imgui_source="$(.tools/venv/bin/python -c 'from tony.imgui_source import source_dir; print(source_dir())' | tail -n 1)"
+cmake -S . -B build/native-sdl -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    -DOPENTONY_BUILD_SDL=ON -DOPENTONY_BUILD_LINUX_LAUNCHER=ON \
+    -DOPENTONY_IMGUI_SOURCE="$imgui_source"
+cmake --build build/native-sdl --target THPSource2 -j"$(nproc)"
+./build/native-sdl/THPSource2
+```
+
+1. Point the launcher at your PC game folder containing `THawk2.exe`,
+   `ALL.PKR`, and optionally `Music/`. You can also import a supported PC
+   disc image using the launcher.
+2. Press **Play**. On first run, the launcher reads the static tables and
+   unpacks the asset archive into `build/native-sdl/Data/Unpacked/`.
+3. Use **Display** for the aspect ratio, widescreen field of view, HUD
+   placement and HUD scale. Graphics quality, frame rate, sound levels, and
+   SDL3 controller support are available from the same launcher.
+
+Keep the checkout alongside its build tree so the launcher can invoke the
+asset preparation script. Settings are stored in
+`build/native-sdl/Config/THPSource2.ini`. Update the Linux build by rebuilding
+the checkout. The current Linux host plays levels, but persistent career
+saves, Quick Start, custom music and movie playback are still pending.
+
+**Upscale textures** uses Vulkan Upscayl and the pinned UltraSharp model.
+The first run needs `curl` and `unzip` to fetch and unpack the verified tools.
+Linux currently upscales PC replacement bitmaps. Textures available only
+through the Windows runtime census retain their original appearance.
+
+### Run the native host directly
+
+Once the launcher has prepared the game data, pass the static image and
+the folder containing `ALL.PKR`:
+
+```bash
+./build/native-sdl/opentony_linux_host --try-boot \
+    build/native-sdl/Data/Unpacked/thawk2_static.img /path/to/game-directory
+```
+
+For an offscreen startup check, replace `--try-boot` with
+`--check-platform-startup` and set `SDL_VIDEODRIVER=offscreen`. The host also
+provides `--check-static-data` and `--check-initializers` modes that take just
+the static image and stop before platform startup.
+
+To run the native test suite, build all targets and run CTest:
+
+```bash
+cmake --build build/native-sdl -j"$(nproc)"
+ctest --test-dir build/native-sdl -j"$(nproc)" --output-on-failure
+```
 
 ## 1. What you need
 
@@ -52,97 +121,6 @@ The retail fixtures (`re/evidence/fixtures/`) are not in the repository: they ho
 copy (`re/evidence/fixtures/README.md`). Without them the ctest cases that replay one are disabled and the pytest modules that read them are skipped. The 19 ctest cases that read the unpacked game (`build/assets/all-pkr/files`, from `tony media extract`) or `ALL.PKR` (`build/disc/files/SETUP/data/ALL.PKR`) report **Skipped** when those files are missing; `OPENTONY_ASSET_ROOT` and `OPENTONY_ALL_PKR` point them elsewhere (`tests/test_assets.hpp`).
 
 ## 4. Run on Windows
-
-### Native Linux host and SDL3 backend
-
-The Linux host can load the standalone's static data and initialize guest
-memory. From a checkout with the Python tools installed and the PC game
-files extracted:
-
-```bash
-./tony.sh hooks static-data --exe /path/to/THawk2.exe
-cmake -S . -B build/native -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/native --target opentony_linux_host -j"$(nproc)"
-build/native/opentony_linux_host --check-static-data build/static/thawk2_static.img
-build/native/opentony_linux_host --check-initializers build/static/thawk2_static.img
-```
-
-`THawk2.exe` supplies data for the image. Both checks run without Wine.
-`--check-initializers` also attaches the reconstructed functions and runs
-the game's C++ initializer table. The check ends before platform startup
-and the game loop.
-
-The top-level build can compile the SDL3 window, input, clock, audio and
-graphics backends against the system SDL3 library. The Linux standalone
-uses them for its experimental main-menu boot. The full playable release
-described below targets Windows.
-
-With SDL3 3.4 development files and a working OpenGL 3.3 implementation:
-
-```bash
-cmake -S . -B build/native-sdl -G Ninja -DOPENTONY_BUILD_SDL=ON
-cmake --build build/native-sdl --target opentony_texture_pack_test -j"$(nproc)"
-SDL_VIDEODRIVER=offscreen OPENTONY_NATIVE_TEXTURE_TEST="$PWD/build/native-sdl/opentony_texture_pack_test" \
-    .tools/venv/bin/python -m pytest -o addopts= -q tests/test_texture_pack_backend.py -k native
-```
-
-Omit `SDL_VIDEODRIVER=offscreen` to use your desktop's video driver. The test
-creates an OpenGL context and checks rendered pixels without game data.
-
-Build the Linux host with the same SDL3-enabled configuration to check the
-game's platform startup against an extracted PC install:
-
-```bash
-cmake --build build/native-sdl --target opentony_linux_host -j"$(nproc)"
-SDL_VIDEODRIVER=offscreen build/native-sdl/opentony_linux_host \
-    --check-platform-startup build/static/thawk2_static.img /path/to/game-directory
-```
-
-The host preloads the original `ALL.PKR` tables, reads the startup options,
-and presents a test frame. To open the native main menu on your desktop:
-
-```bash
-build/native-sdl/opentony_linux_host --try-boot \
-    build/static/thawk2_static.img /path/to/game-directory
-```
-
-The experimental boot skips movies and uses an empty save profile. Original
-soundtrack playback uses the installed game's `Music` folder when the host
-was built with FFmpeg development libraries (`libavcodec`, `libavformat`,
-and `libavutil`, found through pkg-config).
-The first SDL3 gamepad uses the game's default controller bindings.
-Settings are kept in memory. To verify the menu headlessly, set
-`SDL_VIDEODRIVER=offscreen`, `SDL_AUDIODRIVER=dummy`, and
-`OT_LINUX_MENU_SCREENSHOT` to the path of a BMP file. The host saves the
-60th frame presented by the main menu and exits.
-
-### Native Linux graphical launcher
-
-With the Python dependencies from step 1 and SDL3 3.4 development files:
-
-```bash
-imgui_source="$(.tools/venv/bin/python -c 'from tony.imgui_source import source_dir; print(source_dir())' | tail -n 1)"
-cmake -S . -B build/native-sdl -G Ninja -DCMAKE_BUILD_TYPE=Release \
-    -DOPENTONY_BUILD_SDL=ON -DOPENTONY_BUILD_LINUX_LAUNCHER=ON \
-    -DOPENTONY_IMGUI_SOURCE="$imgui_source"
-cmake --build build/native-sdl --target THPSource2 -j"$(nproc)"
-build/native-sdl/THPSource2
-```
-
-The launcher shares the Windows interface, game import, settings and presets.
-Its Play button prepares the assets and starts the native host. The host
-honors window size and mode, V-Sync, OpenGL quality and scaling settings,
-frame-rate selection, audio levels, control bindings and movement stick.
-The guest display still uses 4:3. Windows feature parity is pending for
-gameplay settings, Quick Start, saves, custom music, and movie playback.
-Linux updates are installed by rebuilding the checkout.
-
-**Upscale textures** on Linux uses the native Vulkan Upscayl tool and the
-same pinned UltraSharp model as on Windows. It gets texture keys from the
-PC replacement bitmaps in the extracted game data. Textures available only
-through the Windows runtime census, including many HUD and menu textures,
-keep their original appearance. The first run downloads the verified tool
-and model with `curl` and extracts the tool with `unzip`.
 
 ### Windows standalone
 
