@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+struct OtHalAudioBackend;
+
 namespace opentony::kitdll {
 
 using runtime::RetailMemory;
@@ -86,6 +88,7 @@ std::uint32_t platform_input_polls();
 // standalone_audio.cpp (8a): the voices of the sound front (Audio_PlaySound ... Audio_FreeSoundBank) and the sound bank load on the HAL's audio service
 bool call_audio_seam(std::uint32_t address, const std::vector<std::uint32_t>& args, const std::string& text, std::uint32_t& result);
 bool has_audio_seam(std::uint32_t address);
+void set_standalone_audio(const OtHalAudioBackend* audio);
 // standalone_movie.cpp (5.3b): the Bink seams (SetupFullScreenMovie ... CloseBinkMovie, and _beginthread for the music thread) and the
 // Bink imports the natives report by name (`win32_BinkWait` ...). True when the address or the name is one of theirs.
 bool call_movie_seam(std::uint32_t address, const std::vector<std::uint32_t>& args, const std::string& text, std::uint32_t& result);
@@ -123,6 +126,9 @@ void scenario_before_bindings();
 void scenario_after_bindings();
 // standalone_boot.cpp (9): the cold boot: the C++ initializers, Game_Startup's work, then main; whether it is the program's start
 void standalone_initialize();
+void standalone_prepare_platform();
+void standalone_read_startup_options();
+std::uint32_t standalone_start_game();
 std::uint32_t standalone_boot();
 std::uint32_t standalone_zone_block();   // where the cold boot placed the game's memory zones (standalone_seams.cpp; OT_ZONE_BLOCK)
 bool standalone_booting();

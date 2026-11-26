@@ -40,15 +40,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SIZEOF_VOID_P EQUAL 8
         src/hooks/kits/linux_boot_host.cpp
         src/hooks/kits/linux_guest_memory.cpp
         src/hooks/kits/linux_host_main.cpp
+        src/hooks/kits/standalone_audio.cpp
         src/hooks/kits/standalone_boot.cpp
         src/hooks/kits/standalone_kits_generated.cpp
         src/hooks/kits/standalone_static_init_generated.cpp
+        src/hooks/kits/standalone_surfaces.cpp
+        src/launcher/thpsource2/core/ini.cpp
     )
     # The generated adapters keep their argument lists on Linux and use
     # the host calling convention. Thiscall adapters still take a dummy EDX.
     set_source_files_properties(src/hooks/kits/standalone_kits_generated.cpp PROPERTIES
         COMPILE_DEFINITIONS "__cdecl=;__stdcall=;__fastcall=")
     target_link_libraries(opentony_linux_host PRIVATE opentony_runtime)
+    target_include_directories(opentony_linux_host PRIVATE src/hal)
     target_compile_options(opentony_linux_host PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
@@ -82,6 +86,10 @@ if(OPENTONY_BUILD_SDL)
     target_compile_features(opentony_hal_sdl PUBLIC cxx_std_20)
     target_compile_definitions(opentony_hal_sdl PUBLIC OT_SDL_DYNAMIC=0)
     target_link_libraries(opentony_hal_sdl PUBLIC opentony_hal SDL3::SDL3)
+    if(TARGET opentony_linux_host)
+        target_compile_definitions(opentony_linux_host PRIVATE OPENTONY_LINUX_SDL=1)
+        target_link_libraries(opentony_linux_host PRIVATE opentony_hal_sdl)
+    endif()
 
     if(OPENTONY_BUILD_TESTS)
         add_executable(opentony_texture_pack_test src/hooks/tools/texture_pack_test.cpp)

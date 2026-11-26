@@ -22,8 +22,6 @@
 #include "audio.h"
 #include "wav_asset.hpp"
 
-#include <windows.h>
-
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
@@ -850,7 +848,13 @@ bool call_audio_seam(std::uint32_t address, const std::vector<std::uint32_t>& ar
 
 }  // namespace opentony::kitdll
 
+void opentony::kitdll::set_standalone_audio(const OtHalAudioBackend* audio) {
+    g_audio = audio != nullptr ? audio : &kSilent;
+}
+
+#ifdef _WIN32
 // The HAL's audio service of the program (already initialised by the program, or null for no sound). Audio_Init (0x004f27c0) asks it to start.
 extern "C" __declspec(dllexport) void __cdecl ot_standalone_set_audio_hal(const OtHalAudioBackend* audio) {
-    opentony::kitdll::g_audio = audio != nullptr ? audio : &opentony::kitdll::kSilent;
+    opentony::kitdll::set_standalone_audio(audio);
 }
+#endif

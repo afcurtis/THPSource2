@@ -11,8 +11,12 @@
 
 int main(int argc, char** argv) {
     const bool initialize = argc == 3 && std::strcmp(argv[1], "--check-initializers") == 0;
-    if (argc != 3 || (!initialize && std::strcmp(argv[1], "--check-static-data") != 0)) {
-        std::fprintf(stderr, "usage: opentony_linux_host < --check-static-data | --check-initializers > <thawk2_static.img>\n");
+    const bool boot = argc == 4 && std::strcmp(argv[1], "--check-platform-startup") == 0;
+    const bool try_boot = argc == 4 && std::strcmp(argv[1], "--try-boot") == 0;
+    const bool static_data = argc == 3 && std::strcmp(argv[1], "--check-static-data") == 0;
+    if (!initialize && !boot && !try_boot && !static_data) {
+        std::fprintf(stderr, "usage: opentony_linux_host < --check-static-data | --check-initializers > <thawk2_static.img>\n"
+                             "       opentony_linux_host < --check-platform-startup | --try-boot > <thawk2_static.img> <game-directory>\n");
         return 64;
     }
 
@@ -41,7 +45,9 @@ int main(int argc, char** argv) {
         }
 
         std::printf("Linux host: loaded %zu static-data bytes; guest heap ready\n", copied);
-        if (initialize) {
+        if (boot || try_boot) {
+            opentony::kitdll::run_linux_initializers(arena, argv[3], try_boot);
+        } else if (initialize) {
             opentony::kitdll::run_linux_initializers(arena);
         }
     } catch (const std::exception& error) {

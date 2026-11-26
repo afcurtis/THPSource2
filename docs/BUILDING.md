@@ -73,9 +73,9 @@ the game's C++ initializer table. The check ends before platform startup
 and the game loop.
 
 The top-level build can compile the SDL3 window, input, clock, audio and
-graphics backends against the system SDL3 library. This target is groundwork
-for a Linux standalone executable. The playable host described below still
-requires Windows.
+graphics backends against the system SDL3 library. The Linux standalone
+uses them for its experimental main-menu boot. The full playable release
+described below targets Windows.
 
 With SDL3 3.4 development files and a working OpenGL 3.3 implementation:
 
@@ -88,6 +88,29 @@ SDL_VIDEODRIVER=offscreen OPENTONY_NATIVE_TEXTURE_TEST="$PWD/build/native-sdl/op
 
 Omit `SDL_VIDEODRIVER=offscreen` to use your desktop's video driver. The test
 creates an OpenGL context and checks rendered pixels without game data.
+
+Build the Linux host with the same SDL3-enabled configuration to check the
+game's platform startup against an extracted PC install:
+
+```bash
+cmake --build build/native-sdl --target opentony_linux_host -j"$(nproc)"
+SDL_VIDEODRIVER=offscreen build/native-sdl/opentony_linux_host \
+    --check-platform-startup build/static/thawk2_static.img /path/to/game-directory
+```
+
+The host preloads the original `ALL.PKR` tables, reads the startup options,
+and presents a test frame. To open the native main menu on your desktop:
+
+```bash
+build/native-sdl/opentony_linux_host --try-boot \
+    build/static/thawk2_static.img /path/to/game-directory
+```
+
+The experimental boot skips movies and music and uses an empty save profile.
+Settings are kept in memory. To verify the menu headlessly, set
+`SDL_VIDEODRIVER=offscreen`, `SDL_AUDIODRIVER=dummy`, and
+`OT_LINUX_MENU_SCREENSHOT` to the path of a BMP file. The host saves the
+60th frame presented by the main menu and exits.
 
 ### Windows standalone
 
