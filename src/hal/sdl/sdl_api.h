@@ -104,6 +104,7 @@
     X(SDL_SetAudioStreamGetCallback) \
     X(SDL_PutAudioStreamData)    \
     X(SDL_GetAudioStreamQueued)  \
+    X(SDL_FlushAudioStream)      \
     X(SDL_ClearAudioStream)      \
     X(SDL_SetAudioStreamFrequencyRatio) \
     X(SDL_SetAudioStreamGain)    \
