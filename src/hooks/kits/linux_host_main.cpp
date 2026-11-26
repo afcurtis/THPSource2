@@ -1,3 +1,4 @@
+#include "linux_boot_host.hpp"
 #include "linux_guest_memory.hpp"
 #include "retail_memory.hpp"
 
@@ -9,8 +10,9 @@
 #include <vector>
 
 int main(int argc, char** argv) {
-    if (argc != 3 || std::strcmp(argv[1], "--check-static-data") != 0) {
-        std::fprintf(stderr, "usage: opentony_linux_host --check-static-data <thawk2_static.img>\n");
+    const bool initialize = argc == 3 && std::strcmp(argv[1], "--check-initializers") == 0;
+    if (argc != 3 || (!initialize && std::strcmp(argv[1], "--check-static-data") != 0)) {
+        std::fprintf(stderr, "usage: opentony_linux_host < --check-static-data | --check-initializers > <thawk2_static.img>\n");
         return 64;
     }
 
@@ -39,6 +41,9 @@ int main(int argc, char** argv) {
         }
 
         std::printf("Linux host: loaded %zu static-data bytes; guest heap ready\n", copied);
+        if (initialize) {
+            opentony::kitdll::run_linux_initializers(arena);
+        }
     } catch (const std::exception& error) {
         std::fprintf(stderr, "Linux host: %s: %s\n", argv[2], error.what());
         return 1;

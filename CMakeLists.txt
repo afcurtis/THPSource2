@@ -34,11 +34,20 @@ target_link_libraries(opentony_native_replay PRIVATE opentony_runtime)
 target_compile_features(opentony_native_replay PRIVATE cxx_std_20)
 target_compile_options(opentony_native_replay PRIVATE -Wall -Wextra -Wpedantic)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SIZEOF_VOID_P EQUAL 8
+        AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
     add_executable(opentony_linux_host
+        src/hooks/kits/linux_boot_host.cpp
         src/hooks/kits/linux_guest_memory.cpp
         src/hooks/kits/linux_host_main.cpp
+        src/hooks/kits/standalone_boot.cpp
+        src/hooks/kits/standalone_kits_generated.cpp
+        src/hooks/kits/standalone_static_init_generated.cpp
     )
+    # The generated adapters keep their argument lists on Linux and use
+    # the host calling convention. Thiscall adapters still take a dummy EDX.
+    set_source_files_properties(src/hooks/kits/standalone_kits_generated.cpp PROPERTIES
+        COMPILE_DEFINITIONS "__cdecl=;__stdcall=;__fastcall=")
     target_link_libraries(opentony_linux_host PRIVATE opentony_runtime)
     target_compile_options(opentony_linux_host PRIVATE -Wall -Wextra -Wpedantic)
 endif()

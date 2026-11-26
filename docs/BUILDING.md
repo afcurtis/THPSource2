@@ -64,10 +64,13 @@ files extracted:
 cmake -S . -B build/native -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build/native --target opentony_linux_host -j"$(nproc)"
 build/native/opentony_linux_host --check-static-data build/static/thawk2_static.img
+build/native/opentony_linux_host --check-initializers build/static/thawk2_static.img
 ```
 
-`THawk2.exe` supplies data for the image. The host check runs without Wine
-and ends after initializing guest memory, before the game loop.
+`THawk2.exe` supplies data for the image. Both checks run without Wine.
+`--check-initializers` also attaches the reconstructed functions and runs
+the game's C++ initializer table. The check ends before platform startup
+and the game loop.
 
 The top-level build can compile the SDL3 window, input, clock, audio and
 graphics backends against the system SDL3 library. This target is groundwork

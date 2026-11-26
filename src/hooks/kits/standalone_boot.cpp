@@ -17,8 +17,6 @@
 #include "standalone_options.hpp"
 #include "standalone_static_init.hpp"
 
-#include <windows.h>
-
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -168,6 +166,7 @@ void run_dynamic_initializers() {
 
 // ---- Game_Startup's platform calls ------------------------------------------------------------------------------------------------------------
 
+#ifdef _WIN32
 constexpr std::uint32_t kCommandLine = 0x029d8370;   // WinMain's lpCmdLine, kept by Game_Startup
 constexpr std::uint32_t kMainWindow = 0x029d8374;
 constexpr std::uint32_t kOptionsPath = 0x029d8378;   // the working directory, "\" (0x00540c34), "TH2_OPT.CFG" (0x0055c344)
@@ -330,14 +329,19 @@ void init_input() {
     retail<std::uint32_t>(0x006a3f2c) = 0x80;
 }
 
+#endif
 }  // namespace
+
+void standalone_initialize() { run_dynamic_initializers(); }
+
+#ifdef _WIN32
 
 bool g_booting = false;
 
 // The whole start-up, then `main`; the answer is main's (the process ends in the clock's frame budget or the recorder's limit before that, as a rule).
 std::uint32_t standalone_boot() {
     g_booting = true;
-    run_dynamic_initializers();
+    standalone_initialize();
     // Game_Startup (0x004f7e30), in its order
     // the (empty) command line is a guest block for the process's lifetime, as Windows keeps retail's
     const std::uint32_t command_line = arena::heap_allocate(16);
@@ -378,10 +382,13 @@ std::uint32_t standalone_boot() {
 }
 
 bool standalone_booting() { return g_booting; }
+#endif
 
 }  // namespace opentony::kitdll
 
+#ifdef _WIN32
 // 9: the cold boot, for a program that has laid out the static data and attached the Kits (opentony_spike.exe, OT_SPIKE_CALL=boot)
 extern "C" __declspec(dllexport) std::uint32_t __cdecl ot_standalone_boot() {
     return opentony::kitdll::standalone_boot();
 }
+#endif

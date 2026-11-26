@@ -122,6 +122,7 @@ void scenario_after_keyboard();
 void scenario_before_bindings();
 void scenario_after_bindings();
 // standalone_boot.cpp (9): the cold boot: the C++ initializers, Game_Startup's work, then main; whether it is the program's start
+void standalone_initialize();
 std::uint32_t standalone_boot();
 std::uint32_t standalone_zone_block();   // where the cold boot placed the game's memory zones (standalone_seams.cpp; OT_ZONE_BLOCK)
 bool standalone_booting();
