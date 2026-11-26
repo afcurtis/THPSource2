@@ -481,6 +481,9 @@ at the next input poll when `OT_VEHICLE_SOUND_FIX=1`. Hangar's fluorescent
 lights share one voice, and applying each emitter's settings as it updates
 can expose a momentary mute or pan change to the SDL mixer. The selected
 request's channel ratio is converted to millibels for the HAL.
+The Linux host also filters the stock `audio/humlights1.wav` loop at load
+time to reduce the high-frequency crackle while retaining the 60 Hz hum.
+The filter wraps across the end of the loop to smooth the seam.
 
 `audio=sdl` (`src/hooks/hal/audio_hal.cpp`) replaces `Audio_Init` only:
 `AudioDevice` becomes a stand-in `IDirectSound` whose buffers are HAL

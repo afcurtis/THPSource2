@@ -755,6 +755,38 @@ std::vector<std::uint8_t> read_file(const std::string& path) {
     return bytes;
 }
 
+#ifdef __linux__
+// The stock Hangar light loop has a strong 60 Hz hum and a separate band of
+// crackle above 2 kHz. Filter across the wrap so the seam is smoothed as well.
+std::vector<std::int16_t> filter_hangar_lights(const assets::WavPcmAsset& wav) {
+    constexpr int radius = 48;
+    constexpr double pi = 3.14159265358979323846;
+    constexpr double cutoff_hz = 900.0;
+    const auto samples = wav.samples();
+    const auto count = samples.size() / 2;
+    const double cutoff = cutoff_hz / wav.format().samples_per_second;
+    double kernel[2 * radius + 1];
+    double total = 0;
+    for (int tap = -radius; tap <= radius; ++tap) {
+        const double window = 0.5 + 0.5 * std::cos(pi * tap / radius);
+        const double sinc = tap == 0 ? 2 * cutoff : std::sin(2 * pi * cutoff * tap) / (pi * tap);
+        kernel[tap + radius] = window * sinc;
+        total += window * sinc;
+    }
+    std::vector<std::int16_t> filtered(count);
+    for (std::size_t index = 0; index < count; ++index) {
+        double value = 0;
+        for (std::size_t tap = 0; tap < std::size(kernel); ++tap) {
+            const auto at = 2 * ((index + count + tap - radius) % count);
+            const auto word = std::to_integer<unsigned>(samples[at]) | (std::to_integer<unsigned>(samples[at + 1]) << 8);
+            value += kernel[tap] * static_cast<std::int16_t>(word);
+        }
+        filtered[index] = static_cast<std::int16_t>(std::clamp(std::lround(value / total), -32768L, 32767L));
+    }
+    return filtered;
+}
+#endif
+
 // 0x004f2b40: the first free slot, the sound made from the WAV; the slot, or -1
 std::uint32_t create_buffer_from_wav(const std::string& path) {
     std::uint32_t slot = 0;
@@ -786,6 +818,14 @@ std::uint32_t create_buffer_from_wav(const std::string& path) {
         desc.format.bits_per_sample = wav.format().bits_per_sample;
         desc.data = wav.samples().data();
         desc.size = static_cast<std::uint32_t>(wav.sample_size());
+#ifdef __linux__
+        std::vector<std::int16_t> filtered;
+        if (path == "audio/humlights1.wav" && desc.format.sample_rate == 44100 &&
+            desc.format.channels == 1 && desc.format.bits_per_sample == 16 && desc.size >= 2 * 48) {
+            filtered = filter_hangar_lights(wav);
+            desc.data = filtered.data();
+        }
+#endif
         Slot& host = g_slots[slot];
         host = Slot{};
         host.sound = g_audio->sound_create(&desc);
