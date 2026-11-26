@@ -69,6 +69,7 @@ void upload(OtHalHandle texture, const uint16_t *texels) {
 } // namespace
 
 int main(int argc, char **argv) {
+#if OT_SDL_DYNAMIC
     if (argc < 3) {
         printf("usage: opentony_texture_pack_test <pack dir\\> <SDL3 dir\\>\n");
         return 2;
@@ -78,6 +79,12 @@ int main(int argc, char **argv) {
         printf("FAIL SDL3.dll: %s\n", missing != 0 ? missing : "");
         return 1;
     }
+#else
+    if (argc != 2) {
+        printf("usage: opentony_texture_pack_test <pack dir>\n");
+        return 2;
+    }
+#endif
     if (!OT_SDL(SDL_Init)(SDL_INIT_VIDEO)) {
         printf("FAIL SDL_Init: %s\n", OT_SDL(SDL_GetError)());
         return 1;

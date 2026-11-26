@@ -53,6 +53,27 @@ copy (`re/evidence/fixtures/README.md`). Without them the ctest cases that repla
 
 ## 4. Run on Windows
 
+### Native Linux SDL3 backend
+
+The top-level build can compile the SDL3 window, input, clock, audio and
+graphics backends against the system SDL3 library. This target is groundwork
+for a Linux standalone executable. The playable host described below still
+requires Windows.
+
+With SDL3 3.4 development files and a working OpenGL 3.3 implementation:
+
+```bash
+cmake -S . -B build/native-sdl -G Ninja -DOPENTONY_BUILD_SDL=ON
+cmake --build build/native-sdl --target opentony_texture_pack_test -j"$(nproc)"
+SDL_VIDEODRIVER=offscreen OPENTONY_NATIVE_TEXTURE_TEST="$PWD/build/native-sdl/opentony_texture_pack_test" \
+    .tools/venv/bin/python -m pytest -o addopts= -q tests/test_texture_pack_backend.py -k native
+```
+
+Omit `SDL_VIDEODRIVER=offscreen` to use your desktop's video driver. The test
+creates an OpenGL context and checks rendered pixels without game data.
+
+### Windows standalone
+
 1. Unzip `thpsource2-win64.zip` anywhere.
 2. Run `THPSource2.exe` (it finds or imports your game files into `Data\Game`), or `Build\opentony.exe` from a command line (`--root <install folder>`, `--game-dir <folder with THawk2.exe and ALL.PKR>`).
 

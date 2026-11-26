@@ -7,6 +7,7 @@ find_package(ZLIB REQUIRED)
 include(cmake/opentony_sources.cmake)
 
 option(OPENTONY_BUILD_TESTS "Build native reconstruction tests" ON)
+option(OPENTONY_BUILD_SDL "Build the native SDL3 platform backend" OFF)
 
 add_library(opentony_assets STATIC ${OPENTONY_ASSETS_SOURCES})
 target_compile_features(opentony_assets PUBLIC cxx_std_20)
@@ -49,6 +50,26 @@ add_library(opentony_hal STATIC
 target_compile_features(opentony_hal PUBLIC cxx_std_20)
 target_include_directories(opentony_hal PUBLIC src/hal)
 target_compile_options(opentony_hal PRIVATE -Wall -Wextra -Wpedantic)
+
+if(OPENTONY_BUILD_SDL)
+    find_package(SDL3 3.4 REQUIRED CONFIG)
+    add_library(opentony_hal_sdl STATIC
+        src/hal/sdl/sdl_audio.cpp
+        src/hal/sdl/sdl_clock.cpp
+        src/hal/sdl/sdl_input.cpp
+        src/hal/sdl/sdl_video_gl.cpp
+        src/hal/sdl/sdl_video_gpu.cpp
+        src/hal/sdl/sdl_window.cpp
+    )
+    target_compile_features(opentony_hal_sdl PUBLIC cxx_std_20)
+    target_compile_definitions(opentony_hal_sdl PUBLIC OT_SDL_DYNAMIC=0)
+    target_link_libraries(opentony_hal_sdl PUBLIC opentony_hal SDL3::SDL3)
+
+    if(OPENTONY_BUILD_TESTS)
+        add_executable(opentony_texture_pack_test src/hooks/tools/texture_pack_test.cpp)
+        target_link_libraries(opentony_texture_pack_test PRIVATE opentony_hal_sdl)
+    endif()
+endif()
 
 if(OPENTONY_BUILD_TESTS)
     enable_testing()
