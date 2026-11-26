@@ -7,6 +7,8 @@
 #include "guest_format.hpp"
 #include "pkr_asset.hpp"
 #include "seam_addresses_generated.hpp"
+#include "standalone_display.hpp"
+#include "standalone_options.hpp"
 #include "standalone_thunks_generated.hpp"
 #include "../../launcher/thpsource2/core/ini.hpp"
 
@@ -63,6 +65,10 @@ constexpr std::uint32_t kBackendSeek = 0x004e79f0;
 constexpr std::uint32_t kBackendRead = 0x004e7ad0;
 constexpr std::uint32_t kBackendClose = 0x004e7bc0;
 constexpr std::uint32_t kFailed = 0xffffffffu;
+constexpr std::uint32_t kScreenWidth = 0x029da394;
+constexpr std::uint32_t kScreenHeight = 0x029da398;
+constexpr std::uint32_t kPixelAspectX = 0x00563a6c;
+constexpr std::uint32_t kPixelAspectY = 0x00563a70;
 
 const char* settings_file() {
     const char* path = std::getenv("OPENTONY_SETTINGS");
@@ -121,6 +127,26 @@ public:
         services_.attach(this);
         make_kits(memory_, services_);
     }
+
+#ifdef OPENTONY_LINUX_SDL
+    void configure_display(int width, int height, bool stretch, bool fixed_fov) {
+        display_.width = width;
+        display_.height = height;
+        display_.stretch = stretch;
+        mouse_x_ = width / 2;
+        mouse_y_ = height / 2;
+        widescreen_projection_ = width > 640 ? wide_pixel_aspect(width, fixed_fov) : 0;
+        write_screen_size();
+        auto& options = runtime::host_options();
+        read_hud_layout(options);
+        runtime::drawkit::Presentation presentation{};
+        if (width > display_.hud_width || options.hud_layout()) {
+            presentation.screen_width = width;
+            presentation.hud_width = display_.hud_width;
+        }
+        runtime::drawkit::set_presentation(presentation);
+    }
+#endif
 
     std::uint32_t resolve(std::uint32_t address, const std::vector<std::uint32_t>& args, bool virtual_call = false,
                           const std::string& text = {}) {
@@ -182,6 +208,10 @@ public:
             if (address == 0x00413f70) {  // Options_Init
                 apply_audio_level("OT_SFX_LEVEL", 0x0055fb3c, 0x0052be44, 0x0056a2e8, 0x555);
                 apply_audio_level("OT_MUSIC_LEVEL", 0x0055fb40, 0x0052be48, 0x0056a2ec, 0x15);
+            }
+            if (address == 0x00464690 && widescreen_projection_ != 0) {  // M3D_WindowRatio
+                memory_.set32(kPixelAspectX, widescreen_projection_);
+                memory_.set32(kPixelAspectY, widescreen_projection_);
             }
             x87_load(saved);
             return result;
@@ -266,16 +296,15 @@ public:
             memory_.set32(kModeList, 1);
             memory_.fill(kModeRecord, 0, 0x7c);
             memory_.set32(kModeRecord, 0x7c);
-            memory_.set32(kModeRecord + 0x08, 480);
-            memory_.set32(kModeRecord + 0x0c, 640);
+            memory_.set32(kModeRecord + 0x08, display_.height);
+            memory_.set32(kModeRecord + 0x0c, display_.width);
             memory_.set32(kModeRecord + 0x48, 0x20);
             memory_.set32(kModeRecord + 0x4c, 0x40);
             memory_.set32(kModeRecord + 0x54, 16);
             return 0;
         }
         if (address == seam::hal::WINMAIN_SwitchResolution) {
-            memory_.set32(0x029da394, 640);
-            memory_.set32(0x029da398, 480);
+            write_screen_size();
             return 0;
         }
         if (address == seam::hal::WINMAIN_SwitchRenderer) {
@@ -349,13 +378,14 @@ public:
                 std::int32_t height = 0;
                 ot_hal_sdl_window.get_size(&width, &height);
                 if (width > 0 && height > 0) {
-                    const char* aspect = std::getenv("OT_ASPECT");
-                    const bool stretch = aspect != nullptr && std::string_view(aspect) == "stretch";
-                    const double scale = std::min(width / 640.0, height / 480.0);
-                    const double shown_width = stretch ? width : 640 * scale;
-                    const double shown_height = stretch ? height : 480 * scale;
-                    mouse_x_ = std::clamp(static_cast<int>((state.mouse.x - (width - shown_width) / 2) * 640 / shown_width), 0, 639);
-                    mouse_y_ = std::clamp(static_cast<int>((state.mouse.y - (height - shown_height) / 2) * 480 / shown_height), 0, 479);
+                    const double scale = std::min(static_cast<double>(width) / display_.width, static_cast<double>(height) / display_.height);
+                    const double shown_width = display_.stretch ? width : display_.width * scale;
+                    const double shown_height = display_.stretch ? height : display_.height * scale;
+                    const double game_x = (state.mouse.x - (width - shown_width) / 2) * display_.width / shown_width;
+                    const double menu_x = (game_x - (display_.width - display_.hud_width) / 2.0) * display_.width / display_.hud_width;
+                    const double game_y = (state.mouse.y - (height - shown_height) / 2) * display_.height / shown_height;
+                    mouse_x_ = std::clamp(static_cast<int>(menu_x), 0, display_.width - 1);
+                    mouse_y_ = std::clamp(static_cast<int>(game_y), 0, display_.height - 1);
                 }
             }
 #endif
@@ -700,6 +730,11 @@ private:
         return 0;
     }
 
+    void write_screen_size() {
+        memory_.set32(kScreenWidth, display_.width);
+        memory_.set32(kScreenHeight, display_.height);
+    }
+
     LinuxGuestMemory& arena_;
     std::filesystem::path package_;
     thpsource2::IniFile settings_;
@@ -712,6 +747,8 @@ private:
     std::array<std::optional<Resource>, 10> resources_;
     std::int32_t mouse_x_ = 320;
     std::int32_t mouse_y_ = 240;
+    Display display_{};
+    std::uint32_t widescreen_projection_ = 0;
     std::chrono::steady_clock::time_point next_tick_{};
     std::chrono::steady_clock::time_point last_delivery_{};
     bool menu_active_ = false;
@@ -745,31 +782,54 @@ void run_with_sdl_window(bool try_boot) {
     const auto resolution = env_setting("OT_WINDOW_SIZE");
     const bool custom_size = std::sscanf(resolution.data(), "%dx%d", &width, &height) == 2 &&
         width >= 320 && width <= 16384 && height >= 240 && height <= 16384;
+    const auto window_mode = env_setting("OT_WINDOW_MODE");
+    const auto display_id = SDL_GetPrimaryDisplay();
+    SDL_Rect desktop{};
+    SDL_Rect usable{};
+    SDL_GetDisplayBounds(display_id, &desktop);
+    SDL_GetDisplayUsableBounds(display_id, &usable);
+    const char* aspect_setting = std::getenv("OT_ASPECT");
+    auto aspect = parse_aspect(aspect_setting);
+    if (aspect.window && try_boot) {
+        const auto& bounds = window_mode == "borderless" ? usable : desktop;
+        if (custom_size) {
+            aspect.ratio = static_cast<double>(width) / height;
+        } else if (bounds.w > 0 && bounds.h > 0) {
+            aspect.ratio = static_cast<double>(bounds.w) / bounds.h;
+        }
+    }
+    const int game_width = picture_width(aspect.ratio);
     if (try_boot && custom_size) {
         window.width = width;
         window.height = height;
-    }
-    if (try_boot && env_setting("OT_WINDOW_MODE") == "fullscreen") {
-        window.flags = OT_HAL_WINDOW_FULLSCREEN | (custom_size ? static_cast<unsigned>(OT_HAL_WINDOW_EXCLUSIVE) : 0u);
-    } else if (try_boot && env_setting("OT_WINDOW_MODE") == "borderless") {
-        window.flags = OT_HAL_WINDOW_BORDERLESS;
-        if (!custom_size) {
-            SDL_Rect bounds{};
-            if (SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &bounds)) {
-                window.width = bounds.w;
-                window.height = bounds.h;
-            }
+    } else if (try_boot && aspect_setting != nullptr && window_mode != "fullscreen" &&
+               window_mode != "borderless" && usable.w >= 640 && usable.h >= 540) {
+        const double shape = static_cast<double>(game_width) / 480;
+        window.height = usable.h - 60; // room for the window decorations
+        window.width = static_cast<int>(window.height * shape + 0.5);
+        if (window.width > usable.w) {
+            window.width = usable.w;
+            window.height = static_cast<int>(window.width / shape + 0.5);
         }
     }
-    const OtHalVideoMode mode{640, 480, 32, (window.flags & OT_HAL_WINDOW_FULLSCREEN) != 0, env_setting("OT_VSYNC") == "1"};
+    if (try_boot && window_mode == "fullscreen") {
+        window.flags = OT_HAL_WINDOW_FULLSCREEN | (custom_size ? static_cast<unsigned>(OT_HAL_WINDOW_EXCLUSIVE) : 0u);
+    } else if (try_boot && window_mode == "borderless") {
+        window.flags = OT_HAL_WINDOW_BORDERLESS;
+        if (!custom_size && usable.w > 0 && usable.h > 0) {
+            window.width = usable.w;
+            window.height = usable.h;
+        }
+    }
+    const OtHalVideoMode mode{game_width, 480, 32, (window.flags & OT_HAL_WINDOW_FULLSCREEN) != 0, env_setting("OT_VSYNC") == "1"};
     OtHalSdlVideoOptions options{};
     const auto internal = env_setting("OT_INTERNAL_RESOLUTION");
     options.follow_window = internal == "window";
     if (internal == "psx") {
-        options.target_width = 512;
+        options.target_width = ((512 * game_width / 640) + 1) & ~1;
         options.target_height = 240;
     }
-    options.stretch = env_setting("OT_ASPECT") == "stretch";
+    options.stretch = aspect.stretch;
     options.samples = std::clamp(std::atoi(env_setting("OT_MSAA").data()), 0, 8);
     const double supersample = std::strtod(env_setting("OT_SUPERSAMPLE").data(), nullptr);
     options.supersample = options.follow_window && supersample >= 1.0 ? static_cast<int>(std::min(supersample, 4.0) * 100 + 0.5) : 0;
@@ -825,6 +885,8 @@ void run_with_sdl_window(bool try_boot) {
         output.video = &video;
         output.on_present = [](std::uint32_t, void*) { boot_host->presented(); };
         runtime::drawkit::set_output(output);
+        boot_host->configure_display(mode.width, mode.height, aspect.stretch, env_setting("OT_FOV") == "fixed");
+        std::printf("Linux host: picture %d x %d\n", mode.width, mode.height);
         set_standalone_audio(&ot_hal_sdl_audio);
         standalone_start_game();
     }

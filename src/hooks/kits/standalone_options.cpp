@@ -1,5 +1,6 @@
 // The player's options of the standalone (standalone_options.hpp; docs/LAUNCHER.md, "What the game reads").
 #include "standalone_options.hpp"
+#include "standalone_display.hpp"
 #include "standalone_scores.hpp"
 
 #include "kit_bridge.hpp"
@@ -253,17 +254,7 @@ void read_options() {
     runtime::host_options().default_camera = o.camera == 2 ? 1 : 0;
     runtime::host_options().hide_hud = flag("OT_HIDE_HUD");
     runtime::host_options().grind_meter = flag("OT_GRIND_METER");
-    // the in-level HUD's layout (host_options.hpp): OT_HUD_ANCHOR 1 puts the elements by the left and right edges of a wide picture, OT_HUD_SCALE is its size in percent
-    // (the launcher works out its Auto), OT_HUD_MARGIN the part of the picture in percent kept clear at the edges. Unset: the game's layout.
-    {
-        const auto percent = [](const char* name, double low, double high, double normal) {
-            const char* text = std::getenv(name);
-            return text != nullptr && *text != '\0' ? (std::clamp)(std::strtod(text, nullptr), low, high) : normal;
-        };
-        runtime::host_options().hud_anchor = flag("OT_HUD_ANCHOR");
-        runtime::host_options().hud_scale = static_cast<float>(percent("OT_HUD_SCALE", 25.0, 200.0, 100.0) / 100.0);
-        runtime::host_options().hud_margin = static_cast<float>(percent("OT_HUD_MARGIN", 0.0, 10.0, 0.0) / 100.0);
-    }
+    read_hud_layout(runtime::host_options());
     if (const char* rate = std::getenv("OT_FRAME_RATE"); rate != nullptr && *rate != '\0') {
         if (std::strcmp(rate, "60") == 0) {
             o.frame_rate = 60;
@@ -330,7 +321,7 @@ void write_wide_aspect() {
         return;
     }
     // OT_FOV=fixed leaves the game's 4:3 words (1.0): the same horizontal angle at every width, the extra width magnifies the view and crops it above and below
-    const std::uint32_t aspect = game_options().fov_fixed ? 0x1000u : static_cast<std::uint32_t>(std::lround(4096.0 * std::sqrt(640.0 / static_cast<double>(d.width))));
+    const std::uint32_t aspect = wide_pixel_aspect(d.width, game_options().fov_fixed);
     if (retail<std::uint32_t>(kPixelAspectX) != aspect || retail<std::uint32_t>(kPixelAspectY) != aspect) {
         retail<std::uint32_t>(kPixelAspectX) = aspect;
         retail<std::uint32_t>(kPixelAspectY) = aspect;
