@@ -7,6 +7,7 @@
 
 
 #include <chrono>
+#include <algorithm>
 #include <cstdlib>
 #include <ctime>
 #include <span>
@@ -39,11 +40,13 @@ bool download_all(const opentony::layout::Layout& where, const upscale::Options&
     std::error_code ec;
     fs::create_directories(folder / "models", ec);
     const fs::path curl = system_program("curl.exe");
+#ifdef _WIN32
     const fs::path tar = system_program("tar.exe");
     if (!fs::is_regular_file(curl, ec) || !fs::is_regular_file(tar, ec)) {
         error = "curl.exe or tar.exe is missing from Windows (both come with Windows 10 1803 and later).";
         return false;
     }
+#endif
     for (const us::Fetch& fetch : plan) {
         if (progress.cancel) {
             error = "Cancelled. Start continues where it stopped.";
@@ -52,7 +55,8 @@ bool download_all(const opentony::layout::Layout& where, const upscale::Options&
         log("download: " + fetch.what + ", " + megabytes(fetch.size) + " from " + fetch.url);
         std::vector<std::string> said;
         std::string run_error;
-        const long code = run_process(curl, {"--location", "--fail", "--silent", "--show-error", "--retry", "2", "--output", utf8_of(fetch.to), fetch.url}, folder, {},
+        const long code = run_process(curl, {"--location", "--fail", "--silent", "--show-error", "--retry", "2",
+                                            "--connect-timeout", "15", "--max-time", "180", "--output", utf8_of(fetch.to), fetch.url}, folder, {},
                                       [&said](const std::string& line) { said.push_back(line); }, nullptr, run_error);
         if (code != 0) {
             error = fetch.what + ": the download failed (" + (run_error.empty() ? "curl exit " + std::to_string(code) : run_error) + ")" +
@@ -67,13 +71,29 @@ bool download_all(const opentony::layout::Layout& where, const upscale::Options&
             const fs::path unpack = folder / "unpack";
             fs::remove_all(unpack, ec);
             fs::create_directories(unpack, ec);
+#ifdef _WIN32
             const long unzip = run_process(tar, {"-xf", utf8_of(fetch.to), "-C", utf8_of(unpack)}, folder, {}, nullptr, nullptr, run_error);
+#else
+            const long unzip = run_process("unzip", {"-q", utf8_of(fetch.to), "-d", utf8_of(unpack)}, folder, {}, nullptr, nullptr, run_error);
+#endif
             const fs::path member = unpack / fs::path(fetch.member).make_preferred();
             if (unzip != 0 || !fs::is_regular_file(member, ec)) {
                 error = fetch.what + ": the zip could not be unpacked (" + (run_error.empty() ? "tar exit " + std::to_string(unzip) : run_error) + ")";
                 return false;
             }
             fs::rename(member, fetch.program, ec);
+            if (ec) {
+                error = "cannot install " + utf8_of(fetch.program) + ": " + ec.message();
+                return false;
+            }
+#ifndef _WIN32
+            fs::permissions(fetch.program, fs::perms::owner_exec, fs::perm_options::add, ec);
+            if (ec) {
+                fs::remove(fetch.program);
+                error = "cannot make the native upscaler executable: " + ec.message();
+                return false;
+            }
+#endif
             const fs::path licence = member.parent_path() / "LICENSE";
             if (fs::is_regular_file(licence, ec)) {
                 fs::copy_file(licence, folder / "LICENSE-upscayl-bin.txt", fs::copy_options::overwrite_existing, ec);
@@ -219,6 +239,88 @@ bool run_census(const opentony::layout::Layout& where, const fs::path& game, int
     return true;   // a failed run leaves a gap (its textures stay original); the next press of the button runs it again
 }
 
+#ifdef __linux__
+bool scan_pc_bitmaps(const opentony::layout::Layout& where, const std::function<void(const std::string&)>& log,
+                     UpscaleProgress& progress, std::string& error) {
+    progress.phase = 2;
+    const auto source = where.package_data();
+    const auto dump = where.true_colour();
+    if (!true_colour::is_current(source, dump)) {
+        log("scan: matching the PC replacement bitmaps to their in-game texture keys");
+        const auto result = true_colour::build(source, dump, [&](int done, int total) {
+            progress.done = done;
+            progress.total = total;
+            return !progress.cancel;
+        });
+        if (result.cancelled || result.failed != 0) {
+            error = result.cancelled ? "Cancelled. Start continues where it stopped." : "Could not prepare the PC texture bitmaps.";
+            return false;
+        }
+    }
+
+    const auto known_table = where.upscaler() / "texture_classes.tsv";
+    std::map<std::string, upscale::Class> known;
+    std::uint64_t hash = 0;
+    if (!us::write_class_table(known_table, error) || !upscale::read_classes(known_table, known, hash, error)) {
+        return false;
+    }
+    std::vector<fs::path> images;
+    std::error_code ec;
+    for (fs::directory_iterator it(dump, ec), end; !ec && it != end; it.increment(ec)) {
+        if (it->path().extension() == ".png") {
+            images.push_back(it->path());
+        }
+    }
+    if (images.empty() || ec) {
+        error = "No PC texture bitmaps found. Prepare the game files first.";
+        return false;
+    }
+    std::sort(images.begin(), images.end());
+    const auto index_path = dump / "index.tsv";
+    const auto table_path = where.upscaler() / "pc_bitmap_classes.tsv";
+    const auto staged_index = dump / "index.tsv.tmp";
+    const auto staged_table = where.upscaler() / "pc_bitmap_classes.tsv.tmp";
+    std::ofstream index(staged_index);
+    std::ofstream table(staged_table);
+    progress.done = 0;
+    progress.total = images.size();
+    for (const auto& path : images) {
+        if (progress.cancel) {
+            error = "Cancelled. Start continues where it stopped.";
+            return false;
+        }
+        png::Image picture;
+        if (!png::read(path, picture, error)) {
+            return false;
+        }
+        const auto key = path.stem().string();
+        const auto cls = known.find(key);
+        const bool two_d = cls != known.end() && cls->second == upscale::Class::TwoD;
+        const auto alpha = upscale::has_transparency(picture) ? "cutout" : "opaque";
+        const auto dimensions = key + "\t" + std::to_string(picture.width) + "\t" + std::to_string(picture.height) + "\t";
+        index << dimensions << "1555\t" << alpha << "\t" << (two_d ? "2d\tclamp" : "world\tunknown") << "\t0\t0\tpc-bitmap\n";
+        table << dimensions << (two_d ? "2d" : "world") << "\n";
+        ++progress.done;
+    }
+    index.close();
+    table.close();
+    if (!index || !table) {
+        error = "Could not write the PC texture index.";
+        return false;
+    }
+    fs::rename(staged_table, table_path, ec);
+    if (!ec) {
+        fs::rename(staged_index, index_path, ec);
+    }
+    if (ec) {
+        error = "Could not publish the PC texture index: " + ec.message();
+        return false;
+    }
+    log("scan: " + std::to_string(images.size()) + " keyed PC texture bitmaps");
+    return true;
+}
+#endif
+
 }  // namespace
 
 upscale::ModelRunner upscaler_model_runner(const fs::path& tool, const fs::path& models) {
@@ -284,6 +386,12 @@ bool run_upscale_task(const opentony::layout::Layout& where, const fs::path& gam
         return false;
     }
     if (steps.census) {
+#ifdef __linux__
+        if (!scan_pc_bitmaps(where, say, progress, error)) {
+            say("stopped: " + error);
+            return false;
+        }
+#else
         const us::State before = us::state(where.upscaler(), where.texture_dump(), where.upscaled(), given);
         if (before.census) {
             say("census: done already (" + std::to_string(before.dumped) + " textures in " + utf8_of(where.texture_dump()) + ")");
@@ -291,6 +399,7 @@ bool run_upscale_task(const opentony::layout::Layout& where, const fs::path& gam
             say("stopped: " + error);
             return false;
         }
+#endif
     }
     if (!steps.upscale) {
         return true;
@@ -298,13 +407,23 @@ bool run_upscale_task(const opentony::layout::Layout& where, const fs::path& gam
     progress.phase = 3;
     progress.done = 0;
     progress.total = 0;
+#ifdef __linux__
+    const fs::path dump = where.true_colour();
+    const fs::path table = where.upscaler() / "pc_bitmap_classes.tsv";
+#else
+    const fs::path dump = where.texture_dump();
     const fs::path table = where.upscaler() / "texture_classes.tsv";
     if (!us::write_class_table(table, error)) {
         say("stopped: " + error);
         return false;
     }
+#endif
     // the PC port's 24-bit bitmaps in all 8 bits (graphics-2 G5): the originals the model starts from where there is one, so the 15-bit banding is not upscaled
     upscale::Options options = given;
+#ifdef __linux__
+    // The model runs a whole batch before the pipeline can publish files or handle cancellation.
+    options.batch = std::min(options.batch, 16);
+#endif
     std::error_code colour_ec;
     if (options.originals.empty() && fs::is_directory(where.package_data() / "newtex", colour_ec)) {
         if (!true_colour::is_current(where.package_data(), where.true_colour())) {
@@ -316,9 +435,9 @@ bool run_upscale_task(const opentony::layout::Layout& where, const fs::path& gam
             options.originals = where.true_colour();
         }
     }
-    const fs::path tool = where.upscaler() / "upscayl-bin.exe";
+    const fs::path tool = us::tool_program(where.upscaler());
     say("upscale: world " + options.model_world + ", 2d " + options.model_2d + ", scale " + std::to_string(options.scale) + " into " + utf8_of(where.upscaled()));
-    const upscale::Report report = upscale::run(where.texture_dump(), table, where.upscaled(), options, upscaler_stamp_name(tool),
+    const upscale::Report report = upscale::run(dump, table, where.upscaled(), options, upscaler_stamp_name(tool),
                                                 upscaler_model_runner(tool, where.upscaler() / "models"), say, &progress.cancel, [&progress](int done, int total) {
                                                     progress.total = static_cast<std::uint64_t>(total);
                                                     progress.done = static_cast<std::uint64_t>(done);
@@ -335,6 +454,11 @@ bool run_upscale_task(const opentony::layout::Layout& where, const fs::path& gam
     if (report.failed != 0) {
         error = std::to_string(report.failed) + " textures could not be upscaled" + (report.errors.empty() ? std::string() : ": " + report.errors.front());
         say("finished with errors after " + std::to_string(seconds) + " s: " + error);
+        return false;
+    }
+    if (report.written + report.done_before == 0) {
+        error = "No matching textures were upscaled.";
+        say("stopped: " + error);
         return false;
     }
     say("finished in " + std::to_string(seconds / 60) + " min " + std::to_string(seconds % 60) + " s: " + std::to_string(report.written) + " written, " +

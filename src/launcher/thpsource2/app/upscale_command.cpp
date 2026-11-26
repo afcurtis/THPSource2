@@ -84,8 +84,12 @@ bool upscale_command(const opentony::layout::Layout& install, int argc, char** a
         return true;
     }
     upscale::Options options = upscale_setup::chosen_options();
+#ifdef __linux__
+    fs::path dump = install.true_colour(), table = install.upscaler() / "pc_bitmap_classes.tsv", out = install.upscaled();
+#else
     fs::path dump = install.texture_dump(), table = install.upscaler() / "texture_classes.tsv", out = install.upscaled();
-    fs::path tool = install.upscaler() / "upscayl-bin.exe", models = install.upscaler() / "models", keys;
+#endif
+    fs::path tool = upscale_setup::tool_program(install.upscaler()), models = install.upscaler() / "models", keys;
     for (int k = 1; k < argc; ++k) {
         const std::string argument = argv[k];
         const bool has_value = k + 1 < argc;
@@ -118,7 +122,8 @@ bool upscale_command(const opentony::layout::Layout& install, int argc, char** a
             return true;
         }
     }
-    if (dump == install.texture_dump() && true_colour::is_current(install.package_data(), install.true_colour())) {
+    if ((dump == install.texture_dump() || dump == install.true_colour()) &&
+        true_colour::is_current(install.package_data(), install.true_colour())) {
         options.originals = install.true_colour();   // the 24-bit bitmaps in all 8 bits (graphics-2 G5), as the button uses them
     }
     if (!keys.empty()) {

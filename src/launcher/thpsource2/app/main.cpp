@@ -2442,6 +2442,11 @@ private:
     const upscale_setup::State& upscale_state() {
         if (!upscale_state_valid) {   // counted when the tab or the panel is drawn first, and again after a task: not every frame
             upscale_state_cached = upscale_setup::state(where.upscaler(), where.texture_dump(), where.upscaled(), upscale_options());
+#ifdef __linux__
+            upscale_state_cached.dumped = true_colour::count_files(where.true_colour());
+            std::error_code ec;
+            upscale_state_cached.census = fs::is_regular_file(where.true_colour() / "index.tsv", ec);
+#endif
             upscale_state_valid = true;
         }
         return upscale_state_cached;
@@ -2509,11 +2514,14 @@ private:
         const std::vector<us::Fetch> plan = us::download_plan(where.upscaler(), options);
         const bool have = us::set_exists(st);
         ImGui::PushTextWrapPos(width - ImGui::GetStyle().WindowPadding.x);
+#ifdef __linux__
+        ImGui::TextWrapped("Builds an AI-upscaled pack from the PC replacement bitmaps. Textures that require the in-game scan keep their original appearance.");
+#else
         ImGui::TextWrapped("Creates high-resolution versions of the game's textures on this PC. World textures are upscaled with an AI model; the HUD, fonts "
                            "and menus are enlarged pixel for pixel so they stay crisp.");
+#endif
         ImGui::Spacing();
-        ImGui::TextColored(kDim, "%s", "Requires a graphics card with Vulkan support. The first run takes about 10 to 15 minutes. You can cancel at any time "
-                                       "and continue later.");
+        ImGui::TextColored(kDim, "%s", "Requires a graphics card with Vulkan support. Run time depends on your GPU. Cancel stops after the current batch.");
 
         section("Status");
         const auto status_row = [this](const char* label, const std::string& value) {
@@ -2594,11 +2602,6 @@ private:
     }
 
     void start_upscale() {
-#ifndef _WIN32
-        set_status("Automatic texture upscaling needs the Linux texture census and upscaler.", true);
-        upscale_panel = false;
-        return;
-#endif
         if (!save(true) || !begin_task(Task::Kind::Upscale)) {
             return;
         }
@@ -2612,6 +2615,14 @@ private:
         const upscale::Options options = upscale_options();
         const int jobs = std::clamp(static_cast<int>(std::thread::hardware_concurrency()) / 2, 1, 6);
         task.thread = std::thread([this, install, game, options, jobs] {
+#ifdef __linux__
+            if (!run_prepare(task, opentony_exe(), install.root, game, false)) {
+                task.ok = false;
+                task.running = false;
+                task.finished = true;
+                return;
+            }
+#endif
             task.ok = run_upscale_task(install, game, options, jobs, [this](const std::string& line) { task.add(line); }, task.upscale, task.error);
             task.running = false;
             task.finished = true;

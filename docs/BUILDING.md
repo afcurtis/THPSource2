@@ -131,8 +131,15 @@ Its Play button prepares the assets and starts the native host. The host
 honors window size and mode, V-Sync, OpenGL quality and scaling settings,
 control bindings and movement stick. The guest display still uses 4:3.
 Windows feature parity is pending for gameplay settings, the 60/120 fps
-modes, Quick Start, saves, the music and movie pipeline, and the texture
-census and upscaler. Linux updates are installed by rebuilding the checkout.
+modes, Quick Start, saves, and the music and movie pipeline. Linux updates
+are installed by rebuilding the checkout.
+
+**Upscale textures** on Linux uses the native Vulkan Upscayl tool and the
+same pinned UltraSharp model as on Windows. It gets texture keys from the
+PC replacement bitmaps in the extracted game data. Textures available only
+through the Windows runtime census, including many HUD and menu textures,
+keep their original appearance. The first run downloads the verified tool
+and model with `curl` and extracts the tool with `unzip`.
 
 ### Windows standalone
 
