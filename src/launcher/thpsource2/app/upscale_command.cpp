@@ -6,7 +6,9 @@
 #include "upscale_setup.hpp"
 #include "upscale_task.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include <algorithm>
 #include <cstdio>
@@ -57,10 +59,12 @@ bool upscale_command(const opentony::layout::Layout& install, int argc, char** a
         return false;
     }
     // a WIN32 program has no console of its own: print to the one it was started from, if any
+#ifdef _WIN32
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
         std::freopen("CONOUT$", "w", stdout);
         std::freopen("CONOUT$", "w", stderr);
     }
+#endif
     if (census || download) {   // the button's first steps on their own (upscale_task.cpp): the downloads, the census into Data\TextureDump
         UpscaleProgress progress;
         std::string error;

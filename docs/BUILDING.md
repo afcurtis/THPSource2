@@ -113,6 +113,27 @@ Settings are kept in memory. To verify the menu headlessly, set
 `OT_LINUX_MENU_SCREENSHOT` to the path of a BMP file. The host saves the
 60th frame presented by the main menu and exits.
 
+### Native Linux graphical launcher
+
+With the Python dependencies from step 1 and SDL3 3.4 development files:
+
+```bash
+imgui_source="$(.tools/venv/bin/python -c 'from tony.imgui_source import source_dir; print(source_dir())' | tail -n 1)"
+cmake -S . -B build/native-sdl -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    -DOPENTONY_BUILD_SDL=ON -DOPENTONY_BUILD_LINUX_LAUNCHER=ON \
+    -DOPENTONY_IMGUI_SOURCE="$imgui_source"
+cmake --build build/native-sdl --target THPSource2 -j"$(nproc)"
+build/native-sdl/THPSource2
+```
+
+The launcher shares the Windows interface, game import, settings and presets.
+Its Play button prepares the assets and starts the native host. The host
+honors window size and mode, V-Sync, OpenGL quality and scaling settings,
+control bindings and movement stick. The guest display still uses 4:3.
+Windows feature parity is pending for gameplay settings, the 60/120 fps
+modes, Quick Start, saves, the music and movie pipeline, and the texture
+census and upscaler. Linux updates are installed by rebuilding the checkout.
+
 ### Windows standalone
 
 1. Unzip `thpsource2-win64.zip` anywhere.

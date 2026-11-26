@@ -734,7 +734,13 @@ private:
         saved_settings.game_dir = settings.game_dir;
     }
 
-    fs::path opentony_exe() const { return where.build() / "opentony.exe"; }
+    fs::path opentony_exe() const {
+#ifdef _WIN32
+        return where.build() / "opentony.exe";
+#else
+        return executable_directory() / "opentony_linux_host";
+#endif
+    }
 
     bool begin_task(Task::Kind kind) {
         if (task.running) {
@@ -768,14 +774,28 @@ private:
             return false;
         }
         task.add("Unpacking the game data (first run only, about 200 MB)...");
+        std::string error;
+#ifdef _WIN32
         std::vector<std::string> arguments = {"--root", utf8_of(root), "--game-dir", utf8_of(game), "--prepare"};
         if (force) {
             arguments.push_back("--force");
         }
-        std::string error;
         const long code = run_process(exe, arguments, game, {}, [&task](const std::string& line) { task.add(line); }, {}, error);
+#else
+        const fs::path checkout(OPENTONY_CHECKOUT);
+        const auto where = opentony::layout::Layout{root};
+        if (!force && check_game_folder(game, where.unpacked(), false).prepared) {
+            return true;
+        }
+        const auto venv = checkout / ".tools/venv/bin/python";
+        const fs::path interpreter = fs::is_regular_file(venv, ec) ? venv : fs::path("python3");
+        const long code = run_process(interpreter,
+            {utf8_of(checkout / "scripts/prepare_linux_launcher.py"), utf8_of(find_child(game, "THawk2.exe")),
+             utf8_of(find_child(game, "ALL.PKR")), utf8_of(where.unpacked())},
+            checkout, {}, [&task](const std::string& line) { task.add(line); }, {}, error);
+#endif
         if (code != 0) {
-            task.error = code == -1 ? error : "opentony.exe --prepare stopped with exit code " + std::to_string(code);
+            task.error = code == -1 ? error : "Game data preparation stopped with exit code " + std::to_string(code);
             return false;
         }
         return true;
@@ -821,15 +841,25 @@ private:
 
     // quick: -1 the game as usual (the PLAY button), 0 straight into a free skate, 1 a single session, 2 a goals speed run, 3 a competition (the Quick Start page's buttons)
     void start_play(int quick = -1) {
+#ifndef _WIN32
+        if (quick >= 0) {
+            set_status("Quick Start needs gameplay support in the Linux host.", true);
+            return;
+        }
+#endif
         if (!save(true) || !begin_task(Task::Kind::Play)) {
             return;
         }
         const fs::path exe = opentony_exe();
         const fs::path game = game_dir;
+#ifdef _WIN32
         std::vector<std::string> arguments = {"--root", utf8_of(where.root), "--game-dir", utf8_of(game)};
         if (settings.play_movies) {
             arguments.push_back("--movies");
         }
+#else
+        std::vector<std::string> arguments = {"--try-boot", utf8_of(where.static_image()), utf8_of(game)};
+#endif
         board_before_play = opentony::scores::load(where.scores()).records.size();   // the runs after these are this session's (the High Scores page marks them)
         score_flash = false;
         speed_run_open = false;
@@ -848,6 +878,9 @@ private:
         auto environment = launch_environment(launch, utf8_of(where.screenshots()), desktop != nullptr ? desktop->h : 0, utf8_of(music_root()),
                                               utf8_of(where.scores()), pack ? utf8_of(where.upscaled()) : std::string(),
                                               colour ? utf8_of(where.true_colour()) : std::string());
+#ifndef _WIN32
+        environment.emplace_back("OPENTONY_SETTINGS", utf8_of(where.ini()));
+#endif
         const fs::path colour_source = colour ? where.package_data() : fs::path();
         const fs::path colour_out = where.true_colour();
         if (const char* given = std::getenv("OT_TEXTURE_PACK"); given != nullptr && *given != '\0') {
@@ -859,6 +892,14 @@ private:
         }
         task.thread = std::thread([this, exe, game, arguments, environment, colour_source, colour_out] {
             std::error_code ec;
+#ifndef _WIN32
+            if (!run_prepare(task, exe, where.root, game, false)) {
+                task.exit_code = -1;
+                task.running = false;
+                task.finished = true;
+                return;
+            }
+#endif
             if (!colour_source.empty() && !true_colour::is_current(colour_source, colour_out)) {
                 // seconds, once: the unpacked bitmaps again in all 24 bits (a new import or a new version makes it again)
                 task.add("Preparing true-colour textures...");
@@ -866,7 +907,7 @@ private:
                 task.add("True-colour textures: " + std::to_string(made.written) + " written, " + std::to_string(made.failed) + " failed.");
             }
             if (!fs::is_regular_file(exe, ec)) {
-                task.error = "The game program (opentony.exe) is missing from " + utf8_of(exe.parent_path()) + ". Reinstall THPSource2 to restore it.";
+                task.error = "The game program is missing from " + utf8_of(exe.parent_path()) + ". Reinstall THPSource2 to restore it.";
                 task.exit_code = -1;   // not a crash: the game never started
             } else {
                 std::string error;
@@ -1455,6 +1496,10 @@ private:
     // ------------------------------------------------------------ updates (core/update_check.hpp, app/update_task.hpp)
 
     void start_update_check() {
+#ifndef _WIN32
+        set_status("Linux launcher updates are installed by rebuilding the checkout.", true);
+        return;
+#endif
         if (update && update->state() == UpdateCheck::State::Checking) {
             return;   // one request at a time
         }
@@ -2549,6 +2594,11 @@ private:
     }
 
     void start_upscale() {
+#ifndef _WIN32
+        set_status("Automatic texture upscaling needs the Linux texture census and upscaler.", true);
+        upscale_panel = false;
+        return;
+#endif
         if (!save(true) || !begin_task(Task::Kind::Upscale)) {
             return;
         }
@@ -4079,6 +4129,9 @@ int main(int argc, char** argv) {
     app.page = page;
     app.play_requested = play;
     app.update_check_allowed = !no_update_check && screenshot.empty();
+#ifndef _WIN32
+    app.update_check_allowed = false;
+#endif
     if (!pretend_version.empty() && update::parse_version(pretend_version)) {
         app.running_version = pretend_version;
     }

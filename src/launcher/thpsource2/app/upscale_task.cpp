@@ -5,7 +5,6 @@
 #include "true_colour.hpp"
 #include "upscale_setup.hpp"
 
-#include <windows.h>
 
 #include <chrono>
 #include <cstdlib>

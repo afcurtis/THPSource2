@@ -52,6 +52,11 @@ constexpr std::uint32_t kBackendRead = 0x004e7ad0;
 constexpr std::uint32_t kBackendClose = 0x004e7bc0;
 constexpr std::uint32_t kFailed = 0xffffffffu;
 
+const char* settings_file() {
+    const char* path = std::getenv("OPENTONY_SETTINGS");
+    return path != nullptr && *path != '\0' ? path : "THawk2.ini";
+}
+
 template <std::size_t>
 using Word = std::uint32_t;
 
@@ -80,7 +85,7 @@ class BootHost final : public runtime::ServiceHost {
 public:
     BootHost(LinuxGuestMemory& arena, const std::filesystem::path& game_dir)
         : arena_(arena), package_(game_dir.empty() ? game_dir : std::filesystem::absolute(game_dir) / "ALL.PKR"),
-          settings_(thpsource2::IniFile::load("THawk2.ini")) {
+          settings_(thpsource2::IniFile::load(settings_file())) {
         memory_.make_live(nullptr, false, arena.base());
         services_.attach(this);
         make_kits(memory_, services_);
@@ -146,7 +151,7 @@ public:
             for (std::size_t slot = 0; slot < streams_.size(); ++slot) {
                 if (streams_[slot] == nullptr) {
                     streams_[slot].reset(reset_options ? std::tmpfile() : std::fopen(package_.c_str(), "rb"));
-                    if (reset_options && streams_[slot] != nullptr) {
+                    if (reset_options && streams_[slot] != nullptr && std::getenv("OPENTONY_SETTINGS") == nullptr) {
                         settings_ = thpsource2::IniFile{};
                     }
                     return streams_[slot] == nullptr ? 0 : static_cast<std::uint32_t>(slot + 1);
@@ -251,8 +256,18 @@ public:
             gamepad::update_joystick(state.pads[0]);
             memory_.set8(0x006a44f8, (state.mouse.buttons & OT_MOUSE_LEFT) != 0);
             if (state.mouse.dx || state.mouse.dy || state.mouse.buttons) {
-                mouse_x_ = std::clamp(state.mouse.x, 0, 639);
-                mouse_y_ = std::clamp(state.mouse.y, 0, 479);
+                std::int32_t width = 0;
+                std::int32_t height = 0;
+                ot_hal_sdl_window.get_size(&width, &height);
+                if (width > 0 && height > 0) {
+                    const char* aspect = std::getenv("OT_ASPECT");
+                    const bool stretch = aspect != nullptr && std::string_view(aspect) == "stretch";
+                    const double scale = std::min(width / 640.0, height / 480.0);
+                    const double shown_width = stretch ? width : 640 * scale;
+                    const double shown_height = stretch ? height : 480 * scale;
+                    mouse_x_ = std::clamp(static_cast<int>((state.mouse.x - (width - shown_width) / 2) * 640 / shown_width), 0, 639);
+                    mouse_y_ = std::clamp(static_cast<int>((state.mouse.y - (height - shown_height) / 2) * 480 / shown_height), 0, 479);
+                }
             }
 #endif
             return resolve(0x004e42c0, {});  // PCInput_BuildActionMask
@@ -541,14 +556,66 @@ BootHost* boot_host = nullptr;
 LinuxGuestMemory* guest_memory = nullptr;
 
 #ifdef OPENTONY_LINUX_SDL
+std::string_view env_setting(const char* name) {
+    const char* value = std::getenv(name);
+    return value == nullptr ? "" : value;
+}
+
 void run_with_sdl_window(bool try_boot) {
     if (!SDL_Init(ot_hal_sdl_window_subsystems() | ot_hal_sdl_input_subsystems())) {
         throw runtime::ServiceFault(SDL_GetError());
     }
     ot_hal_sdl_video_gl_hints();
     ot_hal_sdl_window_request_opengl(1);
-    const OtHalWindowDesc window{"THPSource2", 640, 480, try_boot ? 0u : static_cast<std::uint32_t>(OT_HAL_WINDOW_HIDDEN)};
-    const OtHalVideoMode mode{window.width, window.height, 32, 0, 0};
+    OtHalWindowDesc window{"THPSource2", 640, 480, try_boot ? OT_HAL_WINDOW_RESIZABLE : OT_HAL_WINDOW_HIDDEN};
+    int width = 0;
+    int height = 0;
+    const auto resolution = env_setting("OT_WINDOW_SIZE");
+    const bool custom_size = std::sscanf(resolution.data(), "%dx%d", &width, &height) == 2 &&
+        width >= 320 && width <= 16384 && height >= 240 && height <= 16384;
+    if (try_boot && custom_size) {
+        window.width = width;
+        window.height = height;
+    }
+    if (try_boot && env_setting("OT_WINDOW_MODE") == "fullscreen") {
+        window.flags = OT_HAL_WINDOW_FULLSCREEN | (custom_size ? static_cast<unsigned>(OT_HAL_WINDOW_EXCLUSIVE) : 0u);
+    } else if (try_boot && env_setting("OT_WINDOW_MODE") == "borderless") {
+        window.flags = OT_HAL_WINDOW_BORDERLESS;
+        if (!custom_size) {
+            SDL_Rect bounds{};
+            if (SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &bounds)) {
+                window.width = bounds.w;
+                window.height = bounds.h;
+            }
+        }
+    }
+    const OtHalVideoMode mode{640, 480, 32, (window.flags & OT_HAL_WINDOW_FULLSCREEN) != 0, env_setting("OT_VSYNC") == "1"};
+    OtHalSdlVideoOptions options{};
+    const auto internal = env_setting("OT_INTERNAL_RESOLUTION");
+    options.follow_window = internal == "window";
+    if (internal == "psx") {
+        options.target_width = 512;
+        options.target_height = 240;
+    }
+    options.stretch = env_setting("OT_ASPECT") == "stretch";
+    options.samples = std::clamp(std::atoi(env_setting("OT_MSAA").data()), 0, 8);
+    const double supersample = std::strtod(env_setting("OT_SUPERSAMPLE").data(), nullptr);
+    options.supersample = options.follow_window && supersample >= 1.0 ? static_cast<int>(std::min(supersample, 4.0) * 100 + 0.5) : 0;
+    const auto anisotropy = env_setting("OT_ANISOTROPY");
+    options.anisotropy = anisotropy == "trilinear" ? 1 : std::clamp(std::atoi(anisotropy.data()), 0, 16);
+    const auto scaling = env_setting("OT_SCALING");
+    options.present_filter = scaling == "crt" ? OT_HAL_SDL_PRESENT_CRT : scaling == "sharp" ? OT_HAL_SDL_PRESENT_SHARP :
+        scaling == "nearest" ? OT_HAL_SDL_PRESENT_NEAREST : OT_HAL_SDL_PRESENT_LINEAR;
+    const auto filter = env_setting("OT_TEXTURE_FILTER");
+    options.texture_filter = filter == "sharp" ? OT_HAL_SDL_FILTER_NEAREST : filter == "smooth" ? OT_HAL_SDL_FILTER_LINEAR : OT_HAL_SDL_FILTER_AS_DRAWN;
+    const auto occlusion = env_setting("OT_AMBIENT_OCCLUSION");
+    options.ambient_occlusion = occlusion == "high" ? 2 : occlusion == "low" ? 1 : 0;
+    options.alpha_to_coverage = env_setting("OT_ALPHA_TO_COVERAGE") == "1";
+    options.sharp_2d = env_setting("OT_HUD_FILTER") == "sharp";
+    options.psx_dither = env_setting("OT_PSX_DITHER") == "1";
+    options.crt_curve = env_setting("OT_CRT_CURVE") == "1";
+    options.texture_pack = std::getenv("OT_TEXTURE_PACK");
+    ot_hal_sdl_video_gl_options(&options);
     const auto& video = ot_hal_sdl_video_gl;
     const bool created = ot_hal_sdl_window.create(&window) != 0;
     const bool initialized = created && video.init(&mode) != 0;

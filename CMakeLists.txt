@@ -8,6 +8,7 @@ include(cmake/opentony_sources.cmake)
 
 option(OPENTONY_BUILD_TESTS "Build native reconstruction tests" ON)
 option(OPENTONY_BUILD_SDL "Build the native SDL3 platform backend" OFF)
+option(OPENTONY_BUILD_LINUX_LAUNCHER "Build the native Linux graphical launcher" OFF)
 
 add_library(opentony_assets STATIC ${OPENTONY_ASSETS_SOURCES})
 target_compile_features(opentony_assets PUBLIC cxx_std_20)
@@ -95,6 +96,13 @@ if(OPENTONY_BUILD_SDL)
         add_executable(opentony_texture_pack_test src/hooks/tools/texture_pack_test.cpp)
         target_link_libraries(opentony_texture_pack_test PRIVATE opentony_hal_sdl)
     endif()
+endif()
+
+if(OPENTONY_BUILD_LINUX_LAUNCHER)
+    if(NOT TARGET opentony_linux_host OR NOT TARGET opentony_hal_sdl)
+        message(FATAL_ERROR "The Linux launcher requires Linux x86-64 and OPENTONY_BUILD_SDL=ON")
+    endif()
+    include(cmake/linux_launcher.cmake)
 endif()
 
 if(OPENTONY_BUILD_TESTS)
