@@ -53,7 +53,21 @@ copy (`re/evidence/fixtures/README.md`). Without them the ctest cases that repla
 
 ## 4. Run on Windows
 
-### Native Linux SDL3 backend
+### Native Linux host and SDL3 backend
+
+The Linux host can load the standalone's static data and initialize guest
+memory. From a checkout with the Python tools installed and the PC game
+files extracted:
+
+```bash
+./tony.sh hooks static-data --exe /path/to/THawk2.exe
+cmake -S . -B build/native -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/native --target opentony_linux_host -j"$(nproc)"
+build/native/opentony_linux_host --check-static-data build/static/thawk2_static.img
+```
+
+`THawk2.exe` supplies data for the image. The host check runs without Wine
+and ends after initializing guest memory, before the game loop.
 
 The top-level build can compile the SDL3 window, input, clock, audio and
 graphics backends against the system SDL3 library. This target is groundwork

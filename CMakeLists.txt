@@ -34,6 +34,15 @@ target_link_libraries(opentony_native_replay PRIVATE opentony_runtime)
 target_compile_features(opentony_native_replay PRIVATE cxx_std_20)
 target_compile_options(opentony_native_replay PRIVATE -Wall -Wextra -Wpedantic)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    add_executable(opentony_linux_host
+        src/hooks/kits/linux_guest_memory.cpp
+        src/hooks/kits/linux_host_main.cpp
+    )
+    target_link_libraries(opentony_linux_host PRIVATE opentony_runtime)
+    target_compile_options(opentony_linux_host PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 # Portable part of the platform HAL (src/hal/, docs/HAL.md). The backends and
 # hook adapters are Win32-only and built by src/hooks/CMakeLists.txt.
 add_library(opentony_hal STATIC
