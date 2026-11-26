@@ -96,6 +96,10 @@ public:
         if (address == 0x004e5ec0 || address == seam::bink::StartBinkMovie || address == seam::bink::CloseBinkMovie) {
             return 0;
         }
+        if (address == seam::bink::BinkMovieUpdate) {
+            // No clip was opened on this host. Follow the standalone's end-of-clip path.
+            return resolve(0x004e7140, {});  // PCMOVIE_StopFMV
+        }
         const auto* end = kNatives + kNativeCount;
         const auto* native = std::lower_bound(kNatives, end, address, [](const NativeEntry& entry, std::uint32_t value) {
             return entry.address < value;
@@ -141,6 +145,13 @@ public:
         }
         if (address == seam::hal::PCinit && args.empty()) {
             return pc_init();
+        }
+        if (address == seam::hal::CD_Recheck) {
+            // The standalone reads the installed package directly.
+            if (!std::filesystem::is_regular_file(package_)) {
+                throw runtime::ServiceFault("game package is missing: " + package_.string());
+            }
+            return 0;
         }
         if (address == seam::crt::PKR2_OpenPackageStream && args.size() == 2) {
             const std::string_view mode = arena::text(args[1]);
@@ -229,6 +240,23 @@ public:
             memory_.write(args[0], {reinterpret_cast<const std::uint8_t*>(formatted.c_str()), formatted.size() + 1});
             return static_cast<std::uint32_t>(formatted.size());
         }
+        if (address == seam::crt::CRT_vsnprintf && args.size() >= 4) {
+            std::uint32_t list = args[3];
+            const auto formatted = runtime::guest::format(arena::text(args[2]), {
+                [&] {
+                    const auto word = memory_.u32(list);
+                    list += 4;
+                    return word;
+                },
+                [this](std::uint32_t address) { return readable_text(address); }
+            });
+            const std::size_t capacity = args[1];
+            const auto length = std::min(capacity, formatted.size() + 1);
+            if (length != 0) {
+                memory_.write(args[0], {reinterpret_cast<const std::uint8_t*>(formatted.c_str()), length});
+            }
+            return formatted.size() > capacity ? kFailed : static_cast<std::uint32_t>(formatted.size());
+        }
         if (address == seam::hal::Game_FrameTick || address == seam::hal::WINMAIN_Sleep) {
 #ifdef OPENTONY_LINUX_SDL
             OtHalWindowEvent events[16];
@@ -304,6 +332,7 @@ public:
         case seam::net::FUN_004dbcc0:
         case seam::net::NetGame_SessionStart:
         case seam::net::FUN_004ddbf0:
+        case seam::net::FUN_004de790:  // No remote player to receive a skater-hit message.
             return 0;  // The standalone boots in single-player mode.
         case seam::net::FUN_004dbc50:
             return kFailed;
